@@ -1,0 +1,311 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Clinical Precision Design System - Light Mode */
+    --background: 248 250 252; /* #F8FAFC - Canvas */
+    --foreground: 15 23 42; /* #0F172A - Deep Navy */
+
+    --card: 255 255 255; /* #FFFFFF - Cards */
+    --card-foreground: 15 23 42;
+
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
+
+    --primary: 30 64 175; /* #1E40AF - Clinical Cobalt */
+    --primary-foreground: 255 255 255;
+
+    --secondary: 5 150 105; /* #059669 - Vital Emerald */
+    --secondary-foreground: 255 255 255;
+
+    --muted: 241 245 249; /* #F1F5F9 - Panels */
+    --muted-foreground: 100 116 139; /* #64748B */
+
+    --accent: 217 119 6; /* #D97706 - Triage Amber */
+    --accent-foreground: 255 255 255;
+
+    --destructive: 220 38 38; /* #DC2626 - Critical Red */
+    --destructive-foreground: 255 255 255;
+
+    --border: 226 232 240; /* #E2E8F0 */
+    --input: 226 232 240;
+    --ring: 30 64 175; /* Clinical Cobalt */
+
+    --radius: 0.375rem; /* 6px */
+
+    /* Font families */
+    --font-manrope: 'Manrope', system-ui, sans-serif;
+    --font-inter: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  .dark {
+    /* Clinical Precision Design System - Dark Mode */
+    --background: 15 23 42; /* #0F172A - Deep Navy */
+    --foreground: 248 250 252; /* #F8FAFC */
+
+    --card: 30 41 59; /* #1E293B */
+    --card-foreground: 248 250 252;
+
+    --popover: 30 41 59;
+    --popover-foreground: 248 250 252;
+
+    --primary: 96 165 250; /* #60A5FA */
+    --primary-foreground: 15 23 42;
+
+    --secondary: 52 211 153; /* #34D399 */
+    --secondary-foreground: 15 23 42;
+
+    --muted: 30 41 59;
+    --muted-foreground: 148 163 184;
+
+    --accent: 251 191 36; /* #FBBF24 */
+    --accent-foreground: 15 23 42;
+
+    --destructive: 248 113 113; /* #F87171 */
+    --destructive-foreground: 15 23 42;
+
+    --border: 51 65 85; /* #334155 */
+    --input: 51 65 85;
+    --ring: 96 165 250;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Typography defaults */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display font-semibold tracking-tight;
+  }
+
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply h-2 w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-muted-foreground/30;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+@layer components {
+  /* Clinical Precision Components */
+
+  /* Elevation levels */
+  .elevation-0 {
+    @apply shadow-level-0;
+  }
+
+  .elevation-1 {
+    @apply border border-border shadow-level-1;
+  }
+
+  .elevation-2 {
+    @apply shadow-level-2;
+  }
+
+  .elevation-3 {
+    @apply shadow-level-3-blur;
+  }
+
+  /* Medical Card */
+  .medical-card {
+    @apply elevation-1 rounded-lg bg-card p-5;
+  }
+
+  .medical-card-hover {
+    @apply medical-card hover:elevation-2 transition-shadow duration-normal;
+  }
+
+  /* Button variants */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-label-md font-medium text-primary-foreground transition-colors duration-fast hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+    min-height: 44px; /* 44px touch target */
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-secondary px-4 py-2.5 text-label-md font-medium text-secondary-foreground transition-colors duration-fast hover:bg-secondary/90 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+    min-height: 44px;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-label-md font-medium text-foreground transition-colors duration-fast hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+    min-height: 44px;
+  }
+
+  .btn-destructive {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-destructive px-4 py-2.5 text-label-md font-medium text-destructive-foreground transition-colors duration-fast hover:bg-destructive/90 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+    min-height: 44px;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-input px-4 py-2.5 text-label-md font-medium text-foreground transition-colors duration-fast hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+    min-height: 44px;
+  }
+
+  /* Chip variants */
+  .chip-available {
+    @apply inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-label-sm font-medium text-emerald-800;
+  }
+
+  .chip-booked {
+    @apply inline-flex items-center rounded-full bg-cobalt-100 px-2.5 py-0.5 text-label-sm font-medium text-cobalt-800;
+  }
+
+  .chip-cancelled {
+    @apply inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-label-sm font-medium text-red-800;
+  }
+
+  .chip-pending {
+    @apply inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-label-sm font-medium text-amber-800;
+  }
+
+  .chip-neutral {
+    @apply inline-flex items-center rounded-full bg-navy-100 px-2.5 py-0.5 text-label-sm font-medium text-navy-800;
+  }
+
+  /* Form Field */
+  .form-field {
+    @apply w-full rounded-md border border-input bg-background px-3 py-2.5 text-body-md transition-colors duration-fast placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+    min-height: 44px;
+  }
+
+  .form-field-error {
+    @apply border-destructive focus-visible:ring-destructive;
+  }
+
+  .form-label {
+    @apply mb-1.5 block text-label-md font-medium text-foreground;
+  }
+
+  .form-error {
+    @apply mt-1.5 text-body-sm text-destructive;
+  }
+
+  .form-hint {
+    @apply mt-1.5 text-body-sm text-muted-foreground;
+  }
+
+  /* Selection Controls */
+  .checkbox {
+    @apply h-4.5 w-4.5 rounded-sm border-input text-primary focus-visible:ring-2 focus-visible:ring-ring data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground;
+    border-width: 1.5px;
+  }
+
+  .radio {
+    @apply h-4.5 w-4.5 rounded-full border-input text-primary focus-visible:ring-2 focus-visible:ring-ring data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground;
+    border-width: 1.5px;
+  }
+
+  .switch {
+    @apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-input transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=checked]:border-primary data-[state=checked]:bg-primary;
+  }
+
+  .switch-thumb {
+    @apply pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform duration-fast data-[state=checked]:translate-x-5;
+  }
+
+  /* Time Slot Picker */
+  .time-slot {
+    @apply relative inline-flex h-9 w-9 items-center justify-center rounded-md text-label-md font-medium transition-all duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .time-slot-available {
+    @apply time-slot border border-input bg-background text-foreground hover:border-accent/50 hover:bg-accent/10;
+  }
+
+  .time-slot-selected {
+    @apply time-slot border-primary bg-primary text-primary-foreground;
+  }
+
+  .time-slot-booked {
+    @apply time-slot cursor-not-allowed border-transparent bg-muted text-muted-foreground;
+  }
+
+  .time-slot-pending {
+    @apply time-slot border-amber-200 bg-amber-100 text-amber-800;
+  }
+
+  /* Layout utilities */
+  .container-page {
+    @apply mx-auto max-w-[1200px] px-4 md:px-8 lg:px-10;
+  }
+
+  .grid-desktop {
+    @apply grid grid-cols-12 gap-8;
+  }
+
+  .grid-tablet {
+    @apply grid grid-cols-8 gap-6;
+  }
+
+  .grid-mobile {
+    @apply grid grid-cols-4 gap-4;
+  }
+}
+
+@layer utilities {
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Animation utilities */
+  .animate-in {
+    animation: animate-in 0.2s ease-out;
+  }
+
+  .animate-out {
+    animation: animate-out 0.15s ease-in;
+  }
+
+  @keyframes animate-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes animate-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+}

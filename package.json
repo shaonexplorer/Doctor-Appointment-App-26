@@ -1,0 +1,54 @@
+{
+  "name": "doctor-appointment-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Doctor Appointment App - Healthcare appointment management platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=web\" \"npm run dev --workspace=api\"",
+    "dev:web": "npm run dev --workspace=web",
+    "dev:api": "npm run dev --workspace=api",
+    "build": "npm run build --workspaces",
+    "build:web": "npm run build --workspace=web",
+    "build:api": "npm run build --workspace=api",
+    "lint": "npm run lint --workspaces",
+    "lint:web": "npm run lint --workspace=web",
+    "lint:api": "npm run lint --workspace=api",
+    "typecheck": "npm run typecheck --workspaces",
+    "typecheck:web": "npm run typecheck --workspace=web",
+    "typecheck:api": "npm run typecheck --workspace=api",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "check": "npm run lint && npm run typecheck && npm run format:check",
+    "test": "npm run test --workspaces",
+    "test:web": "npm run test --workspace=web",
+    "test:api": "npm run test --workspace=api",
+    "db:generate": "npm run db:generate --workspace=api",
+    "db:push": "npm run db:push --workspace=api",
+    "db:migrate": "npm run db:migrate --workspace=api",
+    "db:studio": "npm run db:studio --workspace=api",
+    "db:seed": "npm run db:seed --workspace=api",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.11.1",
+    "@next/eslint-plugin-next": "^15.0.0",
+    "@types/node": "^22.7.4",
+    "concurrently": "^9.0.1",
+    "eslint": "^9.11.1",
+    "eslint-config-prettier": "^10.0.1",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.8.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@10.8.2"
+}

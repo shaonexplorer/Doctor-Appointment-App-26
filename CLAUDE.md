@@ -8,34 +8,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Doctor Appointment App** — A full-stack TypeScript monorepo for a healthcare appointment management platform with four user roles (Admin, Staff, Doctor, Patient), built with Next.js 15 (App Router) frontend and Express.js backend.
 
-**Planned Architecture** (from `specs/techstack.md`):
+**Architecture**:
 ```
 monorepo/
 ├── apps/
-│   ├── web/          # Next.js 15 + React 19 (App Router, RSC, Server Actions)
+│   ├── web/          # Next.js 15 + React 18 (App Router, RSC, Server Actions)
 │   └── api/          # Express.js + TypeScript (REST API, Prisma, BetterAuth)
 ├── packages/
 │   └── shared/       # Zod schemas, TypeScript types, constants, utilities
-└── specs/            # Product documentation (mission, roadmap, techstack)
+├── specs/            # Product documentation (mission, roadmap, techstack)
+└── docker-compose.yml
 ```
 
 ---
 
-## Current State
+## Current State (Week 1 Complete ✅)
 
-**Repository is in pre-development phase.** Only specifications exist:
-- `specs.md` — Original detailed specification
-- `specs/mission.md` — Vision, objectives, success metrics
-- `specs/roadmap.md` — 8-phase, 24-week delivery plan
-- `specs/techstack.md` — Complete technology decisions with rationale
-- `client/` — Empty (planned: Next.js app)
-- `server/` — Empty (planned: Express API)
+**Phase 1: Foundation — Week 1 Deliverables Complete:**
+
+- [x] **Monorepo Scaffolding**: npm workspaces with 3 packages (`apps/web`, `apps/api`, `packages/shared`)
+- [x] **Next.js 15 App Router**: Configured with TypeScript, Tailwind CSS, Turbopack
+- [x] **Express.js API**: TypeScript server with Prisma, BetterAuth, structured routes
+- [x] **Shared Package**: Zod schemas, TypeScript types, constants, utilities with project references
+- [x] **TypeScript Config**: Root + workspace configs with project references for type safety
+- [x] **Code Quality**: ESLint, Prettier, Husky pre-commit hooks, lint-staged
+- [x] **Prisma Schema**: Complete database schema with all core models
+- [x] **Docker Compose**: PostgreSQL 16, Redis 7, Prisma Studio
+- [x] **CI/CD Pipeline**: GitHub Actions workflow (lint, typecheck, test, build, deploy)
 
 ---
 
-## Commands (Planned)
-
-Once the monorepo is scaffolded with npm workspaces:
+## Commands
 
 ```bash
 # Install dependencies
@@ -58,6 +61,7 @@ npm run db:generate --workspace=api   # Prisma generate
 npm run db:push --workspace=api       # Push schema to DB
 npm run db:migrate --workspace=api    # Run migrations
 npm run db:studio --workspace=api     # Prisma Studio
+npm run db:seed --workspace=api       # Seed development data
 
 # Testing
 npm run test             # Vitest (unit) + Playwright (E2E)
@@ -70,6 +74,7 @@ npm run typecheck        # tsc --noEmit across monorepo
 
 # Code Quality
 npm run format           # Prettier
+npm run format:check     # Check formatting
 npm run check            # lint + typecheck + format:check
 ```
 
@@ -123,25 +128,25 @@ Critical enums: `user_type` (ADMIN/STAFF/DOCTOR/PATIENT), `slot_status` (AVAILAB
 
 ---
 
-## Environment Variables (Planned)
+## Environment Variables
+
+**Backend** (`apps/api/.env`):
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/doctor_appointment
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=<32-char-random>
+BETTER_AUTH_SECRET=<32-char-random>
+BETTER_AUTH_URL=http://localhost:4000
+FRONTEND_URL=http://localhost:3000
+PORT=4000
+NODE_ENV=development
+```
 
 **Frontend** (`apps/web/.env.local`):
 ```
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
-```
-
-**Backend** (`apps/api/.env`):
-```
-DATABASE_URL=postgresql://...
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=...
-BETTER_AUTH_SECRET=...
-BETTER_AUTH_URL=http://localhost:4000
-FRONTEND_URL=http://localhost:3000
-PORT=4000
-NODE_ENV=development
 ```
 
 ---
@@ -171,12 +176,13 @@ NODE_ENV=development
 ## Security Requirements
 
 - Role-based authorization on every mutation
-- Rate limiting on auth endpoints
+- Rate limiting on auth endpoints (5 req/min login, 3 req/hour register)
 - Helmet.js security headers, CORS restricted to frontend origin
 - Prisma parameterized queries (SQL injection prevention)
 - HttpOnly cookies with SameSite + CSRF protection
 - Audit logging for all PHI access
 - Dependency scanning in CI
+- Bcrypt password hashing (cost factor 12)
 
 ---
 
@@ -195,6 +201,7 @@ NODE_ENV=development
 - `specs/roadmap.md` — Phase breakdown, milestones, dependency graph, risk mitigation
 - `specs/mission.md` — Vision, success metrics, guiding principles
 - `design.md` — **Clinical Precision** design system (colors, typography, layout, elevation, components)
+- `specs/1 - Foundation - 2026-09-17/plan.md` — Phase 1 implementation plan
 
 ---
 

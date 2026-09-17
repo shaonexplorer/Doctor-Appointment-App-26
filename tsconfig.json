@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@doctor-appointment-app/shared/*": ["packages/shared/src/*"]
+    }
+  },
+  "include": ["eslint.config.js"],
+  "exclude": ["node_modules", "dist", "build", ".next"],
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./apps/web" },
+    { "path": "./apps/api" }
+  ]
+}
