@@ -87,6 +87,7 @@ npm run check            # lint + typecheck + format:check
 | **Zod (shared package)** | Single source of truth for API contracts; inferred TS types; runtime validation both sides |
 | **TanStack Query + React Hook Form** | Server state caching/optimistic updates; performant forms with Zod resolver |
 | **Recharts** | React-native, declarative, accessible, composable dashboards |
+| **Clinical Precision Design System** (`design.md`) | Clinical Cobalt/Emerald/Amber/Red semantic palette; Manrope+Inter typography; 12/8/4-col responsive grid; 4-level elevation; shadcn/ui components mapped to design tokens |
 
 ---
 
@@ -145,6 +146,28 @@ NODE_ENV=development
 
 ---
 
+## Design System (`design.md` — Clinical Precision)
+
+**Color Palette** (WCAG 2.1 AA compliant):
+- **Primary**: `#1E40AF` (Clinical Cobalt) — core actions, navigation, booking triggers
+- **Secondary**: `#059669` (Vital Emerald) — confirmed bookings, available slots, positive states
+- **Tertiary**: `#D97706` (Triage Amber) — pending slots, holds, unconfirmed records
+- **Destructive**: `#DC2626` (Critical Red) — cancellations, no-shows, emergency alerts
+- **Neutral**: `#0F172A` (Deep Navy) — primary typography, icons, table headers
+- **Surfaces**: `#F8FAFC` (canvas), `#F1F5F9` (panels), `#FFFFFF` (cards), `#E2E8F0`/`#CBD5E1` (borders)
+
+**Typography**:
+- **Manrope** — display/headlines (page titles, modals, KPIs)
+- **Inter** — clinical data, forms, tables, schedules (tabular nums: `tnum`, `zero`)
+
+**Layout**: 12-col desktop (1200px+, 2rem gutters, 2.5rem margins), 8-col tablet (768-1199px), 4-col mobile (<768px); 8pt rhythm
+
+**Elevation**: 4 levels — Level 0 (canvas), Level 1 (cards/rows, 1px outline + ambient shadow), Level 2 (active slots/popovers), Level 3 (modals/drawers with backdrop blur)
+
+**Components**: Buttons (Primary/Secondary/Ghost/Destructive), Chips (Available/Pending/Cancelled/Neutral), Form Fields (40px/44px, focus/error rings), Selection Controls (18px, 1.5px border), Medical Cards (1.25rem padding, avatar + status tag), Time Slot Pickers (36px, 6px radius, selected=Primary fill)
+
+---
+
 ## Security Requirements
 
 - Role-based authorization on every mutation
@@ -171,6 +194,7 @@ NODE_ENV=development
 - `specs/techstack.md` — Complete stack with versions, architecture diagram, migration paths
 - `specs/roadmap.md` — Phase breakdown, milestones, dependency graph, risk mitigation
 - `specs/mission.md` — Vision, success metrics, guiding principles
+- `design.md` — **Clinical Precision** design system (colors, typography, layout, elevation, components)
 
 ---
 
@@ -192,7 +216,7 @@ NODE_ENV=development
 
 ### Shadcn/ui (Component Library)
 
-This project uses **shadcn/ui** with Tailwind CSS. Use the `shadcn` skill for:
+This project uses **shadcn/ui** with Tailwind CSS, customized to the **Clinical Precision** design system (`design.md`). Use the `shadcn` skill for:
 - Adding, searching, fixing, debugging, styling, composing components
 - Chat interfaces, component registries, presets, `--preset` codes
 - `shadcn init`, `create an app with --preset`, `switch to --preset`
@@ -201,9 +225,19 @@ This project uses **shadcn/ui** with Tailwind CSS. Use the `shadcn` skill for:
 1. Check if shadcn/ui has a suitable component via the skill
 2. Use the skill for installation, customization, composition guidance
 3. Follow project's `components.json` configuration
+4. **Map design tokens from `design.md`** — colors, typography, spacing, radius, elevation to Tailwind config
 
 **Component Principles:**
 - Accessible by default (Radix UI primitives)
 - Customizable via Tailwind + CSS variables
 - Copy-paste ownership (not a dependency)
 - Compose complex UIs from primitives
+
+**Design Token Mapping (from `design.md`):**
+| Design Token | Tailwind Config |
+|--------------|-----------------|
+| Colors (primary, secondary, tertiary, error, surfaces) | `theme.extend.colors` + CSS variables |
+| Typography (Manrope/Inter, scale, weights) | `theme.extend.fontFamily`, `fontSize`, `fontWeight` |
+| Spacing (gutter, margin, space-*) | `theme.extend.spacing` |
+| Radius (sm, DEFAULT, md, lg, xl, full) | `theme.extend.borderRadius` |
+| Elevation (Level 0-3 shadows) | `theme.extend.boxShadow` |
