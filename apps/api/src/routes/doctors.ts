@@ -75,7 +75,7 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
           take: 5,
         },
       },
-      orderBy: sortBy ? { [sortBy]: sortOrder || 'asc' } : { createdAt: 'desc' },
+      orderBy: sortBy ? { [sortBy]: sortOrder || 'asc' } : { id: 'desc' },
     }),
     prisma.doctorProfile.count({ where }),
   ]);

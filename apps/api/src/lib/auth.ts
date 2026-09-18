@@ -16,9 +16,15 @@ export function createBetterAuth(prisma: PrismaClient) {
       requireEmailVerification: true,
       minPasswordLength: 8,
       maxPasswordLength: 128,
-      passwordHash: {
-        algorithm: 'bcrypt',
-        cost: 12,
+      password: {
+        hash: async (password: string) => {
+          const bcrypt = await import('bcryptjs');
+          return bcrypt.hash(password, 12);
+        },
+        verify: async ({ password, hash }: { password: string; hash: string }) => {
+          const bcrypt = await import('bcryptjs');
+          return bcrypt.compare(password, hash);
+        },
       },
     },
     session: {
@@ -62,23 +68,12 @@ export function createBetterAuth(prisma: PrismaClient) {
       defaultCookieAttributes: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
         path: '/',
       },
     },
     trustedOrigins: [process.env.FRONTEND_URL || 'http://localhost:3000'],
     plugins: [],
-    hooks: {
-      after: [
-        {
-          matcher: (context) => context.path === '/sign-up/email',
-          handler: async (context) => {
-            // Log user registration
-            console.log(`New user registered: ${context.body.email} (${context.body.userType})`);
-          },
-        },
-      ],
-    },
   });
 }
 

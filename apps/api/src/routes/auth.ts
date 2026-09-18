@@ -4,7 +4,7 @@
 
 import type { Request, Response } from 'express';
 import { Router } from 'express';
-import { auth } from '../index';
+import { auth, prisma } from '../index';
 import {
   RegisterSchema,
   LoginSchema,
@@ -16,6 +16,21 @@ import { buildSuccessResponse, buildErrorResponse } from '@doctor-appointment-ap
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
+
+// Cookie options helper
+const getCookieOptions = (): {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'strict' | 'lax';
+  path: string;
+  maxAge: number;
+} => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  path: '/',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});
 
 // Register
 router.post('/register', async (req: Request, res: Response) => {
@@ -49,7 +64,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
     // Create profile based on user type
     if (data.userType === 'DOCTOR') {
-      await auth.$prisma.doctorProfile.create({
+      await prisma.doctorProfile.create({
         data: {
           userId: result.user.id,
           specialty: data.specialty!,
@@ -60,7 +75,7 @@ router.post('/register', async (req: Request, res: Response) => {
         },
       });
     } else if (data.userType === 'PATIENT') {
-      await auth.$prisma.patientProfile.create({
+      await prisma.patientProfile.create({
         data: {
           userId: result.user.id,
           dob: data.dob ? new Date(data.dob) : null,
@@ -72,13 +87,7 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     // Set cookies
-    res.cookie('session_token', result.session.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('session_token', result.token, getCookieOptions());
 
     res.status(201).json(
       buildSuccessResponse({
@@ -91,8 +100,7 @@ router.post('/register', async (req: Request, res: Response) => {
           emailVerified: result.user.emailVerified,
         },
         session: {
-          id: result.session.id,
-          expiresAt: result.session.expiresAt,
+          token: result.token,
         },
       })
     );
@@ -126,13 +134,7 @@ router.post('/login', async (req: Request, res: Response) => {
     });
 
     // Set cookies
-    res.cookie('session_token', result.session.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('session_token', result.token, getCookieOptions());
 
     res.json(
       buildSuccessResponse({
@@ -145,8 +147,7 @@ router.post('/login', async (req: Request, res: Response) => {
           emailVerified: result.user.emailVerified,
         },
         session: {
-          id: result.session.id,
-          expiresAt: result.session.expiresAt,
+          token: result.token,
         },
       })
     );
@@ -172,12 +173,7 @@ router.post('/logout', async (req: Request, res: Response) => {
     }
   }
 
-  res.clearCookie('session_token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-  });
+  res.clearCookie('session_token', getCookieOptions());
 
   res.json(buildSuccessResponse({ message: 'Logged out successfully' }));
 });
@@ -240,7 +236,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
   const { email } = parseResult.data;
 
   try {
-    await auth.api.forgetPassword({
+    await (auth.api as any).forgetPassword({
       body: { email, redirectTo: `${process.env.FRONTEND_URL}/reset-password` },
     });
 
@@ -271,7 +267,7 @@ router.post('/reset-password', async (req: Request, res: Response) => {
 
   try {
     await auth.api.resetPassword({
-      body: { token, password },
+      body: { token, newPassword: password },
     });
 
     res.json(buildSuccessResponse({ message: 'Password reset successfully' }));
@@ -299,7 +295,7 @@ router.post('/verify-email', async (req: Request, res: Response) => {
   const { token } = parseResult.data;
 
   try {
-    await auth.api.verifyEmail({
+    await (auth.api as any).verifyEmail({
       body: { token },
     });
 
@@ -328,8 +324,8 @@ router.post('/resend-verification', async (req: Request, res: Response) => {
   const { email } = parseResult.data;
 
   try {
-    await auth.api.sendVerificationEmail({
-      body: { email, redirectTo: `${process.env.FRONTEND_URL}/verify-email` },
+    await (auth.api as any).sendVerificationEmail({
+      body: { email, callbackURL: `${process.env.FRONTEND_URL}/verify-email` },
     });
 
     res.json(

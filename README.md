@@ -12,7 +12,6 @@ monorepo/
 ├── packages/
 │   └── shared/       # Zod schemas, TypeScript types, constants, utilities
 ├── specs/            # Product documentation (mission, roadmap, techstack)
-├── docker-compose.yml
 └── turbo.json        # Turborepo config (optional)
 ```
 
@@ -31,8 +30,8 @@ monorepo/
 # Install dependencies
 npm install
 
-# Start databases
-docker-compose up -d
+# Ensure PostgreSQL and Redis are running locally
+# (or update DATABASE_URL and REDIS_URL in .env files)
 
 # Copy environment files
 cp apps/api/.env.example apps/api/.env

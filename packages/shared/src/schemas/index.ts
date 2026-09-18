@@ -226,8 +226,8 @@ export const DoctorSearchFiltersSchema = z.object({
 export const SlotCreateSchema = z
   .object({
     doctorId: z.string().cuid({ message: 'Invalid doctor ID' }),
-    startTime: z.string().datetime({ offset: true }, { message: 'Invalid start time format' }),
-    endTime: z.string().datetime({ offset: true }, { message: 'Invalid end time format' }),
+    startTime: z.string().datetime({ offset: true, message: 'Invalid start time format' }),
+    endTime: z.string().datetime({ offset: true, message: 'Invalid end time format' }),
     status: z.nativeEnum(SlotStatus).default(SlotStatus.AVAILABLE),
   })
   .refine((data) => new Date(data.startTime) < new Date(data.endTime), {
@@ -238,8 +238,14 @@ export const SlotCreateSchema = z
 export const BulkSlotCreateSchema = z
   .object({
     doctorId: z.string().cuid({ message: 'Invalid doctor ID' }),
-    startDate: z.string().date({ message: 'Invalid start date format' }),
-    endDate: z.string().date({ message: 'Invalid end date format' }),
+    startDate: z
+      .string()
+      .date()
+      .refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid start date format' }),
+    endDate: z
+      .string()
+      .date()
+      .refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid end date format' }),
     startTime: z
       .string()
       .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: 'Invalid start time format (HH:MM)' }),
@@ -469,6 +475,25 @@ export type PrescriptionUpdateInput = z.infer<typeof PrescriptionUpdateSchema>;
 
 export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 export type PaginationParams = z.infer<typeof PaginationParamsSchema>;
+
+// PaginatedResponse and ApiResponse types (matching the structure from utils)
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T | null;
+  error: ApiError | null;
+  meta: ApiMeta | null;
+}
+
 export type JWTPayload = z.infer<typeof JWTPayloadSchema>;
 export type AuthTokens = z.infer<typeof AuthTokensSchema>;
 export type ApiError = z.infer<typeof ApiErrorSchema>;

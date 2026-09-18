@@ -8,11 +8,13 @@
     "composite": true,
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "paths": {
       "@/*": ["src/*"],
       "@doctor-appointment-app/shared/*": ["../../packages/shared/src/*"]
     }
   },
-  "include": ["src/**/*", "prisma/seed.ts", "eslint.config.js"],
+  "include": ["src/**/*", "eslint.config.js"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

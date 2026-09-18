@@ -2,7 +2,7 @@
  * Shared utilities for the Doctor Appointment App
  */
 
-import type { PaginationParams, PaginatedResponse, ApiResponse } from '../types';
+import type { PaginationParams, PaginatedResponse, ApiResponse } from '../schemas';
 
 interface ApiMeta {
   page?: number;

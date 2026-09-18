@@ -131,7 +131,6 @@ jobs:
       - name: Deploy to staging
         run: echo "Deploy to staging environment"
         # Add your staging deployment steps here
-        # e.g., Docker build, push to registry, deploy to Kubernetes/ECS
 
   deploy-production:
     name: Deploy to Production
@@ -146,4 +145,3 @@ jobs:
       - name: Deploy to production
         run: echo "Deploy to production environment"
         # Add your production deployment steps here
-        # e.g., Docker build, push to registry, deploy to Kubernetes/ECS

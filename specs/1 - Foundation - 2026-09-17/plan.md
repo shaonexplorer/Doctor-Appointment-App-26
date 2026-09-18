@@ -36,24 +36,26 @@ This phase establishes the monorepo foundation, database schema, authentication 
 ### Week 2: Authentication System
 
 #### Tasks
-- [ ] Install and configure BetterAuth in `apps/api`
-- [ ] Implement JWT token generation with HttpOnly cookies
-- [ ] Create authentication endpoints:
+- [x] Install and configure BetterAuth in `apps/api`
+- [x] Implement JWT token generation with HttpOnly cookies
+- [x] Create authentication endpoints:
   - `POST /api/auth/register` — User registration with role selection
   - `POST /api/auth/login` — Email/password login
   - `POST /api/auth/logout` — Session termination
   - `POST /api/auth/forgot-password` — Password reset request
   - `POST /api/auth/reset-password` — Password reset confirmation
   - `GET /api/auth/me` — Current session user
-- [ ] Implement email verification flow
-- [ ] Add rate limiting on auth endpoints (5 req/min for login, 3 req/hour for register)
-- [ ] Configure CORS for frontend origin only
-- [ ] Add Helmet.js security headers
+  - `POST /api/auth/verify-email` — Email verification
+  - `POST /api/auth/resend-verification` — Resend verification email
+- [x] Implement email verification flow
+- [x] Add rate limiting on auth endpoints (5 req/min for login, 3 req/hour for register, 10 req/min for password reset)
+- [x] Configure CORS for frontend origin only
+- [x] Add Helmet.js security headers
 
 #### Deliverables
 - Functional auth API with secure cookie-based sessions
 - Password hashing (bcrypt, cost factor 12)
-- Rate-limited auth endpoints
+- Rate-limited auth endpoints (Redis-backed)
 
 ---
 

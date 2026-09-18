@@ -17,12 +17,11 @@ monorepo/
 ├── packages/
 │   └── shared/       # Zod schemas, TypeScript types, constants, utilities
 ├── specs/            # Product documentation (mission, roadmap, techstack)
-└── docker-compose.yml
 ```
 
 ---
 
-## Current State (Week 1 Complete ✅)
+## Current State (Week 1 & 2 Complete ✅)
 
 **Phase 1: Foundation — Week 1 Deliverables Complete:**
 
@@ -33,8 +32,39 @@ monorepo/
 - [x] **TypeScript Config**: Root + workspace configs with project references for type safety
 - [x] **Code Quality**: ESLint, Prettier, Husky pre-commit hooks, lint-staged
 - [x] **Prisma Schema**: Complete database schema with all core models
-- [x] **Docker Compose**: PostgreSQL 16, Redis 7, Prisma Studio
 - [x] **CI/CD Pipeline**: GitHub Actions workflow (lint, typecheck, test, build, deploy)
+
+**Phase 1: Foundation — Week 2 Deliverables Complete (Authentication System):**
+
+- [x] **BetterAuth Integration**: Configured in `apps/api` with Prisma adapter
+- [x] **JWT Token Generation**: HttpOnly, Secure, SameSite=Strict (production) / Lax (development) cookies
+- [x] **Password Hashing**: bcrypt with cost factor 12
+- [x] **Authentication Endpoints**:
+  - `POST /api/auth/register` — User registration with role selection (PATIENT/DOCTOR)
+  - `POST /api/auth/login` — Email/password login
+  - `POST /api/auth/logout` — Session termination with cookie clearing
+  - `POST /api/auth/forgot-password` — Password reset request (rate limited: 10 req/min)
+  - `POST /api/auth/reset-password` — Password reset confirmation
+  - `GET /api/auth/me` — Current session user with profile data
+  - `POST /api/auth/verify-email` — Email verification with token
+  - `POST /api/auth/resend-verification` — Resend verification email
+- [x] **Email Verification Flow**: Required for registration, time-limited tokens (24 hours)
+- [x] **Rate Limiting (Redis-backed)**:
+  - Login: 5 requests/minute
+  - Register: 3 requests/hour
+  - Password reset (forgot + reset): 10 requests/minute
+  - Email verification: 3 requests/hour
+  - General API: 100 requests/minute
+- [x] **CORS Configuration**: Restricted to `FRONTEND_URL` only
+- [x] **Helmet.js Security Headers**: CSP disabled for API, HSTS, X-Frame-Options enabled
+- [x] **User Profile Endpoints**:
+  - `GET /api/users/me` — Current user profile with relations
+  - `PATCH /api/users/me` — Update profile (role-specific fields)
+  - `GET /api/users/:id` — Admin/Staff view any user
+  - `GET /api/users` — Admin/Staff list users with pagination
+  - `DELETE /api/users/:id` — Admin delete user
+- [x] **RBAC Middleware**: `requireRole`, `requireAnyRole`, `requireMinimumRole`, `optionalAuth`
+- [x] **Prisma Schema Updates**: Added Session, VerificationToken, Account models for BetterAuth
 
 ---
 
@@ -147,6 +177,9 @@ NODE_ENV=development
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
+```
+
+> **Note**: PostgreSQL 16+ and Redis 7+ must be running locally (not via Docker). Update `DATABASE_URL` and `REDIS_URL` if using different hosts/ports.
 ```
 
 ---

@@ -8,7 +8,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
 import { createBetterAuth } from './lib/auth';
 import { errorHandler } from './middleware/errorHandler';
@@ -21,9 +20,14 @@ import { doctorRouter } from './routes/doctors';
 import { appointmentRouter } from './routes/appointments';
 import { prescriptionRouter } from './routes/prescriptions';
 import { scheduleRouter } from './routes/schedules';
+import { connectRedis, disconnectRedis } from './lib/redis';
+import { authRateLimiters } from './lib/rateLimiter';
 
 const app = express();
 const prisma = new PrismaClient();
+
+// Connect to Redis
+await connectRedis();
 
 // Global middleware
 app.use(
@@ -47,30 +51,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(requestLogger);
 
-// Rate limiting
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute
-  message: { error: 'Too many requests, please try again later' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api', apiLimiter);
+// Rate limiting - Redis-backed
+app.use('/api', authRateLimiters.api);
 
 // Stricter rate limiting for auth endpoints
-const authLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // 5 requests per minute
-  message: { error: 'Too many login attempts, please try again later' },
-});
-app.use('/api/auth/login', authLimiter);
-
-const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 requests per hour
-  message: { error: 'Too many registration attempts, please try again later' },
-});
-app.use('/api/auth/register', registerLimiter);
+app.use('/api/auth/login', authRateLimiters.login);
+app.use('/api/auth/register', authRateLimiters.register);
+app.use('/api/auth/forgot-password', authRateLimiters.passwordReset);
+app.use('/api/auth/reset-password', authRateLimiters.passwordReset);
+app.use('/api/auth/verify-email', authRateLimiters.emailVerification);
+app.use('/api/auth/resend-verification', authRateLimiters.emailVerification);
 
 // Initialize BetterAuth
 export const auth = createBetterAuth(prisma);
@@ -106,12 +96,14 @@ app.listen(PORT, () => {
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
   await prisma.$disconnect();
+  await disconnectRedis();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully...');
   await prisma.$disconnect();
+  await disconnectRedis();
   process.exit(0);
 });
 

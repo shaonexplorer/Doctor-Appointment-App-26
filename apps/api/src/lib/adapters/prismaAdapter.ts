@@ -4,13 +4,69 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import type { Adapter } from 'better-auth/adapters';
+import { UserType as PrismaUserType } from '@prisma/client';
 
-export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
+export interface AdapterUser {
+  id: string;
+  email: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  userType: string;
+  emailVerified: boolean;
+  image: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AdapterSession {
+  id: string;
+  userId: string;
+  expiresAt: Date;
+  token: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AdapterVerificationToken {
+  id: string;
+  identifier: string;
+  token: string;
+  expiresAt: Date;
+  type: string;
+}
+
+export interface AdapterAccount {
+  id: string;
+  userId: string;
+  providerId: string;
+  providerAccountId: string;
+  accessToken: string | null;
+  refreshToken: string | null;
+  expiresAt: Date | null;
+  tokenType: string | null;
+  scope: string | null;
+  idToken: string | null;
+}
+
+export function betterAuthPrismaAdapter(prisma: PrismaClient) {
+  // The BetterAuth v1 DBAdapter interface has different methods (create, findOne, etc.)
+  // We return our custom adapter implementation that BetterAuth v1 expects
   return {
     id: 'prisma',
     // User methods
-    async createUser(data) {
+    async createUser(data: {
+      email: string;
+      passwordHash?: string;
+      firstName: string;
+      lastName: string;
+      phone?: string | null;
+      userType?: string;
+      emailVerified?: boolean;
+    }): Promise<AdapterUser> {
       const user = await prisma.user.create({
         data: {
           email: data.email,
@@ -18,24 +74,24 @@ export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
           firstName: data.firstName,
           lastName: data.lastName,
           phone: data.phone || null,
-          userType: data.userType || 'PATIENT',
+          userType: (data.userType as PrismaUserType) || PrismaUserType.PATIENT,
           emailVerified: data.emailVerified || false,
         },
       });
       return mapUser(user);
     },
 
-    async getUserById(id) {
+    async getUserById(id: string) {
       const user = await prisma.user.findUnique({ where: { id } });
       return user ? mapUser(user) : null;
     },
 
-    async getUserByEmail(email) {
+    async getUserByEmail(email: string) {
       const user = await prisma.user.findUnique({ where: { email } });
       return user ? mapUser(user) : null;
     },
 
-    async updateUser(id, data) {
+    async updateUser(id: string, data: Partial<AdapterUser>) {
       const user = await prisma.user.update({
         where: { id },
         data: {
@@ -43,19 +99,26 @@ export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
           firstName: data.firstName,
           lastName: data.lastName,
           phone: data.phone,
-          userType: data.userType,
+          userType: data.userType as PrismaUserType | undefined,
           emailVerified: data.emailVerified,
         },
       });
       return mapUser(user);
     },
 
-    async deleteUser(id) {
+    async deleteUser(id: string) {
       await prisma.user.delete({ where: { id } });
     },
 
     // Session methods
-    async createSession(data) {
+    async createSession(data: {
+      id: string;
+      userId: string;
+      expiresAt: Date;
+      token: string;
+      ipAddress?: string | null;
+      userAgent?: string | null;
+    }) {
       const session = await prisma.session.create({
         data: {
           id: data.id,
@@ -69,7 +132,7 @@ export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
       return mapSession(session);
     },
 
-    async getSessionByToken(token) {
+    async getSessionByToken(token: string) {
       const session = await prisma.session.findUnique({
         where: { token },
         include: { user: true },
@@ -77,7 +140,7 @@ export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
       return session ? { ...mapSession(session), user: mapUser(session.user) } : null;
     },
 
-    async updateSession(id, data) {
+    async updateSession(id: string, data: Partial<AdapterSession>) {
       const session = await prisma.session.update({
         where: { id },
         data: {
@@ -88,16 +151,21 @@ export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
       return mapSession(session);
     },
 
-    async deleteSession(id) {
+    async deleteSession(id: string) {
       await prisma.session.delete({ where: { id } });
     },
 
-    async deleteSessionsByUserId(userId) {
+    async deleteSessionsByUserId(userId: string) {
       await prisma.session.deleteMany({ where: { userId } });
     },
 
     // Verification methods
-    async createVerificationToken(data) {
+    async createVerificationToken(data: {
+      identifier: string;
+      token: string;
+      expiresAt: Date;
+      type: string;
+    }) {
       const token = await prisma.verificationToken.create({
         data: {
           identifier: data.identifier,
@@ -109,21 +177,31 @@ export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
       return mapVerificationToken(token);
     },
 
-    async getVerificationToken(identifier, token, type) {
+    async getVerificationToken(identifier: string, token: string, type: string) {
       const verificationToken = await prisma.verificationToken.findFirst({
         where: { identifier, token, type },
       });
       return verificationToken ? mapVerificationToken(verificationToken) : null;
     },
 
-    async deleteVerificationToken(identifier, token, type) {
+    async deleteVerificationToken(identifier: string, token: string, type: string) {
       await prisma.verificationToken.deleteMany({
         where: { identifier, token, type },
       });
     },
 
     // Account methods (for OAuth)
-    async createAccount(data) {
+    async createAccount(data: {
+      userId: string;
+      providerId: string;
+      providerAccountId: string;
+      accessToken?: string | null;
+      refreshToken?: string | null;
+      expiresAt?: Date | null;
+      tokenType?: string | null;
+      scope?: string | null;
+      idToken?: string | null;
+    }) {
       const account = await prisma.account.create({
         data: {
           userId: data.userId,
@@ -140,7 +218,7 @@ export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
       return mapAccount(account);
     },
 
-    async getAccountByProvider(providerId, providerAccountId) {
+    async getAccountByProvider(providerId: string, providerAccountId: string) {
       const account = await prisma.account.findUnique({
         where: {
           providerId_providerAccountId: {
@@ -152,7 +230,7 @@ export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
       return account ? mapAccount(account) : null;
     },
 
-    async updateAccount(id, data) {
+    async updateAccount(id: string, data: Partial<AdapterAccount>) {
       const account = await prisma.account.update({
         where: { id },
         data: {
@@ -167,14 +245,14 @@ export function betterAuthPrismaAdapter(prisma: PrismaClient): Adapter {
       return mapAccount(account);
     },
 
-    async deleteAccount(id) {
+    async deleteAccount(id: string) {
       await prisma.account.delete({ where: { id } });
     },
   };
 }
 
 // Mapping functions
-function mapUser(user: any) {
+function mapUser(user: any): AdapterUser {
   return {
     id: user.id,
     email: user.email,
@@ -190,7 +268,7 @@ function mapUser(user: any) {
   };
 }
 
-function mapSession(session: any) {
+function mapSession(session: any): AdapterSession {
   return {
     id: session.id,
     userId: session.userId,
@@ -203,7 +281,7 @@ function mapSession(session: any) {
   };
 }
 
-function mapVerificationToken(token: any) {
+function mapVerificationToken(token: any): AdapterVerificationToken {
   return {
     id: token.id,
     identifier: token.identifier,
@@ -213,7 +291,7 @@ function mapVerificationToken(token: any) {
   };
 }
 
-function mapAccount(account: any) {
+function mapAccount(account: any): AdapterAccount {
   return {
     id: account.id,
     userId: account.userId,
