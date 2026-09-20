@@ -19,9 +19,36 @@ monorepo/
 ├── specs/            # Product documentation (mission, roadmap, techstack)
 ```
 
+**Backend Architecture (Modular MVC)**:
+```
+apps/api/src/
+├── modules/                    # Feature-based modules (self-contained)
+│   ├── auth/                   # Authentication (register, login, password reset, email verification)
+│   │   ├── controllers/        # Request/response handling
+│   │   ├── services/           # Business logic
+│   │   ├── routes/             # Route definitions
+│   │   ├── validators/         # Zod schemas + validation middleware
+│   │   └── types/              # Module-specific types
+│   ├── users/                  # User profiles & admin management
+│   ├── doctors/                # Doctor discovery, profiles, schedules
+│   ├── schedules/              # Slot management (CRUD, bulk, availability)
+│   ├── appointments/           # Booking, cancellation, stats
+│   ├── prescriptions/          # Prescription CRUD, recent lists
+│   └── index.ts                # Module factory (createAllModules)
+├── repositories/               # Data access layer (shared Prisma repositories)
+├── lib/                        # Core infrastructure (BetterAuth, Redis, Rate Limiter, Prisma Adapter)
+├── shared/                     # Shared utilities
+│   ├── middleware/             # Auth, error handler, request logger
+│   ├── utils/                  # Response builders, helpers
+│   ├── types/                  # Common types (ApiResponse, PaginationParams, UserRole)
+│   ├── config/                 # Centralized configuration
+│   └── index.ts
+└── index.ts                    # Application entry point
+```
+
 ---
 
-## Current State (Week 1 & 2 Complete ✅)
+## Current State (Week 1, 2 & 3 Complete ✅)
 
 **Phase 1: Foundation — Week 1 Deliverables Complete:**
 
@@ -65,6 +92,20 @@ monorepo/
   - `DELETE /api/users/:id` — Admin delete user
 - [x] **RBAC Middleware**: `requireRole`, `requireAnyRole`, `requireMinimumRole`, `optionalAuth`
 - [x] **Prisma Schema Updates**: Added Session, VerificationToken, Account models for BetterAuth
+
+**Phase 1: Foundation — Week 3 Deliverables Complete (RBAC & Protected Routes):**
+
+- [x] **BetterAuth Session Management**: Added `multiSession` plugin (max 5 concurrent sessions per user)
+- [x] **BetterAuth Audit Logging**: Added `dash` plugin from `@better-auth/infra` for automatic auth event logging
+- [x] **Custom Audit Logging Middleware**: Created `auditLogger.ts` for PHI access tracking
+- [x] **PHI Access Audit Logging** applied to sensitive endpoints:
+  - User profiles (`GET /api/users/me`, `GET /api/users/:id`, `PATCH /api/users/me`, `DELETE /api/users/:id`)
+  - Prescriptions (`GET /api/prescriptions/:id`, `POST /api/prescriptions`, `PATCH /api/prescriptions/:id`, `DELETE /api/prescriptions/:id`)
+  - Appointments (`GET /api/appointments/:id`, `POST /api/appointments`, `PATCH /api/appointments/:id`, `DELETE /api/appointments/:id`)
+  - Doctor profiles (`GET /api/doctors/:id`, `POST /api/doctors/profile`, `GET /api/doctors/profile/me`, `PATCH /api/doctors/profile/me`)
+- [x] **Audit Log Model**: Already exists in Prisma schema with indexes for userId, resource, resourceId, createdAt
+- [x] **Audit Log Helpers**: `logAuthEvent`, `getUserAuditLogs`, `getResourceAuditLogs` for querying audit trails
+- [x] **Dependency**: Added `@better-auth/infra@^0.4.9` (requires `--legacy-peer-deps` due to zod v4 peer dependency)
 
 ---
 
@@ -123,6 +164,8 @@ npm run check            # lint + typecheck + format:check
 | **TanStack Query + React Hook Form** | Server state caching/optimistic updates; performant forms with Zod resolver |
 | **Recharts** | React-native, declarative, accessible, composable dashboards |
 | **Clinical Precision Design System** (`design.md`) | Clinical Cobalt/Emerald/Amber/Red semantic palette; Manrope+Inter typography; 12/8/4-col responsive grid; 4-level elevation; shadcn/ui components mapped to design tokens |
+| **Modular MVC (Feature-based)** | Self-contained modules with controllers, services, routes, validators; single responsibility; easy testing; clear ownership |
+| **Module Factory Pattern** | Dependency injection via `createAllModules(repositories, prisma)`; decoupled, testable, replaceable |
 
 ---
 
@@ -222,7 +265,15 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 ## Development Workflow
 
 1. **Start with shared package** — Define Zod schemas and types first
-2. **Backend API** — Implement REST endpoints with validation, auth middleware
+2. **Backend API (Modular MVC)**:
+   - Add feature module under `apps/api/src/modules/{feature}/`
+   - Define types in `types/`
+   - Add Zod validators in `validators/`
+   - Implement service in `services/`
+   - Implement controller in `controllers/`
+   - Define routes in `routes/`
+   - Export from module `index.ts`
+   - Register in `modules/index.ts` factory
 3. **Frontend** — Build UI with Server Components, use Server Actions for mutations
 4. **Shared types** — Keep in sync via `packages/shared`; import in both apps
 
@@ -235,6 +286,28 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 - `specs/mission.md` — Vision, success metrics, guiding principles
 - `design.md` — **Clinical Precision** design system (colors, typography, layout, elevation, components)
 - `specs/1 - Foundation - 2026-09-17/plan.md` — Phase 1 implementation plan
+
+## Backend Module Structure
+
+Each feature module follows this structure:
+```
+modules/{feature}/
+├── types/index.ts        # Module-specific TypeScript interfaces
+├── validators/index.ts   # Zod schemas + typed validation middleware
+├── services/{Feature}Service.ts  # Business logic (depends on repositories)
+├── controllers/{Feature}Controller.ts  # HTTP handlers (depends on services)
+├── routes/{feature}Routes.ts         # Express router (depends on controller)
+└── index.ts              # Module factory + exports
+```
+
+**Dependency Flow**: `Repository → Service → Controller → Routes`
+
+**Adding a New Module**:
+1. Create `modules/newFeature/` with subdirectories
+2. Define types, validators, service, controller, routes
+3. Export factory in `index.ts` (e.g., `createNewFeatureModule()`)
+4. Register in `modules/index.ts` → `createAllModules()`
+5. Mount in `src/index.ts` → `app.use('/api/new-feature', modules.newFeature.routes)`
 
 ---
 

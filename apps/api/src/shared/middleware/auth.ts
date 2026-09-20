@@ -4,7 +4,7 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import { auth } from '../index';
+import { auth } from '../../index';
 import { UserType } from '@doctor-appointment-app/shared';
 import { AppError } from './errorHandler';
 
@@ -22,6 +22,7 @@ export interface AuthenticatedRequest extends Request {
     userId: string;
     expiresAt: Date;
   };
+  validatedData?: unknown;
 }
 
 export async function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -85,6 +86,12 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
     throw new AppError('UNAUTHORIZED', 'Invalid or expired session', 401);
   }
 }
+
+/**
+ * Require authentication middleware
+ * Alias for authMiddleware for clarity
+ */
+export const requireAuth = authMiddleware;
 
 export function requireRole(...allowedRoles: UserType[]) {
   return (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {

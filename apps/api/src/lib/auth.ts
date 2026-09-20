@@ -4,6 +4,8 @@
  */
 
 import { betterAuth } from 'better-auth';
+import { multiSession } from 'better-auth/plugins';
+import { dash } from '@better-auth/infra';
 import type { PrismaClient } from '@prisma/client';
 import { betterAuthPrismaAdapter } from './adapters/prismaAdapter';
 import { UserType } from '@doctor-appointment-app/shared';
@@ -73,7 +75,12 @@ export function createBetterAuth(prisma: PrismaClient) {
       },
     },
     trustedOrigins: [process.env.FRONTEND_URL || 'http://localhost:3000'],
-    plugins: [],
+    plugins: [
+      multiSession({
+        maximumSessions: 5,
+      }),
+      dash(),
+    ],
   });
 }
 

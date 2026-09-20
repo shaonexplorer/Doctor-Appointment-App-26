@@ -21,6 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@better-auth/infra": "^0.4.9",
     "@doctor-appointment-app/shared": "^1.0.0",
     "@prisma/client": "^5.19.1",
     "bcryptjs": "^2.4.3",

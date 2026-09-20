@@ -1,6 +1,7 @@
 /**
  * Doctor Appointment App - API Server
  * Express.js + TypeScript + Prisma + BetterAuth
+ * Modular MVC Architecture
  */
 
 import 'dotenv/config';
@@ -9,25 +10,40 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { PrismaClient } from '@prisma/client';
+
+// Core infrastructure
 import { createBetterAuth } from './lib/auth';
-import { errorHandler } from './middleware/errorHandler';
-import { requestLogger } from './middleware/requestLogger';
-import { authMiddleware } from './middleware/auth';
-import { healthRouter } from './routes/health';
-import { authRouter } from './routes/auth';
-import { userRouter } from './routes/users';
-import { doctorRouter } from './routes/doctors';
-import { appointmentRouter } from './routes/appointments';
-import { prescriptionRouter } from './routes/prescriptions';
-import { scheduleRouter } from './routes/schedules';
+import { errorHandler, notFoundHandler, requestLogger } from './shared/middleware';
 import { connectRedis, disconnectRedis } from './lib/redis';
 import { authRateLimiters } from './lib/rateLimiter';
+import { config } from './shared/config';
+
+// Repositories (data access layer)
+import { createRepositories, type Repositories } from './repositories';
+
+// Modules (feature-based MVC)
+import { createAllModules, type AllModules } from './modules';
+
+// Health check
+import { router as healthRouter } from './routes/health';
 
 const app = express();
 const prisma = new PrismaClient();
 
 // Connect to Redis
 await connectRedis();
+
+// Initialize repositories (data access layer)
+const repositories: Repositories = createRepositories(prisma);
+
+// Initialize all feature modules
+const modules: AllModules = createAllModules(repositories, prisma);
+
+// Initialize BetterAuth
+export const auth = createBetterAuth(prisma);
+
+// Make prisma available globally (for legacy code compatibility)
+export { prisma };
 
 // Global middleware
 app.use(
@@ -39,7 +55,7 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: config.frontendUrl,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -62,49 +78,47 @@ app.use('/api/auth/reset-password', authRateLimiters.passwordReset);
 app.use('/api/auth/verify-email', authRateLimiters.emailVerification);
 app.use('/api/auth/resend-verification', authRateLimiters.emailVerification);
 
-// Initialize BetterAuth
-export const auth = createBetterAuth(prisma);
-
-// Make prisma available globally
-export { prisma };
-
 // API Routes
 app.use('/api/health', healthRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/users', authMiddleware, userRouter);
-app.use('/api/doctors', authMiddleware, doctorRouter);
-app.use('/api/appointments', authMiddleware, appointmentRouter);
-app.use('/api/prescriptions', authMiddleware, prescriptionRouter);
-app.use('/api/schedules', authMiddleware, scheduleRouter);
+app.use('/api/auth', modules.auth.routes);
+app.use('/api/users', modules.users.routes);
+app.use('/api/doctors', modules.doctors.routes);
+app.use('/api/schedules', modules.schedules.routes);
+app.use('/api/appointments', modules.appointments.routes);
+app.use('/api/prescriptions', modules.prescriptions.routes);
 
 // 404 handler
-app.use((_req, res) => {
-  res.status(404).json({ error: 'Not found' });
-});
+app.use(notFoundHandler);
 
 // Error handler (must be last)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 4000;
+const PORT = config.port;
 
 app.listen(PORT, () => {
   console.log(`🚀 API server running on http://localhost:${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📝 Environment: ${config.nodeEnv}`);
+  console.log(`🏗️  Architecture: Modular MVC (modules/ + shared/)`);
+  console.log(`📦 Modules loaded: auth, users, doctors, schedules, appointments, prescriptions`);
 });
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-  await prisma.$disconnect();
-  await disconnectRedis();
-  process.exit(0);
+process.on('SIGTERM', () => {
+  void (async () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    await prisma.$disconnect();
+    await disconnectRedis();
+    process.exit(0);
+  })();
 });
 
-process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down gracefully...');
-  await prisma.$disconnect();
-  await disconnectRedis();
-  process.exit(0);
+process.on('SIGINT', () => {
+  void (async () => {
+    console.log('SIGINT received, shutting down gracefully...');
+    await prisma.$disconnect();
+    await disconnectRedis();
+    process.exit(0);
+  })();
 });
 
 export default app;

@@ -62,20 +62,23 @@ This phase establishes the monorepo foundation, database schema, authentication 
 ### Week 3: Role-Based Access Control & Protected Routes
 
 #### Tasks
-- [ ] Define role enum: `ADMIN`, `STAFF`, `DOCTOR`, `PATIENT`
-- [ ] Implement role middleware for Express (`requireRole`, `requireAnyRole`)
-- [ ] Create role-based route protection on API
-- [ ] Implement BetterAuth plugins for session management
-- [ ] Add audit logging middleware for PHI access
-- [ ] Create user profile endpoints:
+- [x] Define role enum: `ADMIN`, `STAFF`, `DOCTOR`, `PATIENT` (completed in Week 2)
+- [x] Implement role middleware for Express (`requireRole`, `requireAnyRole`) (completed in Week 2)
+- [x] Create role-based route protection on API (completed in Week 2)
+- [x] Implement BetterAuth plugins for session management (`multiSession`, `dash`)
+- [x] Add audit logging middleware for PHI access (`auditLogger.ts`)
+- [x] Create user profile endpoints (completed in Week 2):
   - `GET /api/users/me` — Current user profile
   - `PATCH /api/users/me` — Update profile
   - `GET /api/users/:id` — Admin/Staff view any user
+- [x] Apply audit logging to all PHI-sensitive endpoints (users, prescriptions, appointments, doctors)
 
 #### Deliverables
 - RBAC enforced on all API routes
 - Role context available in request handlers
-- Audit logs for sensitive operations
+- Audit logs for sensitive operations (automatic via BetterAuth `dash` + custom middleware)
+- Multi-session support (max 5 concurrent sessions per user)
+- PHI access tracking with `AuditLog` model (userId, action, resource, resourceId, oldData, newData, ipAddress, userAgent, createdAt)
 
 ---
 
@@ -282,6 +285,10 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 - [ ] TypeScript compiles with zero errors (`npm run typecheck`)
 - [ ] ESLint passes with zero warnings (`npm run lint`)
 - [ ] Prettier formats code consistently (`npm run format:check`)
+- [ ] BetterAuth `multiSession` plugin configured (max 5 sessions)
+- [ ] BetterAuth `dash` plugin configured for automatic audit logging
+- [ ] Custom audit logging middleware tracks PHI access on all sensitive endpoints
+- [ ] AuditLog table populated for user profiles, prescriptions, appointments, doctor profiles
 
 ---
 
