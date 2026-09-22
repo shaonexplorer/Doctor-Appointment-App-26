@@ -2,6 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['@base-ui/react', '@base-ui/utils'],
   experimental: {
     turbo: {
       resolveAlias: {
@@ -9,7 +10,7 @@ const nextConfig: NextConfig = {
       },
     },
   },
-  rewrites() {
+  async rewrites() {
     return [
       {
         source: '/api/:path*',
