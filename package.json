@@ -9,29 +9,29 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=web\" \"npm run dev --workspace=api\"",
-    "dev:web": "npm run dev --workspace=web",
-    "dev:api": "npm run dev --workspace=api",
+    "dev": "concurrently \"npm run dev --workspace=@doctor-appointment-app/web\" \"npm run dev --workspace=@doctor-appointment-app/api\"",
+    "dev:web": "npm run dev --workspace=@doctor-appointment-app/web",
+    "dev:api": "npm run dev --workspace=@doctor-appointment-app/api",
     "build": "npm run build --workspaces",
-    "build:web": "npm run build --workspace=web",
-    "build:api": "npm run build --workspace=api",
+    "build:web": "npm run build --workspace=@doctor-appointment-app/web",
+    "build:api": "npm run build --workspace=@doctor-appointment-app/api",
     "lint": "npm run lint --workspaces",
-    "lint:web": "npm run lint --workspace=web",
-    "lint:api": "npm run lint --workspace=api",
+    "lint:web": "npm run lint --workspace=@doctor-appointment-app/web",
+    "lint:api": "npm run lint --workspace=@doctor-appointment-app/api",
     "typecheck": "npm run typecheck --workspaces",
-    "typecheck:web": "npm run typecheck --workspace=web",
-    "typecheck:api": "npm run typecheck --workspace=api",
+    "typecheck:web": "npm run typecheck --workspace=@doctor-appointment-app/web",
+    "typecheck:api": "npm run typecheck --workspace=@doctor-appointment-app/api",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "check": "npm run lint && npm run typecheck && npm run format:check",
     "test": "npm run test --workspaces",
-    "test:web": "npm run test --workspace=web",
-    "test:api": "npm run test --workspace=api",
-    "db:generate": "npm run db:generate --workspace=api",
-    "db:push": "npm run db:push --workspace=api",
-    "db:migrate": "npm run db:migrate --workspace=api",
-    "db:studio": "npm run db:studio --workspace=api",
-    "db:seed": "npm run db:seed --workspace=api",
+    "test:web": "npm run test --workspace=@doctor-appointment-app/web",
+    "test:api": "npm run test --workspace=@doctor-appointment-app/api",
+    "db:generate": "npm run db:generate --workspace=@doctor-appointment-app/api",
+    "db:push": "npm run db:push --workspace=@doctor-appointment-app/api",
+    "db:migrate": "npm run db:migrate --workspace=@doctor-appointment-app/api",
+    "db:studio": "npm run db:studio --workspace=@doctor-appointment-app/api",
+    "db:seed": "npm run db:seed --workspace=@doctor-appointment-app/api",
     "prepare": "husky install"
   },
   "devDependencies": {
@@ -50,5 +50,8 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "npm@10.8.2"
+  "packageManager": "npm@10.8.2",
+  "dependencies": {
+    "zod": "^4.6.5"
+  }
 }

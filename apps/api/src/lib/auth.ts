@@ -4,15 +4,18 @@
  */
 
 import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { multiSession } from 'better-auth/plugins';
 import { dash } from '@better-auth/infra';
 import type { PrismaClient } from '@prisma/client';
-import { betterAuthPrismaAdapter } from './adapters/prismaAdapter';
 import { UserType } from '@doctor-appointment-app/shared';
+import bcrypt from 'bcryptjs';
 
 export function createBetterAuth(prisma: PrismaClient) {
   return betterAuth({
-    database: betterAuthPrismaAdapter(prisma),
+    database: prismaAdapter(prisma, {
+      provider: 'postgresql',
+    }),
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
@@ -20,11 +23,9 @@ export function createBetterAuth(prisma: PrismaClient) {
       maxPasswordLength: 128,
       password: {
         hash: async (password: string) => {
-          const bcrypt = await import('bcryptjs');
           return bcrypt.hash(password, 12);
         },
         verify: async ({ password, hash }: { password: string; hash: string }) => {
-          const bcrypt = await import('bcryptjs');
           return bcrypt.compare(password, hash);
         },
       },

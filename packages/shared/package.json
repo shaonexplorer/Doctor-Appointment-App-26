@@ -8,27 +8,27 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
     "./schemas": {
       "types": "./dist/schemas.d.ts",
-      "import": "./dist/schemas.mjs",
+      "import": "./dist/schemas.js",
       "require": "./dist/schemas.js"
     },
     "./types": {
       "types": "./dist/types.d.ts",
-      "import": "./dist/types.mjs",
+      "import": "./dist/types.js",
       "require": "./dist/types.js"
     },
     "./constants": {
       "types": "./dist/constants.d.ts",
-      "import": "./dist/constants.mjs",
+      "import": "./dist/constants.js",
       "require": "./dist/constants.js"
     },
     "./utils": {
       "types": "./dist/utils.d.ts",
-      "import": "./dist/utils.mjs",
+      "import": "./dist/utils.js",
       "require": "./dist/utils.js"
     }
   },

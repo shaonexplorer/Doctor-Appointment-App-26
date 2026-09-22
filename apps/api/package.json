@@ -18,10 +18,12 @@
     "db:migrate:prod": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@better-auth/infra": "^0.4.9",
+    "@better-auth/core": "^1.7.5",
+    "@better-auth/infra": "^0.4.10",
     "@doctor-appointment-app/shared": "^1.0.0",
     "@prisma/client": "^5.19.1",
     "bcryptjs": "^2.4.3",

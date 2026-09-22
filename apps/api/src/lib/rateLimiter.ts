@@ -3,7 +3,7 @@
  * Uses express-rate-limit with ioredis for distributed rate limiting
  */
 
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import { getRedisClient } from './redis';
 
@@ -38,7 +38,8 @@ export function createRateLimiter(options: RateLimiterOptions) {
     skipFailedRequests: false,
     // Custom key generator - use IP + user agent for better identification
     keyGenerator: (req) => {
-      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      // Use ipKeyGenerator for proper IPv6 support
+      const ip = ipKeyGenerator(req);
       const userAgent = req.get('user-agent') || 'unknown';
       return `${ip}:${Buffer.from(userAgent).toString('base64').slice(0, 20)}`;
     },

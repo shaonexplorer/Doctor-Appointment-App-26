@@ -58,7 +58,7 @@ export class AuthService {
           lastName: userData.lastName,
           phone: userData.phone,
         },
-      })) as unknown as BetterAuthSignUpResult;
+      })) as { token: string; user: BetterAuthSignUpResult['user'] };
 
       // Create profile based on user type
       if (userType === UserType.DOCTOR) {
@@ -84,6 +84,11 @@ export class AuthService {
         });
       }
 
+      // Get session details from database using the token
+      const session = await prisma.session.findUnique({
+        where: { token: result.token },
+      });
+
       return {
         user: {
           id: result.user.id,
@@ -94,9 +99,9 @@ export class AuthService {
           emailVerified: result.user.emailVerified,
         },
         session: {
-          id: result.session.id,
+          id: session?.id || result.token,
           token: result.token,
-          expiresAt: result.session.expiresAt,
+          expiresAt: session?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
       };
     } catch (error) {
@@ -113,7 +118,12 @@ export class AuthService {
     try {
       const result = (await auth.api.signInEmail({
         body: { email: data.email, password: data.password },
-      })) as unknown as BetterAuthSignInResult;
+      })) as { token: string; user: BetterAuthSignInResult['user'] };
+
+      // Get session details from database using the token
+      const session = await prisma.session.findUnique({
+        where: { token: result.token },
+      });
 
       return {
         user: {
@@ -125,9 +135,9 @@ export class AuthService {
           emailVerified: result.user.emailVerified,
         },
         session: {
-          id: result.session.id,
+          id: session?.id || result.token,
           token: result.token,
-          expiresAt: result.session.expiresAt,
+          expiresAt: session?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
       };
     } catch (error) {

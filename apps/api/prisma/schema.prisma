@@ -50,18 +50,20 @@ enum ConsultationType {
   PHONE
 }
 
-// Models
+// Models - BetterAuth compatible schema
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  firstName     String
-  lastName      String
+  id            String    @id @default(cuid())
+  name          String    // BetterAuth expects 'name' field (firstName + lastName)
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?   // BetterAuth expects 'image' field
+  passwordHash  String    @default("")  // Our custom field for password (BetterAuth uses Account.password)
+  firstName     String    // Our custom field
+  lastName      String    // Our custom field
   phone         String?
-  userType      UserType @default(PATIENT)
-  emailVerified Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  userType      UserType  @default(PATIENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   doctorProfile      DoctorProfile?
   patientProfile     PatientProfile?
@@ -74,6 +76,7 @@ model User {
 
   @@index([email])
   @@index([userType])
+  @@map("user")  // BetterAuth expects lowercase 'user' table
 }
 
 model DoctorProfile {
@@ -160,51 +163,54 @@ model Prescription {
 
 // Session model for BetterAuth
 model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt    DateTime
-  token        String   @unique
-  ipAddress    String?
-  userAgent    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([token])
   @@index([expiresAt])
+  @@map("session")  // BetterAuth expects lowercase 'session' table
 }
 
-// VerificationToken model for BetterAuth
-model VerificationToken {
+// Verification model for BetterAuth
+model Verification {
   id         String   @id @default(cuid())
   identifier String
-  token      String
+  value      String   // BetterAuth uses 'value' not 'token'
   expiresAt  DateTime
-  type       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@unique([identifier, token, type])
-  @@index([expiresAt])
+  @@map("verification")  // BetterAuth expects lowercase 'verification' table
 }
 
 // Account model for BetterAuth (OAuth)
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId        String
-  providerAccountId String
-  accessToken       String?
-  refreshToken      String?
-  expiresAt         DateTime?
-  tokenType         String?
-  scope             String?
-  idToken           String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  issuer                String   @default("credentials")  // BetterAuth expects 'issuer'
+  accountId             String   // BetterAuth expects 'accountId'
+  providerId            String
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?  // BetterAuth expects 'password' field
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  @@unique([providerId, providerAccountId])
+  @@unique([issuer, accountId])
   @@index([userId])
+  @@map("account")  // BetterAuth expects lowercase 'account' table
 }
 
 // Audit Log for PHI access tracking
