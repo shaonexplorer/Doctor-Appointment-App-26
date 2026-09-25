@@ -92,7 +92,11 @@ export const RegisterSchema = UserBaseSchema.extend({
     .nullable(),
   fee: z.number().positive().optional(),
   // Patient-specific fields
-  dob: z.string().date().optional().nullable(),
+  // Transform empty strings to undefined to allow optional date fields for non-patient roles
+  dob: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().date().optional().nullable()
+  ),
   gender: z.nativeEnum(Gender).optional().nullable(),
   address: z
     .string()
@@ -146,9 +150,19 @@ export const ResetPasswordSchema = z
     path: ['confirmPassword'],
   });
 
-export const VerifyEmailSchema = z.object({
-  token: z.string().min(1, { message: 'Verification token is required' }),
-});
+export const VerifyEmailSchema = z.discriminatedUnion('method', [
+  // Legacy token-based verification
+  z.object({
+    method: z.literal('token'),
+    token: z.string().min(1, { message: 'Verification token is required' }),
+  }),
+  // New OTP-based verification
+  z.object({
+    method: z.literal('otp'),
+    email: z.string().email({ message: 'Invalid email address' }),
+    otp: z.string().length(6, { message: 'Verification code must be 6 digits' }),
+  }),
+]);
 
 export const UpdateProfileSchema = z.object({
   firstName: z
@@ -169,7 +183,11 @@ export const UpdateProfileSchema = z.object({
     .optional()
     .nullable(),
   // Patient fields
-  dob: z.string().date().optional().nullable(),
+  // Transform empty strings to undefined to allow optional date fields
+  dob: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().date().optional().nullable()
+  ),
   gender: z.nativeEnum(Gender).optional().nullable(),
   address: z
     .string()

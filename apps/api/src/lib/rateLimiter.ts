@@ -12,13 +12,18 @@ interface RateLimiterOptions {
   max: number;
   message?: string;
   keyPrefix?: string;
+  skip?: (req: any, res: any) => boolean;
 }
 
 /**
  * Create a Redis-backed rate limiter
+ * Automatically skips rate limiting in development environment
  */
 export function createRateLimiter(options: RateLimiterOptions) {
   const redisClient = getRedisClient();
+
+  // Skip rate limiting in development environment
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   return rateLimit({
     windowMs: options.windowMs,
@@ -37,12 +42,16 @@ export function createRateLimiter(options: RateLimiterOptions) {
     skipSuccessfulRequests: false,
     skipFailedRequests: false,
     // Custom key generator - use IP + user agent for better identification
-    keyGenerator: (req) => {
+    keyGenerator: (req: any) => {
       // Use ipKeyGenerator for proper IPv6 support
       const ip = ipKeyGenerator(req);
       const userAgent = req.get('user-agent') || 'unknown';
       return `${ip}:${Buffer.from(userAgent).toString('base64').slice(0, 20)}`;
     },
+    // Skip rate limiting in development environment
+    skip: isDevelopment
+      ? () => true
+      : options.skip,
     // Handler for when rate limit is exceeded
     handler: (_req, res) => {
       res.status(429).json({

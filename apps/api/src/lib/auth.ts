@@ -5,11 +5,12 @@
 
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { multiSession } from 'better-auth/plugins';
+import { multiSession, emailOTP } from 'better-auth/plugins';
 import { dash } from '@better-auth/infra';
 import type { PrismaClient } from '@prisma/client';
 import { UserType } from '@doctor-appointment-app/shared';
 import bcrypt from 'bcryptjs';
+import { sendVerificationOTP, sendPasswordResetEmail } from './email';
 
 export function createBetterAuth(prisma: PrismaClient) {
   return betterAuth({
@@ -29,6 +30,17 @@ export function createBetterAuth(prisma: PrismaClient) {
           return bcrypt.compare(password, hash);
         },
       },
+      // Password reset email configuration (link-based)
+      sendResetPassword: async ({ user, url, token }) => {
+        await sendPasswordResetEmail({ user, url, token });
+      },
+    },
+    // Use email-otp plugin for 6-digit code verification
+    // This overrides the default link-based email verification
+    emailVerification: {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+      expiresIn: 3600, // 1 hour
     },
     session: {
       cookieCache: {
@@ -80,6 +92,15 @@ export function createBetterAuth(prisma: PrismaClient) {
     plugins: [
       multiSession({
         maximumSessions: 5,
+      }),
+      // Email OTP plugin for 6-digit code verification
+      emailOTP({
+        overrideDefaultEmailVerification: true,
+        async sendVerificationOTP({ email, otp, type }) {
+          await sendVerificationOTP({ email, otp, type });
+        },
+        expiresIn: 300, // 5 minutes
+        allowedAttempts: 3,
       }),
       dash(),
     ],

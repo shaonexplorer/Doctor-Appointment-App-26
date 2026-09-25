@@ -46,104 +46,129 @@ export class AuthService {
       throw new AppError('EMAIL_EXISTS', 'Email already registered', 409);
     }
 
-    try {
-      // Create user via BetterAuth
-      const result = (await auth.api.signUpEmail({
-        body: {
-          email: userData.email,
-          password: userData.password,
-          name: `${userData.firstName} ${userData.lastName}`,
-          userType,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          phone: userData.phone,
+    // Create user via BetterAuth
+    const result = await auth.api.signUpEmail({
+      body: {
+        email: userData.email,
+        password: userData.password,
+        name: `${userData.firstName} ${userData.lastName}`,
+        userType,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        phone: userData.phone,
+      },
+    });
+
+    // BetterAuth signUpEmail returns { user, session: null, token: null } initially
+    // The session is created separately, we need to fetch it from DB by userId
+    const signUpResult = result as {
+      user: { id: string; email: string; emailVerified: boolean; firstName: string; lastName: string; userType: string };
+      token: string | null;
+    };
+
+    // Create profile based on user type
+    if (userType === UserType.DOCTOR) {
+      await prisma.doctorProfile.create({
+        data: {
+          userId: signUpResult.user.id,
+          specialty: specialty!,
+          designation: designation!,
+          licenseNo: licenseNo!,
+          bio,
+          fee: fee!,
         },
-      })) as { token: string; user: BetterAuthSignUpResult['user'] };
-
-      // Create profile based on user type
-      if (userType === UserType.DOCTOR) {
-        await prisma.doctorProfile.create({
-          data: {
-            userId: result.user.id,
-            specialty: specialty!,
-            designation: designation!,
-            licenseNo: licenseNo!,
-            bio,
-            fee: fee!,
-          },
-        });
-      } else if (userType === UserType.PATIENT) {
-        await prisma.patientProfile.create({
-          data: {
-            userId: result.user.id,
-            dob: dob ? new Date(dob) : null,
-            gender: gender || null,
-            address,
-            emergencyContact,
-          },
-        });
-      }
-
-      // Get session details from database using the token
-      const session = await prisma.session.findUnique({
-        where: { token: result.token },
       });
-
-      return {
-        user: {
-          id: result.user.id,
-          email: result.user.email,
-          firstName: result.user.firstName,
-          lastName: result.user.lastName,
-          userType: result.user.userType as UserType,
-          emailVerified: result.user.emailVerified,
+    } else if (userType === UserType.PATIENT) {
+      await prisma.patientProfile.create({
+        data: {
+          userId: signUpResult.user.id,
+          dob: dob ? new Date(dob) : null,
+          gender: (gender as import('@doctor-appointment-app/shared').Gender) || null,
+          address,
+          emergencyContact,
         },
-        session: {
-          id: session?.id || result.token,
-          token: result.token,
-          expiresAt: session?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        },
-      };
-    } catch (error) {
-      console.error('Registration error:', error);
-      if (error instanceof AppError) throw error;
-      throw new AppError('REGISTRATION_FAILED', 'Registration failed', 500);
+      });
     }
+
+    // Get session details from database by userId (since token is null in signUpEmail response)
+    // The session was just created, so get the most recent one for this user
+    const session = await prisma.session.findFirst({
+      where: { userId: signUpResult.user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Use input data for response (more reliable than BetterAuth response for additional fields)
+    return {
+      user: {
+        id: signUpResult.user.id,
+        email: signUpResult.user.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        userType,
+        emailVerified: signUpResult.user.emailVerified,
+      },
+      session: {
+        id: session?.id || '',
+        token: session?.token || '',
+        expiresAt: session?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    };
   }
 
   /**
    * Login user
    */
   async login(data: LoginInput): Promise<AuthResult> {
-    try {
-      const result = (await auth.api.signInEmail({
-        body: { email: data.email, password: data.password },
-      })) as { token: string; user: BetterAuthSignInResult['user'] };
+    const result = await auth.api.signInEmail({
+      body: { email: data.email, password: data.password },
+    });
 
-      // Get session details from database using the token
-      const session = await prisma.session.findUnique({
-        where: { token: result.token },
-      });
+    // BetterAuth signInEmail returns { user, token, redirect, url }
+    // Token is at the top level, not in session
+    const signInResult = result as {
+      user: { id: string; email: string; emailVerified: boolean };
+      token: string;
+      redirect: boolean;
+      url?: string;
+    };
 
-      return {
-        user: {
-          id: result.user.id,
-          email: result.user.email,
-          firstName: result.user.firstName,
-          lastName: result.user.lastName,
-          userType: result.user.userType as UserType,
-          emailVerified: result.user.emailVerified,
-        },
-        session: {
-          id: session?.id || result.token,
-          token: result.token,
-          expiresAt: session?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        },
-      };
-    } catch (error) {
-      console.error('Login error:', error);
-      throw new AppError('INVALID_CREDENTIALS', 'Invalid email or password', 401);
+    // Get session details from database using the token
+    const session = await prisma.session.findUnique({
+      where: { token: signInResult.token },
+    });
+
+    // Fetch full user data from database to get additional fields
+    const user = await prisma.user.findUnique({
+      where: { id: signInResult.user.id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        userType: true,
+        emailVerified: true,
+      },
+    });
+
+    if (!user) {
+      throw new AppError('NOT_FOUND', 'User not found', 404);
     }
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        userType: user.userType as UserType,
+        emailVerified: user.emailVerified,
+      },
+      session: {
+        id: session?.id || '',
+        token: signInResult.token,
+        expiresAt: session?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    };
   }
 
   /**
@@ -170,18 +195,33 @@ export class AuthService {
         headers: new Headers({
           cookie: `session_token=${sessionToken}`,
         }),
-      })) as BetterAuthSessionResult | null;
+      })) as { user: { id: string }; session: { id: string; expiresAt: Date } } | null;
 
       if (!result) return null;
 
+      // Fetch full user data from database
+      const user = await prisma.user.findUnique({
+        where: { id: result.user.id },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          userType: true,
+          emailVerified: true,
+        },
+      });
+
+      if (!user) return null;
+
       return {
         user: {
-          id: result.user.id,
-          email: result.user.email,
-          firstName: result.user.firstName,
-          lastName: result.user.lastName,
-          userType: result.user.userType as UserType,
-          emailVerified: result.user.emailVerified,
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          userType: user.userType as UserType,
+          emailVerified: user.emailVerified,
         },
         session: {
           id: result.session.id,
@@ -223,26 +263,111 @@ export class AuthService {
   }
 
   /**
-   * Verify email
+   * Verify email with OTP (6-digit code) or legacy token
+   * POST /api/auth/verify-email
+   * Body: { method: 'token', token: string } | { method: 'otp', email: string, otp: string }
    */
   async verifyEmail(data: VerifyEmailInput): Promise<void> {
     try {
-      await (auth.api as any).verifyEmail({
-        body: { token: data.token },
-      });
+      const rawData = data as Record<string, unknown>;
+
+      // Check for discriminated union format with 'method' field
+      if ('method' in rawData) {
+        const method = rawData.method;
+        if (method === 'token' && 'token' in rawData && typeof rawData.token === 'string') {
+          // Legacy token-based verification
+          console.log('Using legacy token verification');
+          await (auth.api as any).verifyEmail({
+            body: { token: rawData.token },
+          });
+          return;
+        }
+        if (method === 'otp' && 'email' in rawData && 'otp' in rawData) {
+          // New OTP-based verification - use email-otp plugin endpoint
+          console.log('Using OTP verification for email:', rawData.email);
+          try {
+            // Try email-otp plugin method first
+            console.log('Trying auth.api.emailOtp.verifyEmail...');
+            await (auth.api as any).emailOtp?.verifyEmail?.({
+              body: { email: rawData.email, otp: rawData.otp },
+            });
+            console.log('emailOtp.verifyEmail succeeded');
+          } catch (emailOtpError) {
+            console.log('emailOtp.verifyEmail failed, trying auth.api.verifyEmail with OTP...', emailOtpError);
+            // Fallback: try the standard verifyEmail with OTP (when overrideDefaultEmailVerification=true)
+            await (auth.api as any).verifyEmail({
+              body: { email: rawData.email, otp: rawData.otp },
+            });
+          }
+          return;
+        }
+      }
+
+      // Backward compatibility: handle legacy format without 'method' field
+      if ('token' in rawData && typeof rawData.token === 'string') {
+        await (auth.api as any).verifyEmail({
+          body: { token: rawData.token },
+        });
+        return;
+      }
+      if ('email' in rawData && 'otp' in rawData && typeof rawData.email === 'string' && typeof rawData.otp === 'string') {
+        // New OTP-based verification
+        console.log('Using OTP verification (no method field) for email:', rawData.email);
+        try {
+          await (auth.api as any).emailOtp?.verifyEmail?.({
+            body: { email: rawData.email, otp: rawData.otp },
+          });
+        } catch {
+          await (auth.api as any).verifyEmail({
+            body: { email: rawData.email, otp: rawData.otp },
+          });
+        }
+        return;
+      }
+
+      throw new AppError('INVALID_INPUT', 'Invalid verification data', 400);
     } catch (error) {
       console.error('Verify email error:', error);
-      throw new AppError('INVALID_TOKEN', 'Invalid or expired verification token', 400);
+      // Log the actual error for debugging
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+      }
+      // Check if it's a BetterAuth API error
+      if (error && typeof error === 'object' && 'body' in error) {
+        console.error('BetterAuth error body:', (error as any).body);
+      }
+      throw new AppError('INVALID_TOKEN', 'Invalid or expired verification code', 400);
     }
   }
 
   /**
-   * Resend verification email
+   * Call the email-otp plugin's verify-email endpoint directly
+   */
+  private async callEmailOtpVerifyEndpoint(email: string, otp: string): Promise<void> {
+    const baseUrl = process.env.BETTER_AUTH_URL || 'http://localhost:4000';
+    const response = await fetch(`${baseUrl}/api/auth/email-otp/verify-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Email-otp verify endpoint error:', errorData);
+      throw new AppError('INVALID_TOKEN', 'Invalid or expired verification code', 400);
+    }
+  }
+
+  /**
+   * Resend verification OTP
+   * POST /api/auth/resend-verification
+   * Body: { email: string }
    */
   async resendVerification(email: string): Promise<void> {
     try {
-      await (auth.api as any).sendVerificationEmail({
-        body: { email, callbackURL: `${process.env.FRONTEND_URL}/verify-email` },
+      await (auth.api as any).sendVerificationOTP({
+        body: { email, type: 'email-verification' },
       });
     } catch (error) {
       console.error('Resend verification error:', error);

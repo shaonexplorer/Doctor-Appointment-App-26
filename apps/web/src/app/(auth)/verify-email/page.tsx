@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
@@ -27,11 +27,21 @@ function AuthShell({
   );
 }
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState(Array(6).fill(''));
   const [focusedIndex, setFocusedIndex] = useState(0);
+  const [email, setEmail] = useState('');
+
+  // Get email from URL query parameter
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, [searchParams]);
 
   const handleCodeChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value) || value.length > 1) return;
@@ -65,15 +75,23 @@ export default function VerifyEmailPage() {
   };
 
   const onSubmit = async () => {
-    const tokenValue = code.join('');
-    if (tokenValue.length !== 6) return;
+    const otpValue = code.join('');
+    if (otpValue.length !== 6) return;
+    if (!email) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing email',
+        description: 'Please return to the registration page and try again.',
+      });
+      return;
+    }
 
     setLoading(true);
     try {
       const response = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: tokenValue }),
+        body: JSON.stringify({ method: 'otp', email, otp: otpValue }),
         credentials: 'include',
       });
 
@@ -108,11 +126,20 @@ export default function VerifyEmailPage() {
   };
 
   const handleResend = async () => {
+    if (!email) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing email',
+        description: 'Please return to the registration page and try again.',
+      });
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/resend-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: '' }), // The API will get email from session
+        body: JSON.stringify({ email }),
         credentials: 'include',
       });
 
@@ -189,5 +216,30 @@ export default function VerifyEmailPage() {
         </div>
       </AuthShell>
     </main>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <main className="min-h-screen bg-background flex items-center justify-center px-5 py-10">
+      <AuthShell
+        eyebrow="Almost there"
+        title="Verify your email"
+        copy="We sent a 6-digit verification code to your email address. Enter it below to continue."
+      >
+        <div className="flex flex-col gap-6 items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </AuthShell>
+    </main>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

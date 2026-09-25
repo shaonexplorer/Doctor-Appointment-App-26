@@ -21,10 +21,95 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { RegisterSchema, type RegisterInput } from '@doctor-appointment-app/shared';
+import {
+  type RegisterInput,
+  UserBaseSchema,
+  UserType,
+  Gender,
+  VALIDATION,
+} from '@doctor-appointment-app/shared';
+import { z } from 'zod';
 
-// Extend RegisterInput to include confirmPassword and terms
-type RegisterFormInput = RegisterInput & { confirmPassword?: string; terms?: boolean };
+// Build form schema by extending UserBaseSchema with all RegisterSchema fields + form-only fields
+// This avoids issues with extending a ZodEffects (refined) schema
+const RegisterFormSchema = UserBaseSchema.extend({
+  password: z
+    .string()
+    .min(VALIDATION.PASSWORD_MIN_LENGTH, {
+      message: `Password must be at least ${VALIDATION.PASSWORD_MIN_LENGTH} characters`,
+    })
+    .max(VALIDATION.PASSWORD_MAX_LENGTH, { message: 'Password is too long' })
+    .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+    .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
+    .regex(/[0-9]/, { message: 'Password must contain at least one number' })
+    .regex(/[^A-Za-z0-9]/, { message: 'Password must contain at least one special character' }),
+  // Doctor-specific fields
+  specialty: z.string().optional(),
+  designation: z.string().optional(),
+  licenseNo: z.string().optional(),
+  bio: z
+    .string()
+    .max(VALIDATION.BIO_MAX_LENGTH, { message: 'Bio is too long' })
+    .optional()
+    .nullable(),
+  fee: z.number().positive().optional(),
+  // Patient-specific fields
+  // Transform empty strings to undefined before date validation to allow optional date fields for non-patient roles
+  dob: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().date().optional().nullable()
+  ),
+  gender: z.nativeEnum(Gender).optional().nullable(),
+  address: z
+    .string()
+    .max(VALIDATION.ADDRESS_MAX_LENGTH, { message: 'Address is too long' })
+    .optional()
+    .nullable(),
+  emergencyContact: z
+    .string()
+    .max(VALIDATION.PHONE_MAX_LENGTH, { message: 'Emergency contact is too long' })
+    .optional()
+    .nullable(),
+  // Form-only fields
+  confirmPassword: z.string().min(1, { message: 'Please confirm your password' }),
+  terms: z
+    .boolean()
+    .refine((val) => val === true, { message: 'You must accept the terms and conditions' }),
+}).superRefine((data, ctx) => {
+  // Doctor validation
+  if (data.userType === UserType.DOCTOR) {
+    if (!data.specialty)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Doctor registration requires specialty, designation, license number, and fee',
+        path: ['specialty'],
+      });
+    if (!data.designation)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Doctor registration requires specialty, designation, license number, and fee',
+        path: ['designation'],
+      });
+    if (!data.licenseNo)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Doctor registration requires specialty, designation, license number, and fee',
+        path: ['licenseNo'],
+      });
+    if (data.fee === undefined)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Doctor registration requires specialty, designation, license number, and fee',
+        path: ['fee'],
+      });
+  }
+  // Password match validation
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({ code: 'custom', message: 'Passwords do not match', path: ['confirmPassword'] });
+  }
+});
+
+type RegisterFormInput = z.infer<typeof RegisterFormSchema>;
 
 const roles = [
   {
@@ -190,14 +275,16 @@ function Signup({
   loading: boolean;
 }) {
   const roleTitle = role[0].toUpperCase() + role.slice(1);
+  const isDoctor = role === 'doctor';
+  const isPatient = role === 'patient';
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterFormInput>({
-    // @ts-expect-error - Zod v4 schema compatibility with zodResolver
-    resolver: zodResolver(RegisterSchema),
+    // @ts-expect-error - Zod v3 ZodEffects compatibility with zodResolver
+    resolver: zodResolver(RegisterFormSchema),
     defaultValues: {
       email: '',
       firstName: '',
@@ -211,7 +298,7 @@ function Signup({
       designation: '',
       licenseNo: '',
       bio: '',
-      fee: 0,
+      fee: isDoctor ? 0 : undefined,
       // Patient fields
       dob: '',
       gender: undefined,
@@ -220,9 +307,6 @@ function Signup({
       terms: false,
     },
   });
-
-  const isDoctor = role === 'doctor';
-  const isPatient = role === 'patient';
 
   return (
     <AuthShell
@@ -242,16 +326,26 @@ function Signup({
       }
     >
       <form
-        onSubmit={handleSubmit(onSubmit)} // eslint-disable-line @typescript-eslint/no-misused-promises
+        onSubmit={handleSubmit(onSubmit, (formErrors) => {
+          console.error('Form Validation Failed:', formErrors);
+        })} // eslint-disable-line @typescript-eslint/no-misused-promises
         className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto pr-1"
       >
+        {/* First Name & Last Name */}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label="Full name"
-            placeholder="Your full name"
+            label="First name"
+            placeholder="John"
             icon={UserRound}
             {...register('firstName')}
             error={errors.firstName?.message}
+          />
+          <Field
+            label="Last name"
+            placeholder="Doe"
+            icon={UserRound}
+            {...register('lastName')}
+            error={errors.lastName?.message}
           />
           <Field
             label="Email address"
@@ -269,6 +363,10 @@ function Signup({
             {...register('phone')}
             error={errors.phone?.message}
           />
+        </div>
+
+        {/* Password & Confirm Password (Rendered for ALL roles) */}
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Password"
             type="password"
@@ -277,15 +375,57 @@ function Signup({
             {...register('password')}
             error={errors.password?.message}
           />
+          <Field
+            label="Confirm password"
+            type="password"
+            placeholder="Repeat your password"
+            icon={LockKeyhole}
+            {...register('confirmPassword')}
+            error={errors.confirmPassword?.message}
+          />
         </div>
 
         {isPatient && (
-          <Field
-            label="Date of birth"
-            type="date"
-            {...register('dob')}
-            error={errors.dob?.message}
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Date of birth"
+              type="date"
+              {...register('dob')}
+              error={errors.dob?.message}
+            />
+            <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
+              <span>Gender</span>
+              <select
+                {...register('gender')}
+                className="h-11 w-full rounded-xl border border-input bg-background px-4 text-sm font-normal text-foreground outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10"
+                aria-invalid={!!errors.gender}
+              >
+                <option value="">Select gender</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+              {errors.gender && (
+                <p className="text-sm text-destructive" role="alert">
+                  {errors.gender.message}
+                </p>
+              )}
+            </label>
+            <Field
+              label="Address"
+              placeholder="Your address"
+              {...register('address')}
+              error={errors.address?.message}
+            />
+            <Field
+              label="Emergency contact"
+              type="tel"
+              placeholder="+1 (555) 000-0000"
+              icon={Phone}
+              {...register('emergencyContact')}
+              error={errors.emergencyContact?.message}
+            />
+          </div>
         )}
 
         {isDoctor && (
@@ -303,31 +443,29 @@ function Signup({
               error={errors.specialty?.message}
             />
             <Field
+              label="License Number"
+              placeholder="e.g. MD-123456"
+              {...register('licenseNo')}
+              error={errors.licenseNo?.message}
+            />
+            <Field
               label="Consultation fee"
               placeholder="$ 0.00"
               type="number"
               step="0.01"
-              {...register('fee', { valueAsNumber: true })}
+              {...register('fee', {
+                valueAsNumber: true,
+                setValueAs: (v) => (v === '' || isNaN(v) ? undefined : Number(v)),
+              })}
               error={errors.fee?.message}
             />
             <Field
-              label="Qualifications"
+              label="Bio / Qualifications"
               placeholder="e.g. FACC, PhD"
               {...register('bio')}
               error={errors.bio?.message}
             />
           </div>
-        )}
-
-        {!isDoctor && (
-          <Field
-            label="Confirm password"
-            type="password"
-            placeholder="Repeat your password"
-            icon={LockKeyhole}
-            {...register('confirmPassword')}
-            error={errors.confirmPassword?.message}
-          />
         )}
 
         <Label className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
@@ -376,13 +514,28 @@ export default function RegisterPage() {
   };
 
   const handleSignup = async (data: RegisterFormInput): Promise<void> => {
-    // console.log('Submitting registration data:', data);
+    // Strip form-only fields before sending to API
+    const { confirmPassword, terms, ...apiData } = data;
+
+    // Determine if doctor from userType (comes from form data)
+    const isDoctor = apiData.userType === 'DOCTOR';
+
+    // Clean up optional fields: convert empty strings to undefined
+    const cleanedData = Object.fromEntries(
+      Object.entries(apiData).map(([key, value]) => {
+        if (value === '') return [key, undefined];
+        if (value === 0 && key === 'fee' && !isDoctor) return [key, undefined];
+        return [key, value];
+      })
+    );
+
+    console.log('Submitting registration data:', cleanedData);
     setLoading(true);
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(cleanedData),
         credentials: 'include',
       });
 
@@ -403,7 +556,9 @@ export default function RegisterPage() {
         description: 'Please check your email to verify your account.',
       });
 
-      void router.push('/verify-email');
+      // Pass email as query parameter for verification page
+      const email = cleanedData.email as string;
+      void router.push(`/verify-email?email=${encodeURIComponent(email)}`);
       router.refresh();
     } catch {
       toast({

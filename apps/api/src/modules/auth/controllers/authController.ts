@@ -7,6 +7,14 @@ import type { Response, NextFunction } from 'express';
 import type { AuthService } from '../services/authService';
 import { buildSuccessResponse, buildErrorResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
+import type {
+  RegisterInput,
+  LoginInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+  VerifyEmailInput,
+  ChangePasswordInput,
+} from '../types';
 
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -18,7 +26,7 @@ export class AuthController {
   register = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as RegisterInput;
 
       const result = await this.authService.register(validatedData);
 
@@ -39,7 +47,7 @@ export class AuthController {
    */
   login = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as LoginInput;
 
       const result = await this.authService.login(validatedData);
 
@@ -100,7 +108,7 @@ export class AuthController {
    */
   forgotPassword = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as ForgotPasswordInput;
 
       await this.authService.forgotPassword(validatedData);
 
@@ -119,7 +127,7 @@ export class AuthController {
    */
   resetPassword = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as ResetPasswordInput;
 
       await this.authService.resetPassword(validatedData);
 
@@ -135,7 +143,7 @@ export class AuthController {
    */
   verifyEmail = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as VerifyEmailInput;
 
       await this.authService.verifyEmail(validatedData);
 
@@ -151,7 +159,7 @@ export class AuthController {
    */
   resendVerification = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as ForgotPasswordInput; // Uses same schema as forgot password
 
       await this.authService.resendVerification(validatedData.email);
 
@@ -169,7 +177,7 @@ export class AuthController {
    */
   changePassword = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as ChangePasswordInput;
       const userId = req.user?.id;
 
       if (!userId) {
