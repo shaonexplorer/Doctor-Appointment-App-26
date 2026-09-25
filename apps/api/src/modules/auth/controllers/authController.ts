@@ -12,34 +12,6 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   /**
-   * Set auth cookies
-   */
-  private setAuthCookies(res: Response, token: string) {
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? ('strict' as const) : ('lax' as const),
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    };
-    res.cookie('session_token', token, cookieOptions);
-  }
-
-  /**
-   * Clear auth cookies
-   */
-  private clearAuthCookies(res: Response) {
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? ('strict' as const) : ('lax' as const),
-      path: '/',
-      maxAge: 0,
-    };
-    res.clearCookie('session_token', cookieOptions);
-  }
-
-  /**
    * Register new user
    * POST /api/auth/register
    */
@@ -49,7 +21,6 @@ export class AuthController {
       const validatedData = req.validatedData;
 
       const result = await this.authService.register(validatedData);
-      this.setAuthCookies(res, result.session.token);
 
       res.status(201).json(
         buildSuccessResponse({
@@ -71,7 +42,6 @@ export class AuthController {
       const validatedData = req.validatedData;
 
       const result = await this.authService.login(validatedData);
-      this.setAuthCookies(res, result.session.token);
 
       res.json(
         buildSuccessResponse({
@@ -96,8 +66,6 @@ export class AuthController {
         await this.authService.logout(sessionToken);
       }
 
-      this.clearAuthCookies(res);
-
       res.json(buildSuccessResponse({ message: 'Logged out successfully' }));
     } catch (error) {
       next(error);
@@ -110,22 +78,15 @@ export class AuthController {
    */
   me = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const sessionToken = req.cookies?.session_token;
-
-      if (!sessionToken) {
-        return res.json(buildSuccessResponse({ user: null, session: null }));
-      }
-
-      const result = await this.authService.getSession(sessionToken);
-
-      if (!result) {
+      // User and session are already attached by requireAuth middleware
+      if (!req.user || !req.session) {
         return res.json(buildSuccessResponse({ user: null, session: null }));
       }
 
       res.json(
         buildSuccessResponse({
-          user: result.user,
-          session: { id: result.session.id, expiresAt: result.session.expiresAt },
+          user: req.user,
+          session: { id: req.session.id, expiresAt: req.session.expiresAt },
         })
       );
     } catch (error) {

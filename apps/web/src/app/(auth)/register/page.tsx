@@ -351,7 +351,7 @@ function Signup({
         <Button
           type="submit"
           disabled={loading}
-          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-60"
+          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-60"
         >
           {loading ? 'Creating account...' : 'Create account'} <ArrowRight className="size-4" />
         </Button>
@@ -376,6 +376,7 @@ export default function RegisterPage() {
   };
 
   const handleSignup = async (data: RegisterFormInput): Promise<void> => {
+    // console.log('Submitting registration data:', data);
     setLoading(true);
     try {
       const response = await fetch('/api/auth/register', {

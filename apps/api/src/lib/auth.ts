@@ -68,6 +68,7 @@ export function createBetterAuth(prisma: PrismaClient) {
         enabled: false,
       },
       useSecureCookies: process.env.NODE_ENV === 'production',
+      cookiePrefix: '', // Use empty prefix so cookie name is 'session_token' instead of 'better-auth.session_token'
       defaultCookieAttributes: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

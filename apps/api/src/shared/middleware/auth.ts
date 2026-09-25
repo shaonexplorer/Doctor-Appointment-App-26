@@ -55,12 +55,12 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
     }
 
     if (!session || !user) {
-      throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+      return next(new AppError('UNAUTHORIZED', 'Authentication required', 401));
     }
 
     // Check if session is expired
     if (new Date(session.expiresAt) < new Date()) {
-      throw new AppError('SESSION_EXPIRED', 'Session has expired', 401);
+      return next(new AppError('SESSION_EXPIRED', 'Session has expired', 401));
     }
 
     req.user = {
@@ -81,9 +81,9 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
     next();
   } catch (error) {
     if (error instanceof AppError) {
-      throw error;
+      return next(error);
     }
-    throw new AppError('UNAUTHORIZED', 'Invalid or expired session', 401);
+    return next(new AppError('UNAUTHORIZED', 'Invalid or expired session', 401));
   }
 }
 

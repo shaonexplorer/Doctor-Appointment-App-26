@@ -17,6 +17,7 @@ import { errorHandler, notFoundHandler, requestLogger } from './shared/middlewar
 import { connectRedis, disconnectRedis } from './lib/redis';
 import { authRateLimiters } from './lib/rateLimiter';
 import { config } from './shared/config';
+import { getServerEnv } from './shared/config/env';
 
 // Repositories (data access layer)
 import { createRepositories, type Repositories } from './repositories';
