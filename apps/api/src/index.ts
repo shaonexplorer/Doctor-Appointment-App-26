@@ -16,6 +16,7 @@ import { createBetterAuth } from './lib/auth';
 import { errorHandler, notFoundHandler, requestLogger } from './shared/middleware';
 import { connectRedis, disconnectRedis } from './lib/redis';
 import { authRateLimiters } from './lib/rateLimiter';
+import { validateServerEnv, getServerEnv } from './shared/config/env';
 import { config } from './shared/config';
 
 // Repositories (data access layer)
@@ -26,6 +27,9 @@ import { createAllModules, type AllModules } from './modules';
 
 // Health check
 import { router as healthRouter } from './routes/health';
+
+// Validate environment variables at startup
+getServerEnv();
 
 const app = express();
 const prisma = new PrismaClient();

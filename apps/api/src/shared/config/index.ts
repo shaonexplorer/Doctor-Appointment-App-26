@@ -1,30 +1,33 @@
 /**
  * Shared Configuration
  * Centralized configuration for the application
+ * Uses validated environment variables
  */
+
+import { getServerEnv } from './env';
+
+const env = getServerEnv();
 
 export const config = {
   // Server
-  port: parseInt(process.env.PORT || '4000', 10),
-  nodeEnv: process.env.NODE_ENV || 'development',
+  port: env.PORT,
+  nodeEnv: env.NODE_ENV,
 
   // Frontend URL for CORS
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  frontendUrl: env.FRONTEND_URL,
 
   // Database
-  databaseUrl:
-    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/doctor_appointment',
+  databaseUrl: env.DATABASE_URL,
 
   // Redis
-  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+  redisUrl: env.REDIS_URL,
 
   // JWT
-  jwtSecret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
+  jwtSecret: env.JWT_SECRET,
 
   // BetterAuth
-  betterAuthSecret:
-    process.env.BETTER_AUTH_SECRET || 'your-better-auth-secret-change-in-production',
-  betterAuthUrl: process.env.BETTER_AUTH_URL || 'http://localhost:4000',
+  betterAuthSecret: env.BETTER_AUTH_SECRET,
+  betterAuthUrl: env.BETTER_AUTH_URL,
 
   // Rate limiting
   rateLimits: {
@@ -38,8 +41,8 @@ export const config = {
   // Cookie settings
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? ('strict' as const) : ('lax' as const),
+    secure: env.NODE_ENV === 'production',
+    sameSite: env.NODE_ENV === 'production' ? ('strict' as const) : ('lax' as const),
     path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   },

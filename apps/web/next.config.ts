@@ -3,13 +3,6 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@base-ui/react', '@base-ui/utils'],
-  experimental: {
-    turbo: {
-      resolveAlias: {
-        '@doctor-appointment-app/shared/*': '../../packages/shared/src/*',
-      },
-    },
-  },
   async rewrites() {
     return [
       {
