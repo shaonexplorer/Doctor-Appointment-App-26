@@ -2,9 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { UserType } from '@doctor-appointment-app/shared';
+import type { UserType } from '@doctor-appointment-app/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProtectedRouteProps {

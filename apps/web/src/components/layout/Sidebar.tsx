@@ -140,9 +140,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <Button
             variant="ghost"
             className="mt-4 w-full justify-start gap-3"
-            onClick={async () => {
-              await logout();
-              window.location.href = '/login';
+            onClick={() => {
+              void logout().then(() => {
+                window.location.href = '/login';
+              });
             }}
           >
             <LogOut className="h-4 w-4" />

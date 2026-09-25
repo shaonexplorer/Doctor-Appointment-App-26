@@ -1,15 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, Check, Eye, EyeOff, LockKeyhole } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, LockKeyhole } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { z } from 'zod';
 import { ResetPasswordSchema, type ResetPasswordInput } from '@doctor-appointment-app/shared';
 
 function Field({
@@ -123,7 +121,7 @@ function AuthShell({
   );
 }
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -146,7 +144,7 @@ export default function ResetPasswordPage() {
 
   const password = watch('password');
 
-  const onSubmit = async (data: ResetPasswordInput) => {
+  const onSubmit = async (data: ResetPasswordInput): Promise<void> => {
     setLoading(true);
     try {
       const response = await fetch('/api/auth/reset-password', {
@@ -173,9 +171,9 @@ export default function ResetPasswordPage() {
         description: 'Your password has been reset successfully.',
       });
 
-      router.push('/login');
+      void router.push('/login');
       router.refresh();
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -193,6 +191,7 @@ export default function ResetPasswordPage() {
         title="Create a new password"
         copy="Choose a strong password you haven't used before."
       >
+        {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <input type="hidden" {...register('token')} />
           <Field
@@ -223,5 +222,13 @@ export default function ResetPasswordPage() {
         </form>
       </AuthShell>
     </main>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
+      <ResetPasswordPageContent />
+    </Suspense>
   );
 }

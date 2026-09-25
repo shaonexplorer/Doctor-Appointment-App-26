@@ -4,7 +4,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout';
 import { UserType } from '@doctor-appointment-app/shared';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Calendar, Stethoscope, ClipboardList, Users, TrendingUp, CreditCard, Shield, Bell } from 'lucide-react';
+import { Calendar, Stethoscope, ClipboardList, Users, CreditCard } from 'lucide-react';
 
 export default function PatientDashboardPage() {
   return (

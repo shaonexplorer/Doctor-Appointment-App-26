@@ -4,7 +4,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout';
 import { UserType } from '@doctor-appointment-app/shared';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Users, Stethoscope, Calendar, Settings, Shield, TrendingUp, DollarSign, Activity, BarChart3 } from 'lucide-react';
+import { Users, Stethoscope, Calendar, Settings, Shield, DollarSign, Activity, BarChart3 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   return (

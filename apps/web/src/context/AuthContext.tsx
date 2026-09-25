@@ -1,7 +1,7 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode, type UserType } from 'react';
-import { UserType as SharedUserType } from '@doctor-appointment-app/shared';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { UserType } from '@doctor-appointment-app/shared';
 
 interface User {
   id: string;
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUser(null);
       }
-    } catch (error) {
+    } catch {
       setUser(null);
     } finally {
       setLoading(false);
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    fetchUser();
+    void fetchUser();
   }, []);
 
   const refreshUser = async () => {

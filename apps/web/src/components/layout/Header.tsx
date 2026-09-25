@@ -58,14 +58,9 @@ export function Header() {
 
   return (
     <>
-      <style jsx>{`
-        header {
-          backdrop-filter: blur(8px);
-        }
-      `}</style>
       <header
         className={cn(
-          'fixed top-0 left-0 right-0 z-40 border-b border-border bg-background/80 transition-all duration-200',
+          'fixed top-0 left-0 right-0 z-40 border-b border-border bg-background/80 backdrop-blur-sm transition-all duration-200',
           scrolled ? 'shadow-sm' : ''
         )}
         onScroll={handleScroll}
@@ -107,7 +102,7 @@ export function Header() {
 
             {/* User Menu */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={user.email} alt={user.firstName} />
@@ -117,7 +112,7 @@ export function Header() {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user.firstName} {user.lastName}</p>
@@ -125,13 +120,13 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem>
                   <Link href="/profile" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
                     Profile
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem>
                   <Link href="/settings" className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
                     Settings
@@ -139,9 +134,10 @@ export function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={async () => {
-                    await logout();
-                    window.location.href = '/login';
+                  onClick={() => {
+                    void logout().then(() => {
+                      window.location.href = '/login';
+                    });
                   }}
                   className="flex items-center gap-2 text-destructive focus:text-destructive"
                 >
@@ -183,9 +179,10 @@ export function Header() {
               <Button
                 variant="outline"
                 className="w-full justify-start gap-3"
-                onClick={async () => {
-                  await logout();
-                  window.location.href = '/login';
+                onClick={() => {
+                  void logout().then(() => {
+                    window.location.href = '/login';
+                  });
                 }}
               >
                 <LogOut className="h-4 w-4" />

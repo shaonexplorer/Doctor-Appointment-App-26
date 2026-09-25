@@ -4,7 +4,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout';
 import { UserType } from '@doctor-appointment-app/shared';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Calendar, Stethoscope, Users, ClipboardList, TrendingUp, Settings, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Calendar, Stethoscope, Users, ClipboardList, Settings, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function StaffDashboardPage() {
   return (

@@ -5,20 +5,40 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, Phone, Stethoscope, UserRound, UsersRound } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+  Phone,
+  Stethoscope,
+  UserRound,
+  UsersRound,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { z } from 'zod';
 import { RegisterSchema, type RegisterInput } from '@doctor-appointment-app/shared';
 
 // Extend RegisterInput to include confirmPassword and terms
 type RegisterFormInput = RegisterInput & { confirmPassword?: string; terms?: boolean };
 
 const roles = [
-  { id: 'patient', title: 'Patient', copy: 'Book appointments and manage your care.', icon: UserRound },
-  { id: 'doctor', title: 'Doctor', copy: 'Manage your practice and consultations.', icon: Stethoscope },
+  {
+    id: 'patient',
+    title: 'Patient',
+    copy: 'Book appointments and manage your care.',
+    icon: UserRound,
+  },
+  {
+    id: 'doctor',
+    title: 'Doctor',
+    copy: 'Manage your practice and consultations.',
+    icon: Stethoscope,
+  },
   { id: 'staff', title: 'Staff', copy: 'Support your clinic operations.', icon: UsersRound },
 ] as const;
 
@@ -61,7 +81,9 @@ function Field({
           type={isPassword && visible ? 'text' : type}
           placeholder={placeholder}
           className={`h-11 w-full rounded-xl border bg-background px-10 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:ring-4 focus:ring-primary/10 ${
-            error ? 'border-destructive focus:border-destructive focus:ring-destructive/10' : 'border-input'
+            error
+              ? 'border-destructive focus:border-destructive focus:ring-destructive/10'
+              : 'border-input'
           }`}
           style={{ paddingLeft: Icon ? '2.75rem' : undefined }}
           aria-invalid={!!error}
@@ -78,7 +100,11 @@ function Field({
           </button>
         )}
       </span>
-      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
     </label>
   );
 }
@@ -97,7 +123,7 @@ function AuthShell({
   backAction?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full">
       <div className="mb-10 lg:hidden">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
@@ -108,11 +134,7 @@ function AuthShell({
           </span>
         </Link>
       </div>
-      {backAction && (
-        <div className="mb-8">
-          {backAction}
-        </div>
-      )}
+      {backAction && <div className="mb-8">{backAction}</div>}
       <p className="text-sm font-bold text-primary">{eyebrow}</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{title}</h1>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p>
@@ -156,13 +178,22 @@ function RoleChoice({ onSelectRole }: { onSelectRole: (role: Role) => void }) {
   );
 }
 
-function Signup({ role, onBack, onSubmit }: { role: Role; onBack: () => void; onSubmit: (data: RegisterFormInput) => void }) {
+function Signup({
+  role,
+  onBack,
+  onSubmit,
+  loading,
+}: {
+  role: Role;
+  onBack: () => void;
+  onSubmit: (data: RegisterFormInput) => Promise<void>;
+  loading: boolean;
+}) {
   const roleTitle = role[0].toUpperCase() + role.slice(1);
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<RegisterFormInput>({
     // @ts-expect-error - Zod v4 schema compatibility with zodResolver
@@ -210,7 +241,10 @@ function Signup({ role, onBack, onSubmit }: { role: Role; onBack: () => void; on
         </Button>
       }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto pr-1">
+      <form
+        onSubmit={handleSubmit(onSubmit)} // eslint-disable-line @typescript-eslint/no-misused-promises
+        className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto pr-1"
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Full name"
@@ -316,9 +350,10 @@ function Signup({ role, onBack, onSubmit }: { role: Role; onBack: () => void; on
 
         <Button
           type="submit"
-          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20"
+          disabled={loading}
+          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-60"
         >
-          Create account <ArrowRight className="size-4" />
+          {loading ? 'Creating account...' : 'Create account'} <ArrowRight className="size-4" />
         </Button>
       </form>
     </AuthShell>
@@ -340,7 +375,7 @@ export default function RegisterPage() {
     setScreen('role');
   };
 
-  const handleSignup = async (data: RegisterFormInput) => {
+  const handleSignup = async (data: RegisterFormInput): Promise<void> => {
     setLoading(true);
     try {
       const response = await fetch('/api/auth/register', {
@@ -367,9 +402,9 @@ export default function RegisterPage() {
         description: 'Please check your email to verify your account.',
       });
 
-      router.push('/verify-email');
+      void router.push('/verify-email');
       router.refresh();
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -384,63 +419,12 @@ export default function RegisterPage() {
     screen === 'role' ? (
       <RoleChoice onSelectRole={handleRoleSelect} />
     ) : (
-      <Signup role={role} onBack={handleBack} onSubmit={handleSignup} />
+      <Signup role={role} onBack={handleBack} onSubmit={handleSignup} loading={loading} />
     );
 
   return (
-    <main className="min-h-screen bg-background lg:flex">
-      <aside className="relative hidden overflow-hidden bg-cobalt-800 lg:flex lg:w-[44%] lg:flex-col lg:justify-between lg:p-12">
-        <div className="absolute -right-36 -top-32 size-[520px] rounded-full bg-cobalt-500/30 blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 size-[440px] rounded-full bg-cobalt-900/70 blur-2xl" />
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2.5 mb-10">
-            <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-              <Stethoscope className="size-5" />
-            </span>
-            <span className="text-xl font-bold tracking-tight text-white">
-              Medi<span className="text-primary-foreground/80">Book</span>
-            </span>
-          </Link>
-          <p className="max-w-sm text-4xl font-semibold leading-[1.1] tracking-tight text-white">
-            Care that feels <span className="text-cobalt-200">personal.</span>
-          </p>
-          <p className="mt-5 max-w-sm text-base leading-7 text-cobalt-200">
-            Your trusted space to find the right care, book appointments, and stay on top of your health.
-          </p>
-        </div>
-        <div className="relative z-10 mx-auto w-full max-w-sm">
-          <div className="rounded-[2rem] border border-white/20 bg-white/10 p-5 backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="grid size-11 place-items-center rounded-2xl bg-cobalt-200 text-cobalt-800">
-                  <UserRound className="size-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-cobalt-200">Your next visit</p>
-                  <p className="font-semibold text-white">Dr. Emily Carter</p>
-                </div>
-              </div>
-              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">
-                Confirmed
-              </span>
-            </div>
-            <div className="mt-5 flex items-center gap-3 border-t border-white/15 pt-4 text-xs text-cobalt-200">
-              <span className="rounded-lg bg-white/10 px-3 py-2 font-semibold text-white">Wed, 24 Apr</span>
-              <span>10:30 AM</span>
-              <span className="ml-auto">Video visit</span>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-2 text-xs text-cobalt-200">
-            <svg className="size-4 text-cobalt-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            Your health data is private and secure
-          </div>
-        </div>
-      </aside>
-      <section className="flex min-h-screen flex-1 items-center justify-center px-5 py-10 sm:px-10">
-        <div className="w-full max-w-md">{content}</div>
-      </section>
-    </main>
+    <section className="flex min-h-screen flex-1 items-center justify-center px-5 py-10 sm:px-10">
+      {content}
+    </section>
   );
 }

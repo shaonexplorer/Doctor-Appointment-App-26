@@ -8,10 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
-import { z } from 'zod';
 import { LoginSchema, type LoginInput } from '@doctor-appointment-app/shared';
 
 // Extend LoginInput to include rememberMe
@@ -71,7 +69,7 @@ function Field({
 
 function Divider() {
   return (
-    <div className="my-6 flex items-center gap-3 text-xs font-medium text-muted-foreground/60">
+    <div className="my-2 flex items-center gap-3 text-xs font-medium text-muted-foreground/60">
       <Separator className="flex-1" />
       <span>or</span>
       <Separator className="flex-1" />
@@ -97,7 +95,7 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (data: LoginInput) => {
+  const onSubmit = async (data: LoginInput): Promise<void> => {
     setLoading(true);
     try {
       const response = await fetch('/api/auth/login', {
@@ -124,9 +122,9 @@ export default function LoginPage() {
         description: 'You have been signed in successfully.',
       });
 
-      router.push('/dashboard');
+      void router.push('/dashboard');
       router.refresh();
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -143,7 +141,12 @@ export default function LoginPage() {
         <Link href="/" className="flex items-center gap-2.5">
           <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+              />
             </svg>
           </span>
           <span className="text-xl font-bold tracking-tight text-foreground">
@@ -160,6 +163,7 @@ export default function LoginPage() {
         Manage your appointments and stay connected to your care team.
       </p>
 
+      {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-5">
         <Field
           label="Email address"
@@ -198,10 +202,7 @@ export default function LoginPage() {
             />
             Remember me
           </label>
-          <Link
-            href="/forgot-password"
-            className="font-bold text-primary hover:underline"
-          >
+          <Link href="/forgot-password" className="font-bold text-primary hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -209,7 +210,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           disabled={loading}
-          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90 disabled:opacity-60"
+          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-blue-600/90 disabled:opacity-60 dark:bg-blue-600"
           size="lg"
         >
           {loading ? 'Signing in...' : 'Sign in'}
@@ -222,14 +223,14 @@ export default function LoginPage() {
       <Button
         type="button"
         variant="outline"
-        className="flex h-11 items-center justify-center gap-3 rounded-xl border border-input bg-background text-sm font-bold text-foreground hover:bg-muted"
+        className="mx-auto flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-input bg-background text-sm font-bold text-foreground hover:bg-muted"
         size="lg"
       >
         <span className="text-base font-bold text-blue-500">G</span>
         Continue with Google
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="mt-2 text-center text-sm text-muted-foreground">
         New to MediBook?{' '}
         <Link href="/register" className="font-bold text-primary hover:underline">
           Create an account

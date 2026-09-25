@@ -1,61 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, Check, Mail } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { VerifyEmailSchema, type VerifyEmailInput } from '@doctor-appointment-app/shared';
-import { z } from 'zod';
-
-function Field({
-  label,
-  type = 'text',
-  placeholder,
-  icon: Icon,
-  required = true,
-  error,
-  ...props
-}: {
-  label: string;
-  type?: string;
-  placeholder?: string;
-  icon?: typeof Mail;
-  required?: boolean;
-  error?: string;
-} & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
-      <span>
-        {label}
-        {required && <span className="text-muted-foreground/60"> *</span>}
-      </span>
-      <span className="relative">
-        {Icon && (
-          <Icon
-            aria-hidden="true"
-            className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50"
-          />
-        )}
-        <Input
-          type={type}
-          placeholder={placeholder}
-          className={`h-11 w-full rounded-xl border bg-background px-10 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:ring-4 focus:ring-primary/10 ${
-            error ? 'border-destructive focus:border-destructive focus:ring-destructive/10' : 'border-input'
-          }`}
-          style={{ paddingLeft: Icon ? '2.75rem' : undefined }}
-          aria-invalid={!!error}
-          {...props}
-        />
-      </span>
-      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-    </label>
-  );
-}
 
 function AuthShell({
   eyebrow,
@@ -80,12 +29,9 @@ function AuthShell({
 
 export default function VerifyEmailPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState(Array(6).fill(''));
   const [focusedIndex, setFocusedIndex] = useState(0);
-
-  const token = searchParams.get('token') || '';
 
   const handleCodeChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value) || value.length > 1) return;
@@ -148,9 +94,9 @@ export default function VerifyEmailPage() {
         description: 'Your account has been successfully verified.',
       });
 
-      router.push('/login');
+      void router.push('/login');
       router.refresh();
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -186,7 +132,7 @@ export default function VerifyEmailPage() {
         title: 'Code sent',
         description: 'A new verification code has been sent to your email.',
       });
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -227,7 +173,7 @@ export default function VerifyEmailPage() {
             ))}
           </div>
           <Button
-            onClick={onSubmit}
+            onClick={() => void onSubmit()}
             disabled={loading || code.some((c) => !c)}
             className="h-11 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20"
           >
@@ -236,7 +182,7 @@ export default function VerifyEmailPage() {
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Didn't receive a code?{' '}
-            <button onClick={handleResend} className="font-bold text-primary hover:underline">
+            <button onClick={() => void handleResend()} className="font-bold text-primary hover:underline">
               Resend code
             </button>
           </p>
