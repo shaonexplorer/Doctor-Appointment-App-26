@@ -264,6 +264,8 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 
 **Components**: Buttons (Primary/Secondary/Ghost/Destructive), Chips (Available/Pending/Cancelled/Neutral), Form Fields (40px/44px, focus/error rings), Selection Controls (18px, 1.5px border), Medical Cards (1.25rem padding, avatar + status tag), Time Slot Pickers (36px, 6px radius, selected=Primary fill)
 
+**✅ CSS Variables Configured** (2026-09-27): The `globals.css` now correctly maps Clinical Precision colors to HSL CSS variables consumed by Tailwind. All semantic color tokens (`--primary`, `--secondary`, `--tertiary`, `--destructive`, `--background`, `--card`, `--muted`, `--border`, etc.) are properly defined for both light and dark modes. The `tertiary` color is now available as Tailwind utilities (`bg-tertiary`, `text-tertiary`, `border-tertiary`).
+
 ---
 
 ## Security Requirements

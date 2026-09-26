@@ -4,102 +4,128 @@
 
 @layer base {
   .theme {
-    --font-heading: var(--font-sans);
+    --font-heading: var(--font-display);
     --font-sans: var(--font-sans);
   }
 
   :root {
     color-scheme: light;
 
-    --background: oklch(0.978 0.008 230);
-    --foreground: oklch(0.29 0.06 235);
+    /* Clinical Precision Design System - Light Mode */
+    /* Primary: #1E40AF (Clinical Cobalt) -> hsl(225, 83%, 40%) */
+    --primary: 225 83% 40%;
+    --primary-foreground: 0 0% 100%;
 
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.29 0.06 235);
+    /* Secondary: #059669 (Vital Emerald) -> hsl(158, 91%, 31%) */
+    --secondary: 158 91% 31%;
+    --secondary-foreground: 0 0% 100%;
 
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.29 0.06 235);
+    /* Tertiary: #D97706 (Triage Amber) -> hsl(38, 92%, 44%) */
+    --tertiary: 38 92% 44%;
+    --tertiary-foreground: 0 0% 100%;
 
-    --primary: oklch(0.57 0.22 257);
-    --primary-foreground: oklch(1 0 0);
+    /* Destructive: #DC2626 (Critical Red) -> hsl(0, 84%, 51%) */
+    --destructive: 0 84% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --secondary: oklch(0.95 0.015 230);
-    --secondary-foreground: oklch(0.29 0.06 235);
+    /* Neutral: #0F172A (Deep Navy) -> hsl(222, 47%, 11%) */
+    --foreground: 222 47% 11%;
+    --muted-foreground: 222 47% 35%;
 
-    --muted: oklch(0.95 0.015 230);
-    --muted-foreground: oklch(0.57 0.045 230);
+    /* Surfaces */
+    --background: 210 40% 98%;        /* #F8FAFC - Canvas */
+    --card: 0 0% 100%;                /* #FFFFFF - Cards */
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --accent: oklch(0.95 0.025 230);
-    --accent-foreground: oklch(0.29 0.06 235);
+    /* Muted: #F1F5F9 (Panels) -> hsl(210, 40%, 96%) */
+    --muted: 210 40% 96%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: oklch(0.64 0.17 28);
+    /* Borders: #E2E8F0 -> hsl(214, 32%, 91%) */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 225 83% 40%;
 
-    --border: oklch(0.91 0.025 230);
-    --input: oklch(0.91 0.025 230);
-    --ring: oklch(0.57 0.22 257);
+    /* Chart colors using design system palette */
+    --chart-1: 225 83% 40%;   /* Primary Cobalt */
+    --chart-2: 158 91% 31%;   /* Secondary Emerald */
+    --chart-3: 38 92% 44%;    /* Tertiary Amber */
+    --chart-4: 0 84% 51%;     /* Destructive Red */
+    --chart-5: 222 47% 25%;   /* Neutral Navy */
 
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --radius: 0.375rem; /* 6px - base radius per design system */
 
-    --radius: 0.625rem;
-
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    /* Sidebar colors */
+    --sidebar: 210 40% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 225 83% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 225 83% 40%;
   }
 
   .dark {
     color-scheme: dark;
 
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
+    /* Clinical Precision Design System - Dark Mode */
+    /* Primary: #1E40AF -> hsl(225, 83%, 40%) */
+    --primary: 225 83% 40%;
+    --primary-foreground: 0 0% 100%;
 
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
+    /* Secondary: #059669 -> hsl(158, 91%, 31%) */
+    --secondary: 158 91% 31%;
+    --secondary-foreground: 0 0% 100%;
 
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
+    /* Tertiary: #D97706 -> hsl(38, 92%, 44%) */
+    --tertiary: 38 92% 44%;
+    --tertiary-foreground: 0 0% 100%;
 
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
+    /* Destructive: #DC2626 -> hsl(0, 84%, 51%) */
+    --destructive: 0 84% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
+    /* Neutral: #F8FAFC (inverted) */
+    --foreground: 210 40% 98%;
+    --muted-foreground: 210 40% 65%;
 
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
+    /* Surfaces */
+    --background: 222 47% 11%;        /* #0F172A - Deep Navy */
+    --card: 222 47% 15%;              /* Slightly lighter navy for cards */
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 15%;
+    --popover-foreground: 210 40% 98%;
 
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    /* Muted */
+    --muted: 222 47% 18%;
+    --accent: 222 47% 18%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: oklch(0.704 0.191 22.216);
+    /* Borders */
+    --border: 222 47% 20%;
+    --input: 222 47% 20%;
+    --ring: 225 83% 40%;
 
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
+    /* Chart colors */
+    --chart-1: 225 83% 50%;
+    --chart-2: 158 91% 40%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 0 84% 55%;
+    --chart-5: 210 40% 70%;
 
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    /* Sidebar colors */
+    --sidebar: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 225 83% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 47% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 47% 20%;
+    --sidebar-ring: 225 83% 40%;
   }
 
   * {

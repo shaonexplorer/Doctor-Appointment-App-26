@@ -34,7 +34,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </p>
         </div>
 
-        <div className="relative z-10 mx-auto w-full max-w-sm">
+        <div className="relative z-10 w-full max-w-sm">
           <div className="rounded-[2rem] border border-white/20 bg-white/10 p-5 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
