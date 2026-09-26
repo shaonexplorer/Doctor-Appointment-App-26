@@ -9,6 +9,8 @@ export default function DashboardRedirectPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
 
+  console.log('DashboardRedirectPage: user:', user, 'loading:', loading);
+
   useEffect(() => {
     if (!loading && user) {
       switch (user.userType) {
@@ -31,7 +33,7 @@ export default function DashboardRedirectPage() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         <p className="text-muted-foreground">Loading dashboard...</p>

@@ -109,6 +109,23 @@ apps/api/src/
 
 ---
 
+## Phase 2: Doctor Discovery & Patient Portal — Week 5 Started (2026-09-27)
+
+**Specs Created:**
+- `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/plan.md` — 4-week implementation plan
+- `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/requirements.md` — Detailed requirements
+
+**Design Screens Available for Component Extraction:**
+- `screens/Patient Portal/patient-dashboard.tsx` — Dashboard with KPIs, charts, timeline, quick actions
+- `screens/Patient Portal/patient-appointments.tsx` — Tabbed appointments with search, filter, drawer, cancel modal
+- `screens/Patient Portal/patient-portal-shell.tsx` — Full portal layout with sidebar, header, mobile nav
+- `screens/Patient Portal/patient-records.tsx` — Medical records with category nav, prescription list, preview
+- `screens/Patient Portal/patient-profile-settings.tsx` — Profile/settings with form fields, toggles, avatar upload
+
+> **⚠️ STRICT**: Extract reusable components from these screens per the Development Workflow section above.
+
+---
+
 ## Commands
 
 ```bash
@@ -279,6 +296,58 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 
 ---
 
+## ⚠️ STRICT INSTRUCTION: Component Extraction from Design Screens
+
+**When implementing Phase 2 (Doctor Discovery & Patient Portal) features, you MUST extract and reuse components from `screens/Patient Portal/` instead of creating new ones from scratch.**
+
+### Screens Available for Extraction
+
+The following pre-built screens exist in `screens/Patient Portal/` and contain production-ready, design-system-compliant components:
+
+| Screen File | Key Reusable Components |
+|-------------|------------------------|
+| `patient-dashboard.tsx` | `Metric`, `Panel`, `Detail`, `Reminder`, `Action`, `EmptyDashboardState`, `DashboardErrorState`, timeline, charts (PieChart, BarChart) |
+| `patient-appointments.tsx` | `AppointmentCard`, `Status` chip, `AppointmentDrawer`, `CancelModal`, `EmptyState`, tab navigation, search/filter |
+| `patient-portal-shell.tsx` | Sidebar navigation, header with search/notifications/profile, mobile nav, `Brand`, `Metric`, `Activity` |
+| `patient-records.tsx` | Category navigation, `PrescriptionList`, `DocumentPlaceholder`, `PrescriptionPreview`, `Info` cards |
+| `patient-profile-settings.tsx` | `field` input component, `toggle` switch, profile avatar, sections for personal/medical info, notifications, privacy |
+
+### Extraction Rules (MANDATORY)
+
+1. **Before creating ANY new component**, check `screens/Patient Portal/` for existing implementations
+2. **Extract to `apps/web/src/components/`** — Create reusable components in the web app's component library
+3. **Map to Design System** — Ensure extracted components use Clinical Precision tokens from `design.md`:
+   - Colors: Primary (`#1E40AF`), Secondary (`#059669`), Tertiary (`#D97706`), Destructive (`#DC2626`)
+   - Typography: Manrope (headlines), Inter (clinical data)
+   - Elevation: Level 0-3 shadows
+   - Border radius: 6px (slots), 8px (cards), 12px (modals)
+   - Spacing: 8pt rhythm
+4. **Remove hardcoded values** — Replace mock data with props, use TypeScript interfaces
+5. **Add proper accessibility** — ARIA labels, keyboard navigation, focus management
+6. **Make responsive** — Use 4/8/12 column breakpoints per design.md
+
+### Component Mapping for Phase 2 Features
+
+| Phase 2 Feature | Source Screen | Components to Extract |
+|-----------------|---------------|----------------------|
+| Patient Dashboard (Week 7) | `patient-dashboard.tsx` | KPI cards, Timeline, Charts, Quick Actions, Panels |
+| Patient Appointments (Week 7) | `patient-appointments.tsx` | AppointmentCard, Tabs, Search/Filter, Drawer, CancelModal |
+| Doctor Search Results | `patient-portal-shell.tsx` + `patient-dashboard.tsx` | DoctorCard (from Metric/Action), SpecialtyChip, AvailabilityIndicator |
+| Booking Flow Steps | `patient-portal-shell.tsx` (BookingFlow import) | Step indicator, progress bar, confirmation summary |
+| Medical Records | `patient-records.tsx` | CategoryNav, DocumentList, PreviewModal |
+| Profile/Settings | `patient-profile-settings.tsx` | FormField, ToggleSwitch, AvatarUpload, Section |
+
+### Implementation Order
+
+1. **Week 5**: Extract `DoctorCard`, `SpecialtyChip`, `AvailabilityIndicator`, `FeeDisplay` from dashboard/appointment patterns
+2. **Week 6**: Extract `TimeSlotPicker`, `SlotGrid`, `BookingSummary` from portal shell booking flow
+3. **Week 7**: Extract full dashboard, appointments, records components as listed above
+4. **Week 8**: Polish extracted components, add tests, accessibility audit
+
+**DO NOT create duplicate components. DO NOT ignore the design system tokens. ALWAYS extract first, then adapt.**
+
+---
+
 ## References
 
 - `specs/techstack.md` — Complete stack with versions, architecture diagram, migration paths
@@ -286,6 +355,8 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 - `specs/mission.md` — Vision, success metrics, guiding principles
 - `design.md` — **Clinical Precision** design system (colors, typography, layout, elevation, components)
 - `specs/1 - Foundation - 2026-09-17/plan.md` — Phase 1 implementation plan
+- `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/plan.md` — Phase 2 implementation plan
+- `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/requirements.md` — Phase 2 detailed requirements
 
 ## Backend Module Structure
 
