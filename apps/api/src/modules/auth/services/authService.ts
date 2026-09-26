@@ -119,27 +119,44 @@ export class AuthService {
    * Login user
    */
   async login(data: LoginInput): Promise<AuthResult> {
-    const result = await auth.api.signInEmail({
-      body: { email: data.email, password: data.password },
-    });
+    let signInResult;
+    try {
+      const result = await auth.api.signInEmail({
+        body: { email: data.email, password: data.password },
+      });
 
-    // BetterAuth signInEmail returns { user, token, redirect, url }
-    // Token is at the top level, not in session
-    const signInResult = result as {
-      user: { id: string; email: string; emailVerified: boolean };
-      token: string;
-      redirect: boolean;
-      url?: string;
-    };
+      // BetterAuth signInEmail returns { user, token, redirect, url }
+      // Token is at the top level, not in session
+      signInResult = result as {
+        user: { id: string; email: string; emailVerified: boolean };
+        token: string;
+        redirect: boolean;
+        url?: string;
+      };
+    } catch (error) {
+      // Handle BetterAuth errors for unverified email
+      if (error instanceof Error) {
+        // Check for email not verified error
+        if (error.message.includes('Email not verified') || error.message.includes('email_verified')) {
+          throw new AppError('EMAIL_NOT_VERIFIED', 'Please verify your email before logging in', 400);
+        }
+        // Check for invalid credentials
+        if (error.message.includes('Invalid') || error.message.includes('incorrect') || error.message.includes('wrong')) {
+          throw new AppError('INVALID_CREDENTIALS', 'Invalid email or password', 401);
+        }
+      }
+      // Re-throw other errors
+      throw error;
+    }
 
     // Get session details from database using the token
     const session = await prisma.session.findUnique({
-      where: { token: signInResult.token },
+      where: { token: signInResult!.token },
     });
 
     // Fetch full user data from database to get additional fields
     const user = await prisma.user.findUnique({
-      where: { id: signInResult.user.id },
+      where: { id: signInResult!.user.id },
       select: {
         id: true,
         email: true,
@@ -165,7 +182,7 @@ export class AuthService {
       },
       session: {
         id: session?.id || '',
-        token: signInResult.token,
+        token: signInResult!.token,
         expiresAt: session?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     };
@@ -270,6 +287,8 @@ export class AuthService {
   async verifyEmail(data: VerifyEmailInput): Promise<void> {
     try {
       const rawData = data as Record<string, unknown>;
+      let email: string | null = null;
+      let verificationMethod = 'unknown';
 
       // Check for discriminated union format with 'method' field
       if ('method' in rawData) {
@@ -277,14 +296,16 @@ export class AuthService {
         if (method === 'token' && 'token' in rawData && typeof rawData.token === 'string') {
           // Legacy token-based verification
           console.log('Using legacy token verification');
+          verificationMethod = 'token';
           await (auth.api as any).verifyEmail({
             body: { token: rawData.token },
           });
-          return;
-        }
-        if (method === 'otp' && 'email' in rawData && 'otp' in rawData) {
+          // Get email from the user lookup (we'll need to find it)
+        } else if (method === 'otp' && 'email' in rawData && 'otp' in rawData) {
           // New OTP-based verification - use email-otp plugin endpoint
-          console.log('Using OTP verification for email:', rawData.email);
+          email = rawData.email as string;
+          verificationMethod = 'otp';
+          console.log('Using OTP verification for email:', email);
           try {
             // Try email-otp plugin method first
             console.log('Trying auth.api.emailOtp.verifyEmail...');
@@ -299,33 +320,55 @@ export class AuthService {
               body: { email: rawData.email, otp: rawData.otp },
             });
           }
-          return;
         }
-      }
-
-      // Backward compatibility: handle legacy format without 'method' field
-      if ('token' in rawData && typeof rawData.token === 'string') {
-        await (auth.api as any).verifyEmail({
-          body: { token: rawData.token },
-        });
-        return;
-      }
-      if ('email' in rawData && 'otp' in rawData && typeof rawData.email === 'string' && typeof rawData.otp === 'string') {
-        // New OTP-based verification
-        console.log('Using OTP verification (no method field) for email:', rawData.email);
-        try {
-          await (auth.api as any).emailOtp?.verifyEmail?.({
-            body: { email: rawData.email, otp: rawData.otp },
-          });
-        } catch {
+      } else {
+        // Backward compatibility: handle legacy format without 'method' field
+        if ('token' in rawData && typeof rawData.token === 'string') {
           await (auth.api as any).verifyEmail({
-            body: { email: rawData.email, otp: rawData.otp },
+            body: { token: rawData.token },
           });
+        } else if ('email' in rawData && 'otp' in rawData && typeof rawData.email === 'string' && typeof rawData.otp === 'string') {
+          email = rawData.email as string;
+          verificationMethod = 'otp';
+          console.log('Using OTP verification (no method field) for email:', email);
+          try {
+            await (auth.api as any).emailOtp?.verifyEmail?.({
+              body: { email: rawData.email, otp: rawData.otp },
+            });
+          } catch {
+            await (auth.api as any).verifyEmail({
+              body: { email: rawData.email, otp: rawData.otp },
+            });
+          }
+        } else {
+          throw new AppError('INVALID_INPUT', 'Invalid verification data', 400);
         }
-        return;
       }
 
-      throw new AppError('INVALID_INPUT', 'Invalid verification data', 400);
+      // CRITICAL: After successful verification, ensure user's emailVerified is updated in database
+      // The BetterAuth email-otp plugin should do this, but if it doesn't, we need to do it manually
+      if (email) {
+        console.log('Ensuring emailVerified is set to true for:', email);
+        const user = await prisma.user.findUnique({
+          where: { email: email.toLowerCase() },
+          select: { id: true, emailVerified: true },
+        });
+
+        if (user && !user.emailVerified) {
+          console.log('User emailVerified was false, updating to true...');
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: true },
+          });
+          console.log('User emailVerified updated successfully');
+        } else if (user) {
+          console.log('User emailVerified already true');
+        } else {
+          console.warn('User not found for email:', email);
+        }
+      }
+
+      return;
     } catch (error) {
       console.error('Verify email error:', error);
       // Log the actual error for debugging
