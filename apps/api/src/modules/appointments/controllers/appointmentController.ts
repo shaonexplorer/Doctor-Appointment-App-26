@@ -7,6 +7,7 @@ import type { Response, NextFunction } from 'express';
 import type { AppointmentService } from '../services/appointmentService';
 import { buildSuccessResponse, buildPaginatedResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
+import type { AppointmentFilters, TimelineQuery } from '../validators';
 
 export class AppointmentController {
   constructor(private appointmentService: AppointmentService) {}
@@ -18,7 +19,7 @@ export class AppointmentController {
   bookAppointment = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as AppointmentFilters;
 
       const appointment = await this.appointmentService.bookAppointment(
         req.user!.id,
@@ -54,7 +55,7 @@ export class AppointmentController {
   updateAppointment = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as AppointmentFilters;
 
       const appointment = await this.appointmentService.updateAppointment(
         req.params.id,
@@ -109,7 +110,7 @@ export class AppointmentController {
   listAppointments = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedQuery = req.validatedQuery;
+      const validatedQuery = req.validatedQuery as AppointmentFilters;
 
       const result = await this.appointmentService.listAppointments(
         validatedQuery,
@@ -219,7 +220,7 @@ export class AppointmentController {
    */
   getMedicalTimeline = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const validatedQuery = req.validatedQuery;
+      const validatedQuery = req.validatedQuery as TimelineQuery;
       const query = {
         page: validatedQuery.page,
         limit: validatedQuery.limit,
