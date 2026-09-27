@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { CalendarDays, Check, Download, FileText, MapPin, ShieldCheck, Stethoscope, X } from "lucide-react";
+import { CalendarDays, Check, Download, FileText, MapPin, ShieldCheck, Stethoscope, Video, X } from "lucide-react";
 
 export interface AppointmentDrawerProps {
   isOpen: boolean;
@@ -60,8 +60,14 @@ export function AppointmentDrawer({
 
   const consultationTypeLabels = {
     IN_PERSON: "In-person visit",
-    VIDEO: "Video consultation",
+    VIDEO: "Video visit",
     PHONE: "Phone consultation",
+  };
+
+  const consultationTypeIcons = {
+    IN_PERSON: MapPin,
+    VIDEO: Video,
+    PHONE: Stethoscope,
   };
 
   const defaultTimeline = [
@@ -94,10 +100,10 @@ export function AppointmentDrawer({
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">Appointment details</p>
+            <p className="text-xs font-black uppercase tracking-wider text-primary">Appointment details</p>
             <h2 className="mt-2 text-2xl font-black">{appointment.doctor}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {appointment.specialty} · {appointment.id}
+              {appointment.specialty} &middot; {appointment.id}
             </p>
           </div>
           <button
@@ -112,10 +118,10 @@ export function AppointmentDrawer({
 
         {/* Info Grid */}
         <div className="mt-7 grid gap-3 sm:grid-cols-2">
-          <InfoCard icon={CalendarDays} label="Date & time" value={`${formatDate(appointment.date)} · ${formatTime(appointment.time)}`} />
+          <InfoCard icon={CalendarDays} label="Date & time" value={`${formatDate(appointment.date)} &middot; ${formatTime(appointment.time)}`} />
           <InfoCard icon={MapPin} label="Clinic" value={appointment.clinic} />
           <InfoCard
-            icon={Stethoscope}
+            icon={consultationTypeIcons[appointment.consultationType] || Stethoscope}
             label="Visit type"
             value={consultationTypeLabels[appointment.consultationType]}
           />
@@ -140,14 +146,14 @@ export function AppointmentDrawer({
         </div>
 
         {/* Symptoms Section */}
-        <Section title="Reason for visit">
+        <Section title="Patient symptoms">
           <p className="text-sm leading-6 text-muted-foreground">{appointment.symptoms || "Not specified"}</p>
         </Section>
 
         {/* Doctor Information */}
         <Section title="Doctor information">
           <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-full bg-blue-100 text-primary">
+            <div className="grid size-11 place-items-center rounded-full bg-[#dce8ff] text-sm font-black text-primary">
               {appointment.doctorAvatar ? (
                 <img src={appointment.doctorAvatar} alt="" className="size-full rounded-full object-cover" />
               ) : (
@@ -155,10 +161,9 @@ export function AppointmentDrawer({
               )}
             </div>
             <div>
-              <p className="text-sm font-bold">{appointment.doctor}</p>
+              <p className="text-sm font-black">{appointment.doctor}</p>
               <p className="text-xs text-muted-foreground">
-                Verified {appointment.specialty} specialist
-                {appointment.doctorRating && ` · ${appointment.doctorRating} rating`}
+                Verified {appointment.specialty} specialist &middot; 4.9 rating
               </p>
             </div>
           </div>
@@ -172,7 +177,7 @@ export function AppointmentDrawer({
                 <div
                   className={cn(
                     "grid size-7 place-items-center rounded-full",
-                    item.current ? "bg-primary text-primary-foreground" : item.completed ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"
+                    item.current ? "bg-primary text-primary-foreground" : item.completed ? "bg-secondary text-primary" : "bg-secondary text-primary"
                   )}
                 >
                   <Check className="size-3" aria-hidden="true" />
@@ -220,7 +225,15 @@ export function AppointmentDrawer({
   );
 }
 
-function InfoCard({ icon: Icon, label, value }: { icon: typeof CalendarDays; label: string; value: string | React.ReactNode }) {
+function InfoCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof CalendarDays;
+  label: string;
+  value: string | React.ReactNode;
+}) {
   return (
     <div className="rounded-xl bg-secondary p-3">
       <div className="flex items-center gap-2">
@@ -244,13 +257,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function getStatusColors(status: string) {
   switch (status) {
     case "Confirmed":
-      return "bg-green-100 text-green-700";
+      return "bg-primary/10 text-primary";
     case "Completed":
-      return "bg-blue-100 text-blue-700";
+      return "bg-primary/10 text-primary";
     case "Cancelled":
-      return "bg-orange-100 text-orange-700";
+      return "bg-[#fff2ef] text-[#b86f63]";
     case "Scheduled":
-      return "bg-blue-100 text-blue-700";
+      return "bg-primary/10 text-primary";
     default:
       return "bg-secondary text-muted-foreground";
   }
@@ -259,11 +272,11 @@ function getStatusColors(status: string) {
 function getPaymentColors(payment: string) {
   switch (payment) {
     case "Paid":
-      return "bg-green-100 text-green-700";
+      return "bg-[#e6f7ef] text-[#278e70]";
     case "Refunded":
-      return "bg-green-100 text-green-700";
+      return "bg-[#e6f7ef] text-[#278e70]";
     case "Pending":
-      return "bg-yellow-100 text-yellow-700";
+      return "bg-[#fff3e7] text-[#b97932]";
     default:
       return "bg-secondary text-muted-foreground";
   }

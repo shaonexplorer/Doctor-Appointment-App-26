@@ -21,6 +21,7 @@ export interface AppointmentCardProps {
   onCancel?: () => void;
   onReschedule?: () => void;
   onDownloadPrescription?: () => void;
+  onNotice?: (message: string) => void;
   className?: string;
 }
 
@@ -30,19 +31,20 @@ export function AppointmentCard({
   onCancel,
   onReschedule,
   onDownloadPrescription,
+  onNotice,
   className,
 }: AppointmentCardProps) {
   const statusConfig = {
-    Confirmed: { bg: "bg-green-100", text: "text-green-700", icon: Check },
-    Completed: { bg: "bg-blue-100", text: "text-blue-700", icon: Check },
-    Cancelled: { bg: "bg-orange-100", text: "text-orange-700", icon: Clock3 },
-    Scheduled: { bg: "bg-blue-100", text: "text-blue-700", icon: CalendarDays },
+    Confirmed: { bg: "bg-[#e9f8f3]", text: "text-[#218765]", icon: Check },
+    Completed: { bg: "bg-[#eaf1ff]", text: "text-primary", icon: Check },
+    Cancelled: { bg: "bg-[#fff2ef]", text: "text-[#b86f63]", icon: Clock3 },
+    Scheduled: { bg: "bg-[#eaf1ff]", text: "text-primary", icon: CalendarDays },
   };
 
   const paymentConfig = {
     Pending: { text: "text-foreground" },
-    Paid: { text: "text-green-700" },
-    Refunded: { text: "text-green-700" },
+    Paid: { text: "text-[#218765]" },
+    Refunded: { text: "text-[#218765]" },
   };
 
   const StatusConfig = statusConfig[appointment.status] || statusConfig.Scheduled;
@@ -59,7 +61,7 @@ export function AppointmentCard({
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
         <div className="flex min-w-0 flex-1 items-start gap-3">
-          <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-100 text-primary">
+          <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#eaf1ff] text-primary">
             <CalendarDays className="size-5" aria-hidden="true" />
           </div>
           <div className="min-w-0">
@@ -78,7 +80,7 @@ export function AppointmentCard({
             </div>
             <p className="mt-1 text-xs font-semibold text-primary">{appointment.specialty}</p>
             <p className="mt-2 text-xs text-muted-foreground">
-              {appointment.date} · {appointment.time}
+              {appointment.date} &middot; {appointment.time}
             </p>
             <p className="mt-1 truncate text-xs text-muted-foreground">{appointment.clinic}</p>
           </div>
@@ -118,7 +120,7 @@ export function AppointmentCard({
                   <button
                     type="button"
                     onClick={onCancel}
-                    className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
+                    className="rounded-lg border border-[#efd3ce] px-3 py-2 text-xs font-bold text-[#b86f63] hover:bg-[#fff8f6]"
                   >
                     Cancel
                   </button>
