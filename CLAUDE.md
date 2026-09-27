@@ -121,6 +121,11 @@ apps/api/src/
 - `screens/Patient Portal/patient-portal-shell.tsx` — Full portal layout with sidebar, header, mobile nav
 - `screens/Patient Portal/patient-records.tsx` — Medical records with category nav, prescription list, preview
 - `screens/Patient Portal/patient-profile-settings.tsx` — Profile/settings with form fields, toggles, avatar upload
+- `screens/Patient Portal/booking-flow.tsx` — 5-step booking flow with stepper, date/time picker, symptoms, confirmation
+- `screens/Patient Portal/doctor-profile.tsx` — Doctor profile with hero, about, schedule calendar, reviews
+- `screens/Patient Portal/find-doctors.tsx` — Doctor search with filters, grid/list view, empty state
+- `screens/Patient Portal/global-search.tsx` — Command palette (⌘K) with role-based results
+- `screens/Patient Portal/notification-center.tsx` — Notifications with tabs, filters, preferences
 
 > **⚠️ STRICT**: Extract reusable components from these screens per the Development Workflow section above.
 
@@ -132,6 +137,21 @@ apps/api/src/
 - [x] All 8 reusable components extracted: `DoctorCard`, `SpecialtyChip`, `AvailabilityIndicator`, `FeeDisplay`, `SearchInput`, `FilterSidebar`, `LoadingSkeleton`, `EmptyState`
 - [x] Doctor Search Page with infinite scroll/pagination
 - [x] Doctor Detail Page with hero, about, schedule calendar, time slot picker
+
+**Week 6-7 Deliverables Complete (2026-09-27):**
+- [x] **Patient Dashboard** (`/patient/dashboard`) — KPI cards, charts (Pie/Bar), timeline, prescriptions, quick actions
+- [x] **Patient Appointments** (`/patient/appointments`) — Tabs, search/filter, drawer, cancel/reschedule modals
+- [x] **Patient Records** (`/patient/records`) — Category nav, prescription list, preview modal
+- [x] **Patient Profile** (`/patient/profile`) — Personal/medical info, avatar upload
+- [x] **Patient Settings** (`/patient/settings`) — Account, notifications, privacy
+- [x] **Patient Notifications** (`/patient/notifications`) — Notification center with preferences
+- [x] **Booking Flow** (`/doctors/[id]/book`) — 5-step flow: Doctor → Date/Time → Symptoms → Confirmation → Success
+- [x] **Doctor Profile** (`/doctors/[id]`) — Hero, about, clinic info, schedule calendar, reviews
+- [x] **Find Doctors** (`/doctors/search`) — Search, filters (sidebar/mobile), grid/list view, pagination
+- [x] **Global Search** — Command palette (⌘K) with recent searches, categorized results
+- [x] **PatientPortalShell** — Internal navigation via routeMap, auto-detects active page from pathname
+- [x] All routes consolidated under `/patient/*` and `/doctors/*` for consistency
+- [x] Extracted 30+ reusable components across: `patient-dashboard`, `patient-portal`, `appointments`, `patient-records`, `patient-profile`, `booking-flow`, `doctor-profile`, `find-doctors`, `notification-center`
 
 ---
 
@@ -305,6 +325,12 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 3. **Frontend** — Build UI with Server Components, use Server Actions for mutations
 4. **Shared types** — Keep in sync via `packages/shared`; import in both apps
 
+**Patient Portal Navigation (Updated 2026-09-27):**
+- `PatientPortalShell` now handles navigation internally via `routeMap` (no `onNavigate` prop needed)
+- Active page auto-detected from `pathname` if not provided
+- Pages simply use `<PatientPortalShell active="Label">` without `onNavigate` callback
+- Route mapping defined in `apps/web/src/components/patient-portal/PatientPortalShell.tsx`
+
 ---
 
 ## ⚠️ STRICT INSTRUCTION: Component Extraction from Design Screens
@@ -368,6 +394,21 @@ The following pre-built screens exist in `screens/Patient Portal/` and contain p
 - `specs/1 - Foundation - 2026-09-17/plan.md` — Phase 1 implementation plan
 - `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/plan.md` — Phase 2 implementation plan
 - `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/requirements.md` — Phase 2 detailed requirements
+- `screens/Patient Portal/` — Design screens for component extraction (10 screens)
+
+## Patient Portal Routes (Active)
+
+| Route | Page | Shell Active Label |
+|-------|------|-------------------|
+| `/patient/dashboard` | Patient Dashboard | `Dashboard` |
+| `/patient/appointments` | Appointments | `Appointments` |
+| `/patient/records` | Medical Records | `Medical Records` |
+| `/patient/profile` | Profile | `Profile` |
+| `/patient/settings` | Settings | `Settings` |
+| `/patient/notifications` | Notification Center | `Notifications` |
+| `/doctors/search` | Find Doctors | `Find Doctors` |
+| `/doctors/[id]` | Doctor Profile | `Doctor Profile` |
+| `/doctors/[id]/book` | Booking Flow | `Book Appointment` |
 
 ## Backend Module Structure
 
