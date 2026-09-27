@@ -18,6 +18,7 @@ export interface DoctorProfile {
   bio: string | null;
   fee: number;
   isVerified: boolean;
+  searchVector: string | null;
   createdAt: Date;
   updatedAt: Date;
   user?: {
@@ -26,26 +27,50 @@ export interface DoctorProfile {
     firstName: string;
     lastName: string;
     phone: string | null;
+    userType: string;
     emailVerified: boolean;
   };
+  schedules?: Array<{
+    id: string;
+    doctorId: string;
+    startTime: Date;
+    endTime: Date;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
 }
 
 export interface DoctorSearchResult {
   id: string;
+  userId: string;
   specialty: string;
   designation: string;
   licenseNo: string;
   bio: string | null;
   fee: number;
   isVerified: boolean;
+  searchVector: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   user: {
     id: string;
     email: string;
     firstName: string;
     lastName: string;
     phone: string | null;
+    userType: string;
     emailVerified: boolean;
   };
+  schedules?: Array<{
+    id: string;
+    doctorId: string;
+    startTime: Date;
+    endTime: Date;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
 }
 
 export interface DoctorSchedule {
@@ -55,6 +80,7 @@ export interface DoctorSchedule {
   endTime: Date;
   status: string;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export type { DoctorSearchFilters, DoctorProfileCreateInput, DoctorProfileUpdateInput };

@@ -15,6 +15,34 @@ import type {
   VerifyEmailInput,
   ChangePasswordInput,
 } from '../types';
+import { config } from '../../../shared/config';
+
+/**
+ * Set session cookie on response
+ */
+function setSessionCookie(res: Response, token: string) {
+  const cookieOptions = {
+    httpOnly: config.cookie.httpOnly,
+    secure: config.cookie.secure,
+    sameSite: config.cookie.sameSite,
+    path: config.cookie.path,
+    maxAge: config.cookie.maxAge,
+  };
+  res.cookie('session_token', token, cookieOptions);
+}
+
+/**
+ * Clear session cookie on response
+ */
+function clearSessionCookie(res: Response) {
+  const cookieOptions = {
+    httpOnly: config.cookie.httpOnly,
+    secure: config.cookie.secure,
+    sameSite: config.cookie.sameSite,
+    path: config.cookie.path,
+  };
+  res.clearCookie('session_token', cookieOptions);
+}
 
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -29,6 +57,9 @@ export class AuthController {
       const validatedData = req.validatedData as RegisterInput;
 
       const result = await this.authService.register(validatedData);
+
+      // Set session cookie
+      setSessionCookie(res, result.session.token);
 
       res.status(201).json(
         buildSuccessResponse({
@@ -50,6 +81,9 @@ export class AuthController {
       const validatedData = req.validatedData as LoginInput;
 
       const result = await this.authService.login(validatedData);
+
+      // Set session cookie
+      setSessionCookie(res, result.session.token);
 
       res.json(
         buildSuccessResponse({
@@ -73,6 +107,9 @@ export class AuthController {
       if (sessionToken) {
         await this.authService.logout(sessionToken);
       }
+
+      // Clear session cookie
+      clearSessionCookie(res);
 
       res.json(buildSuccessResponse({ message: 'Logged out successfully' }));
     } catch (error) {

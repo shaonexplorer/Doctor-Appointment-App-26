@@ -80,18 +80,21 @@ model User {
 }
 
 model DoctorProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  specialty   String
-  designation String
-  licenseNo   String   @unique
-  bio         String?
-  fee         Decimal  @db.Decimal(10, 2)
-  schedules   Schedule[]
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty    String
+  designation  String
+  licenseNo    String   @unique
+  bio          String?
+  fee          Decimal  @db.Decimal(10, 2)
+  isVerified   Boolean  @default(false)
+  searchVector String?  @db.Text // tsvector stored as text, managed via trigger
+  schedules    Schedule[]
 
   @@index([specialty])
   @@index([licenseNo])
+  @@index([isVerified])
 }
 
 model PatientProfile {

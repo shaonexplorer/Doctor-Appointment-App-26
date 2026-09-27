@@ -109,7 +109,7 @@ apps/api/src/
 
 ---
 
-## Phase 2: Doctor Discovery & Patient Portal — Week 5 Started (2026-09-27)
+## Phase 2: Doctor Discovery & Patient Portal — Week 5 COMPLETED ✅ (2026-09-27)
 
 **Specs Created:**
 - `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/plan.md` — 4-week implementation plan
@@ -123,6 +123,15 @@ apps/api/src/
 - `screens/Patient Portal/patient-profile-settings.tsx` — Profile/settings with form fields, toggles, avatar upload
 
 > **⚠️ STRICT**: Extract reusable components from these screens per the Development Workflow section above.
+
+**Week 5 Deliverables Complete:**
+- [x] Doctor profile CRUD operations (Admin/Staff create, Doctor updates own)
+- [x] Full-text search across name, specialty, designation, symptoms
+- [x] Doctor listing with filters (specialty, availability, fee range)
+- [x] PostgreSQL full-text search setup with materialized views
+- [x] All 8 reusable components extracted: `DoctorCard`, `SpecialtyChip`, `AvailabilityIndicator`, `FeeDisplay`, `SearchInput`, `FilterSidebar`, `LoadingSkeleton`, `EmptyState`
+- [x] Doctor Search Page with infinite scroll/pagination
+- [x] Doctor Detail Page with hero, about, schedule calendar, time slot picker
 
 ---
 

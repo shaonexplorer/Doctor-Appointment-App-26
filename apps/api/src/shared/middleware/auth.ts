@@ -5,6 +5,7 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import { auth } from '../../index';
+import { prisma } from '../../index';
 import { UserType } from '@doctor-appointment-app/shared';
 import { AppError } from './errorHandler';
 
@@ -23,6 +24,7 @@ export interface AuthenticatedRequest extends Request {
     expiresAt: Date;
   };
   validatedData?: unknown;
+  validatedQuery?: unknown;
 }
 
 export async function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -35,14 +37,39 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
     let user = null;
 
     if (sessionCookie) {
-      // Validate session via BetterAuth
+      // First try BetterAuth's getSession (for sessions created via BetterAuth handler)
       const result = await auth.api.getSession({
         headers: new Headers({
           cookie: `session_token=${sessionCookie}`,
         }),
       });
-      session = result?.session;
-      user = result?.user;
+
+      if (result?.session && result?.user) {
+        session = result.session;
+        user = result.user;
+      } else {
+        // Fallback: Query database directly for sessions created via custom login
+        const dbSession = await prisma.session.findUnique({
+          where: { token: sessionCookie },
+          include: { user: true },
+        });
+
+        if (dbSession && dbSession.user) {
+          session = {
+            id: dbSession.id,
+            userId: dbSession.userId,
+            expiresAt: dbSession.expiresAt,
+          };
+          user = {
+            id: dbSession.user.id,
+            email: dbSession.user.email,
+            firstName: dbSession.user.firstName,
+            lastName: dbSession.user.lastName,
+            userType: dbSession.user.userType,
+            emailVerified: dbSession.user.emailVerified,
+          };
+        }
+      }
     } else if (accessToken) {
       // Try JWT token validation
       const result = await auth.api.getSession({

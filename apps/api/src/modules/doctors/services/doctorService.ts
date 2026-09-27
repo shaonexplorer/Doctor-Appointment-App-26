@@ -23,7 +23,32 @@ export class DoctorService {
   async searchDoctors(
     filters: DoctorSearchFilters
   ): Promise<{ data: DoctorSearchResult[]; meta: { total: number; totalPages: number } }> {
-    return this.doctorRepository.search(filters);
+    const result = await this.doctorRepository.search(filters);
+    return {
+      data: result.data.map(this.mapToSearchResult),
+      meta: result.meta,
+    };
+  }
+
+  /**
+   * Full-text search doctors (dedicated search endpoint)
+   * Uses PostgreSQL tsvector/tsquery with materialized view for performance
+   */
+  async fullTextSearchDoctors(
+    filters: DoctorSearchFilters
+  ): Promise<{ data: DoctorSearchResult[]; meta: { total: number; totalPages: number } }> {
+    const result = await this.doctorRepository.fullTextSearch(filters);
+    return {
+      data: result.data.map(this.mapToSearchResult),
+      meta: result.meta,
+    };
+  }
+
+  private mapToSearchResult(doctor: any): DoctorSearchResult {
+    return {
+      ...doctor,
+      fee: typeof doctor.fee === 'object' && doctor.fee !== null ? Number(doctor.fee) : Number(doctor.fee),
+    };
   }
 
   /**
@@ -34,7 +59,10 @@ export class DoctorService {
     if (!doctor) {
       throw new AppError('NOT_FOUND', 'Doctor not found', 404);
     }
-    return doctor;
+    return {
+      ...doctor,
+      fee: typeof doctor.fee === 'object' && doctor.fee !== null ? Number(doctor.fee) : Number(doctor.fee),
+    };
   }
 
   /**
@@ -45,7 +73,10 @@ export class DoctorService {
     if (!doctor) {
       throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
     }
-    return doctor;
+    return {
+      ...doctor,
+      fee: typeof doctor.fee === 'object' && doctor.fee !== null ? Number(doctor.fee) : Number(doctor.fee),
+    };
   }
 
   /**
@@ -70,9 +101,13 @@ export class DoctorService {
       designation: data.designation,
       licenseNo: data.licenseNo,
       bio: data.bio ?? null,
-      fee: data.fee, // Prisma will convert number to Decimal automatically
+      fee: data.fee,
     };
-    return this.doctorRepository.create(createData);
+    const created = await this.doctorRepository.create(createData);
+    return {
+      ...created,
+      fee: typeof created.fee === 'object' && created.fee !== null ? Number(created.fee) : Number(created.fee),
+    } as DoctorProfile;
   }
 
   /**
@@ -98,16 +133,21 @@ export class DoctorService {
     if (data.designation !== undefined) updateData.designation = data.designation;
     if (data.licenseNo !== undefined) updateData.licenseNo = data.licenseNo;
     if (data.bio !== undefined) updateData.bio = data.bio;
-    if (data.fee !== undefined) updateData.fee = data.fee; // Prisma will convert number to Decimal automatically
+    if (data.fee !== undefined) updateData.fee = data.fee;
 
-    return this.doctorRepository.update(userId, updateData);
+    const updated = await this.doctorRepository.update(userId, updateData);
+    return {
+      ...updated,
+      fee: typeof updated.fee === 'object' && updated.fee !== null ? Number(updated.fee) : Number(updated.fee),
+    } as DoctorProfile;
   }
 
   /**
    * Get doctor schedule
    */
   async getSchedule(doctorId: string, startDate?: Date, endDate?: Date): Promise<DoctorSchedule[]> {
-    return this.doctorRepository.getSchedule(doctorId, startDate, endDate);
+    const schedules = await this.doctorRepository.getSchedule(doctorId, startDate, endDate);
+    return schedules as DoctorSchedule[];
   }
 }
 

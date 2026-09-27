@@ -9,6 +9,7 @@ import { requireRole } from '../../../shared/middleware/auth';
 import { UserType } from '@doctor-appointment-app/shared';
 import { buildSuccessResponse, buildPaginatedResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
+import type { DoctorSearchFilters, DoctorProfileCreateInput, DoctorProfileUpdateInput } from '../types';
 
 export class DoctorController {
   constructor(private doctorService: DoctorService) {}
@@ -20,9 +21,27 @@ export class DoctorController {
   searchDoctors = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedQuery = req.validatedQuery;
+      const validatedQuery = req.validatedQuery as DoctorSearchFilters;
 
       const result = await this.doctorService.searchDoctors(validatedQuery);
+      res.json(
+        buildSuccessResponse(buildPaginatedResponse(result.data, validatedQuery, result.meta.total))
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Full-text search doctors (public)
+   * GET /api/doctors/search
+   */
+  fullTextSearchDoctors = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      // Validation is handled by middleware
+      const validatedQuery = req.validatedQuery as DoctorSearchFilters;
+
+      const result = await this.doctorService.fullTextSearchDoctors(validatedQuery);
       res.json(
         buildSuccessResponse(buildPaginatedResponse(result.data, validatedQuery, result.meta.total))
       );
@@ -51,7 +70,7 @@ export class DoctorController {
   createProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as DoctorProfileCreateInput;
 
       const profile = await this.doctorService.createProfile(req.user!.id, validatedData);
       res.status(201).json(buildSuccessResponse(profile));
@@ -80,7 +99,7 @@ export class DoctorController {
   updateMyProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as DoctorProfileUpdateInput;
 
       const profile = await this.doctorService.updateProfile(req.user!.id, validatedData);
       res.json(buildSuccessResponse(profile));

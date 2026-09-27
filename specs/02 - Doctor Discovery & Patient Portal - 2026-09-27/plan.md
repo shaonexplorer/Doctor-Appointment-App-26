@@ -25,36 +25,36 @@ Enable patients to find and book doctors through a comprehensive discovery and b
 
 ---
 
-## Week 5: Doctor Profile Management & Search Infrastructure
+## Week 5: Doctor Profile Management & Search Infrastructure ✅ COMPLETED
 
 ### Goals
-- [ ] Doctor profile CRUD operations (Admin/Staff create, Doctor updates own)
-- [ ] Full-text search across name, specialty, designation, symptoms
-- [ ] Doctor listing with filters (specialty, availability, fee range)
-- [ ] PostgreSQL full-text search setup with materialized views
+- [x] Doctor profile CRUD operations (Admin/Staff create, Doctor updates own)
+- [x] Full-text search across name, specialty, designation, symptoms
+- [x] Doctor listing with filters (specialty, availability, fee range)
+- [x] PostgreSQL full-text search setup with materialized views
 
 ### Backend Tasks
 
 #### 1. Doctor Module (`apps/api/src/modules/doctors/`)
-- [ ] Create module structure: types, validators, services, controllers, routes
-- [ ] Implement `DoctorProfileService` with:
+- [x] Create module structure: types, validators, services, controllers, routes
+- [x] Implement `DoctorProfileService` with:
   - `createProfile()` — Admin/Staff only
   - `updateOwnProfile()` — Doctor only
   - `getProfileById()` — Public with schedule preview
   - `searchDoctors()` — Full-text search with filters
   - `listDoctors()` — Paginated listing with filters
-- [ ] Add Zod validators for:
+- [x] Add Zod validators for:
   - Profile create/update (specialty, designation, experience, fee, bio, clinic address)
   - Search query params (q, specialty, minFee, maxFee, availability, page, limit)
-- [ ] Implement PostgreSQL full-text search using `tsvector`/`tsquery`
-- [ ] Create materialized view for optimized search performance
-- [ ] Add database indexes on searchable columns
+- [x] Implement PostgreSQL full-text search using `tsvector`/`tsquery`
+- [x] Create materialized view for optimized search performance
+- [x] Add database indexes on searchable columns
 
 #### 2. Database Schema Updates
-- [ ] Verify `DoctorProfile` model has all required fields
-- [ ] Add `search_vector` tsvector column for full-text search
-- [ ] Create GIN index on search_vector
-- [ ] Add trigger to auto-update search_vector on profile changes
+- [x] Verify `DoctorProfile` model has all required fields
+- [x] Add `search_vector` tsvector column for full-text search
+- [x] Create GIN index on search_vector
+- [x] Add trigger to auto-update search_vector on profile changes
 
 #### 3. API Endpoints
 ```
@@ -69,26 +69,26 @@ GET    /api/doctors/profile/me         # Get own profile (Doctor)
 ### Frontend Tasks (Component Extraction from `screens/Patient Portal/`)
 
 #### 1. Extract & Adapt Reusable Components → `apps/web/src/components/`
-- [ ] **`DoctorCard`** — Extract from `patient-dashboard.tsx` `Metric` + `Action` patterns; props: photo, name, designation, specialty, rating, fee, nextAvailableSlot, onClick
-- [ ] **`SpecialtyChip`** — Extract from `patient-appointments.tsx` `Status` chip pattern; variants: specialty colors per design.md, size: sm/md
-- [ ] **`AvailabilityIndicator`** — Extract from `patient-dashboard.tsx` status indicators; real-time dot with pulse animation, states: available/pending/unavailable
-- [ ] **`FeeDisplay`** — Extract from `patient-dashboard.tsx` metric value formatting; formatted currency with consultation type label
-- [ ] **`SearchInput`** — Extract from `patient-portal-shell.tsx` `GlobalSearch` + `patient-appointments.tsx` search; debounced, with filter trigger
-- [ ] **`FilterSidebar`** — Extract from `patient-appointments.tsx` filter pattern; multi-select specialty, fee range slider, availability toggle
-- [ ] **`LoadingSkeleton`** — Extract from `patient-dashboard.tsx` pulse animation pattern; DoctorCard, SlotGrid, AppointmentCard variants
-- [ ] **`EmptyState`** — Extract from `patient-dashboard.tsx` `EmptyDashboardState` + `patient-appointments.tsx` `EmptyState`; configurable icon, title, description, action
+- [x] **`DoctorCard`** — Extract from `patient-dashboard.tsx` `Metric` + `Action` patterns; props: photo, name, designation, specialty, rating, fee, nextAvailableSlot, onClick
+- [x] **`SpecialtyChip`** — Extract from `patient-appointments.tsx` `Status` chip pattern; variants: specialty colors per design.md, size: sm/md
+- [x] **`AvailabilityIndicator`** — Extract from `patient-dashboard.tsx` status indicators; real-time dot with pulse animation, states: available/pending/unavailable
+- [x] **`FeeDisplay`** — Extract from `patient-dashboard.tsx` metric value formatting; formatted currency with consultation type label
+- [x] **`SearchInput`** — Extract from `patient-portal-shell.tsx` `GlobalSearch` + `patient-appointments.tsx` search; debounced, with filter trigger
+- [x] **`FilterSidebar`** — Extract from `patient-appointments.tsx` filter pattern; multi-select specialty, fee range slider, availability toggle
+- [x] **`LoadingSkeleton`** — Extract from `patient-dashboard.tsx` pulse animation pattern; DoctorCard, SlotGrid, AppointmentCard variants
+- [x] **`EmptyState`** — Extract from `patient-dashboard.tsx` `EmptyDashboardState` + `patient-appointments.tsx` `EmptyState`; configurable icon, title, description, action
 
 #### 2. Doctor Search Page (`apps/web/src/app/doctors/search/`)
-- [ ] Compose `DoctorSearchPage` using extracted: `SearchInput`, `FilterSidebar`, `DoctorCard` grid, `EmptyState`, `LoadingSkeleton`
-- [ ] Infinite scroll / pagination with TanStack Query
-- [ ] Responsive: 4-col mobile, 8-col tablet, 12-col desktop (per design.md)
+- [x] Compose `DoctorSearchPage` using extracted: `SearchInput`, `FilterSidebar`, `DoctorCard` grid, `EmptyState`, `LoadingSkeleton`
+- [x] Infinite scroll / pagination with TanStack Query
+- [x] Responsive: 4-col mobile, 8-col tablet, 12-col desktop (per design.md)
 
 #### 3. Doctor Detail Page (`apps/web/src/app/doctors/[id]/`)
-- [ ] **`DoctorHero`** — Extract from `patient-portal-shell.tsx` avatar/name pattern; photo, name, designation, specialty chips, rating, clinic
-- [ ] **`DoctorAbout`** — Extract from `patient-records.tsx` `Info` card pattern; bio, experience, education, languages
-- [ ] **`ScheduleCalendar`** — Extract from `patient-portal-shell.tsx` booking flow calendar; weekly view (Mon-Sun), 7-day range
-- [ ] **`TimeSlotPicker`** — Extract/adapt from portal shell booking flow; 36px height, 6px radius, selected=Primary fill (per design.md)
-- [ ] Slot selection → navigate to booking flow (`/doctors/[id]/book?slotId=`)
+- [x] **`DoctorHero`** — Extract from `patient-portal-shell.tsx` avatar/name pattern; photo, name, designation, specialty chips, rating, clinic
+- [x] **`DoctorAbout`** — Extract from `patient-records.tsx` `Info` card pattern; bio, experience, education, languages
+- [x] **`ScheduleCalendar`** — Extract from `patient-portal-shell.tsx` booking flow calendar; weekly view (Mon-Sun), 7-day range
+- [x] **`TimeSlotPicker`** — Extract/adapt from portal shell booking flow; 36px height, 6px radius, selected=Primary fill (per design.md)
+- [x] Slot selection → navigate to booking flow (`/doctors/[id]/book?slotId=`)
 
 ---
 
