@@ -147,6 +147,32 @@ export {
 } from './appointments/controllers/appointmentController';
 export { createAppointmentRoutes } from './appointments/routes/appointmentRoutes';
 
+// Patients module exports
+export type {
+  PatientDashboardStats,
+  MedicalTimelineEntry,
+  MedicalTimelineResponse,
+  NextAppointment,
+  UpcomingAppointmentDetail,
+  CompletedAppointmentDetail,
+  TimelineQuery,
+} from './patients/types';
+
+export {
+  TimelineQuerySchema,
+  DashboardStatsQuerySchema,
+  createValidationMiddleware as createPatientValidationMiddleware,
+  validateTimelineQuery,
+  validateDashboardStatsQuery,
+} from './patients/validators';
+
+export { PatientService, createPatientService } from './patients/services/patientService';
+export {
+  PatientController,
+  createPatientController,
+} from './patients/controllers/patientController';
+export { createPatientRoutes } from './patients/routes/patientRoutes';
+
 // Prescriptions module exports
 export type {
   Prescription,
@@ -184,6 +210,7 @@ import { createDoctorsModule } from './doctors';
 import { createSchedulesModule } from './schedules';
 import { createAppointmentsModule } from './appointments';
 import { createPrescriptionsModule } from './prescriptions';
+import { createPatientsModule } from './patients';
 
 export interface AllModules {
   auth: ReturnType<typeof createAuthModule>;
@@ -192,6 +219,7 @@ export interface AllModules {
   schedules: ReturnType<typeof createSchedulesModule>;
   appointments: ReturnType<typeof createAppointmentsModule>;
   prescriptions: ReturnType<typeof createPrescriptionsModule>;
+  patients: ReturnType<typeof createPatientsModule>;
 }
 
 export function createAllModules(repositories: Repositories, prisma: PrismaClient): AllModules {
@@ -204,6 +232,11 @@ export function createAllModules(repositories: Repositories, prisma: PrismaClien
     prescriptions: createPrescriptionsModule(
       repositories.prescription,
       repositories.appointment,
+      prisma
+    ),
+    patients: createPatientsModule(
+      repositories.appointment,
+      repositories.prescription,
       prisma
     ),
   };

@@ -90,6 +90,7 @@ app.use('/api/doctors', modules.doctors.routes);
 app.use('/api/schedules', modules.schedules.routes);
 app.use('/api/appointments', modules.appointments.routes);
 app.use('/api/prescriptions', modules.prescriptions.routes);
+app.use('/api/patients', modules.patients.routes);
 
 // 404 handler
 app.use(notFoundHandler);
@@ -103,7 +104,7 @@ app.listen(PORT, () => {
   console.log(`🚀 API server running on http://localhost:${PORT}`);
   console.log(`📝 Environment: ${config.nodeEnv}`);
   console.log(`🏗️  Architecture: Modular MVC (modules/ + shared/)`);
-  console.log(`📦 Modules loaded: auth, users, doctors, schedules, appointments, prescriptions`);
+  console.log(`📦 Modules loaded: auth, users, doctors, schedules, appointments, prescriptions, patients`);
 });
 
 // Graceful shutdown

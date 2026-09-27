@@ -34,6 +34,12 @@ apps/api/src/
 │   ├── schedules/              # Slot management (CRUD, bulk, availability)
 │   ├── appointments/           # Booking, cancellation, stats
 │   ├── prescriptions/          # Prescription CRUD, recent lists
+│   ├── patients/               # Patient dashboard, medical timeline, appointments
+│   │   ├── controllers/        # Request/response handling
+│   │   ├── services/           # Business logic
+│   │   ├── routes/             # Route definitions
+│   │   ├── validators/         # Zod schemas + validation middleware
+│   │   └── types/              # Module-specific types
 │   └── index.ts                # Module factory (createAllModules)
 ├── repositories/               # Data access layer (shared Prisma repositories)
 ├── lib/                        # Core infrastructure (BetterAuth, Redis, Rate Limiter, Prisma Adapter)
@@ -138,20 +144,30 @@ apps/api/src/
 - [x] Doctor Search Page with infinite scroll/pagination
 - [x] Doctor Detail Page with hero, about, schedule calendar, time slot picker
 
-**Week 6-7 Deliverables Complete (2026-09-27):**
-- [x] **Patient Dashboard** (`/patient/dashboard`) — KPI cards, charts (Pie/Bar), timeline, prescriptions, quick actions
-- [x] **Patient Appointments** (`/patient/appointments`) — Tabs, search/filter, drawer, cancel/reschedule modals
-- [x] **Patient Records** (`/patient/records`) — Category nav, prescription list, preview modal
-- [x] **Patient Profile** (`/patient/profile`) — Personal/medical info, avatar upload
-- [x] **Patient Settings** (`/patient/settings`) — Account, notifications, privacy
-- [x] **Patient Notifications** (`/patient/notifications`) — Notification center with preferences
-- [x] **Booking Flow** (`/doctors/[id]/book`) — 5-step flow: Doctor → Date/Time → Symptoms → Confirmation → Success
-- [x] **Doctor Profile** (`/doctors/[id]`) — Hero, about, clinic info, schedule calendar, reviews
-- [x] **Find Doctors** (`/doctors/search`) — Search, filters (sidebar/mobile), grid/list view, pagination
-- [x] **Global Search** — Command palette (⌘K) with recent searches, categorized results
-- [x] **PatientPortalShell** — Internal navigation via routeMap, auto-detects active page from pathname
-- [x] All routes consolidated under `/patient/*` and `/doctors/*` for consistency
-- [x] Extracted 30+ reusable components across: `patient-dashboard`, `patient-portal`, `appointments`, `patient-records`, `patient-profile`, `booking-flow`, `doctor-profile`, `find-doctors`, `notification-center`
+**Week 6 Deliverables Complete (2026-09-27):**
+- [x] Slot availability API with real-time status
+- [x] Booking flow: select slot → symptom notes → confirm
+- [x] Atomic slot locking (DB transaction) preventing double-booking
+- [x] Appointment confirmation + email/SMS notification stubs
+
+**Week 7 Deliverables Complete (2026-09-28):**
+- [x] **Patient Module** (`apps/api/src/modules/patients/`) — New modular MVC module
+  - Dashboard stats endpoint: `GET /api/patients/dashboard/stats`
+  - Medical timeline endpoint: `GET /api/patients/timeline` (appointments + prescriptions)
+  - Upcoming appointments: `GET /api/patients/appointments/upcoming`
+  - Completed appointments: `GET /api/patients/appointments/completed`
+- [x] **Enhanced Appointments Module** with new endpoints:
+  - Dashboard stats: `GET /api/appointments/stats/dashboard`
+  - Upcoming with details: `GET /api/appointments/timeline/upcoming`
+  - Completed with prescriptions: `GET /api/appointments/timeline/completed`
+  - Medical timeline: `GET /api/appointments/timeline/medical`
+- [x] **Repository enhancements**:
+  - `getUpcomingWithDetails()` - Upcoming appointments with doctor profile
+  - `getCompletedWithPrescriptions()` - Completed appointments with Rx links
+  - `findManyForTimeline()` - Appointments for timeline view
+- [x] Prescription compliance calculation (completed appointments with prescriptions / total completed)
+- [x] Monthly expenses aggregation (last 6 months by completed appointment fees)
+- [x] Appointments by specialty breakdown for dashboard charts
 
 ---
 
@@ -409,6 +425,19 @@ The following pre-built screens exist in `screens/Patient Portal/` and contain p
 | `/doctors/search` | Find Doctors | `Find Doctors` |
 | `/doctors/[id]` | Doctor Profile | `Doctor Profile` |
 | `/doctors/[id]/book` | Booking Flow | `Book Appointment` |
+
+## New Patient API Endpoints (Week 7)
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/patients/dashboard/stats` | Patient dashboard KPIs, charts data (upcoming, total, expenses, compliance) |
+| `GET /api/patients/timeline` | Medical timeline (appointments + prescriptions) with filters |
+| `GET /api/patients/appointments/upcoming` | Upcoming appointments with doctor/slot details |
+| `GET /api/patients/appointments/completed` | Completed appointments with prescription links |
+| `GET /api/appointments/stats/dashboard` | Dashboard stats (alias for patient module) |
+| `GET /api/appointments/timeline/upcoming` | Upcoming appointments with details (alias) |
+| `GET /api/appointments/timeline/completed` | Completed appointments with prescriptions (alias) |
+| `GET /api/appointments/timeline/medical` | Medical timeline (alias) |
 
 ## Backend Module Structure
 

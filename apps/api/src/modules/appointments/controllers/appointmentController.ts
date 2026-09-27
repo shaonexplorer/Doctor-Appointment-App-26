@@ -171,6 +171,68 @@ export class AppointmentController {
       next(error);
     }
   };
+
+  /**
+   * Get dashboard statistics for patient
+   * GET /api/appointments/stats/dashboard
+   */
+  getDashboardStats = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const stats = await this.appointmentService.getDashboardStats(req.user!.id);
+      res.json(buildSuccessResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get upcoming appointments with full details
+   * GET /api/appointments/timeline/upcoming
+   */
+  getUpcomingWithDetails = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+      const appointments = await this.appointmentService.getUpcomingWithDetails(req.user!.id, limit);
+      res.json(buildSuccessResponse(appointments));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get completed appointments with prescription links
+   * GET /api/appointments/timeline/completed
+   */
+  getCompletedWithPrescriptions = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+      const appointments = await this.appointmentService.getCompletedWithPrescriptions(req.user!.id, limit);
+      res.json(buildSuccessResponse(appointments));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get medical timeline combining appointments and prescriptions
+   * GET /api/appointments/timeline/medical
+   */
+  getMedicalTimeline = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const validatedQuery = req.validatedQuery;
+      const query = {
+        page: validatedQuery.page,
+        limit: validatedQuery.limit,
+        type: validatedQuery.type,
+        dateFrom: validatedQuery.dateFrom,
+        dateTo: validatedQuery.dateTo,
+      };
+      const timeline = await this.appointmentService.getMedicalTimeline(req.user!.id, query);
+      res.json(buildSuccessResponse(timeline));
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 // Factory function for dependency injection

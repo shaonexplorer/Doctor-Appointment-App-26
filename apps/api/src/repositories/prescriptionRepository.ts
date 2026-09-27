@@ -233,4 +233,45 @@ export class PrescriptionRepository {
       take: limit,
     }) as Promise<PrescriptionWithRelations[]>;
   }
+
+  /**
+   * Find prescriptions for timeline (with appointment details)
+   */
+  async findManyForTimeline(
+    patientId: string,
+    whereClause: any = {}
+  ): Promise<
+    Array<{
+      id: string;
+      diagnosis: string;
+      medications: any;
+      tests: string | null;
+      notes: string | null;
+      createdAt: Date;
+      appointment: {
+        id: string;
+        slot: { startTime: Date; endTime: Date };
+        patient: { id: string; firstName: string; lastName: string };
+        doctor: { id: string; firstName: string; lastName: string };
+        doctorProfile: { specialty: string; clinic: string; designation: string; fee: number } | null;
+      };
+    }>
+  > {
+    const prescriptions = await this.prisma.prescription.findMany({
+      where: { patientId, ...whereClause },
+      include: {
+        appointment: {
+          include: {
+            slot: { select: { startTime: true, endTime: true } },
+            patient: { select: { id: true, firstName: true, lastName: true } },
+            doctor: { select: { id: true, firstName: true, lastName: true } },
+            doctorProfile: { select: { specialty: true, clinic: true, designation: true, fee: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return prescriptions as any;
+  }
 }

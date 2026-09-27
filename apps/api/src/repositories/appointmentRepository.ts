@@ -349,4 +349,143 @@ export class AppointmentRepository {
 
     return { total, scheduled, completed, cancelled, noShow };
   }
+
+  /**
+   * Get upcoming appointments with full details for timeline
+   */
+  async getUpcomingWithDetails(
+    patientId: string,
+    limit: number = 10
+  ): Promise<
+    Array<{
+      id: string;
+      status: AppointmentStatus;
+      symptoms: string | null;
+      notes: string | null;
+      consultationType: ConsultationType;
+      paymentStatus: PaymentStatus;
+      createdAt: Date;
+      slot: { id: string; startTime: Date; endTime: Date };
+      doctor: { id: string; firstName: string; lastName: string; email: string };
+      doctorProfile: { specialty: string; clinic?: string; designation: string; fee: number } | null;
+    }>
+  > {
+    const appointments = await this.prisma.appointment.findMany({
+      where: {
+        patientId,
+        status: { in: [AppointmentStatus.SCHEDULED] },
+        slot: {
+          startTime: { gte: new Date() },
+        },
+      },
+      include: {
+        slot: { select: { id: true, startTime: true, endTime: true } },
+        doctor: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+          include: {
+            doctorProfile: { select: { specialty: true, designation: true, fee: true } },
+          },
+        },
+      },
+      orderBy: { slot: { startTime: 'asc' } },
+      take: limit,
+    });
+
+    // Transform to include doctorProfile at top level
+    return appointments.map((appt) => ({
+      ...appt,
+      doctorProfile: appt.doctor?.doctorProfile || null,
+    })) as any;
+  }
+
+  /**
+   * Get completed appointments with prescription links
+   */
+  async getCompletedWithPrescriptions(
+    patientId: string,
+    limit: number = 10
+  ): Promise<
+    Array<{
+      id: string;
+      status: AppointmentStatus;
+      symptoms: string | null;
+      notes: string | null;
+      consultationType: ConsultationType;
+      paymentStatus: PaymentStatus;
+      createdAt: Date;
+      completedAt: Date | null;
+      slot: { id: string; startTime: Date; endTime: Date };
+      doctor: { id: string; firstName: string; lastName: string; email: string };
+      doctorProfile: { specialty: string; clinic?: string; designation: string; fee: number } | null;
+      prescriptions: Array<{ id: string; diagnosis: string; createdAt: Date }>;
+    }>
+  > {
+    const appointments = await this.prisma.appointment.findMany({
+      where: {
+        patientId,
+        status: AppointmentStatus.COMPLETED,
+      },
+      include: {
+        slot: { select: { id: true, startTime: true, endTime: true } },
+        doctor: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+          include: {
+            doctorProfile: { select: { specialty: true, designation: true, fee: true } },
+          },
+        },
+        prescriptions: {
+          select: { id: true, diagnosis: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+      orderBy: { slot: { startTime: 'desc' } },
+      take: limit,
+    });
+
+    // Transform to include doctorProfile at top level
+    return appointments.map((appt) => ({
+      ...appt,
+      doctorProfile: appt.doctor?.doctorProfile || null,
+    })) as any;
+  }
+
+  /**
+   * Find appointments for timeline (with minimal includes)
+   */
+  async findManyForTimeline(
+    patientId: string,
+    whereClause: any = {}
+  ): Promise<
+    Array<{
+      id: string;
+      status: AppointmentStatus;
+      symptoms: string | null;
+      notes: string | null;
+      consultationType: ConsultationType;
+      createdAt: Date;
+      slot: { id: string; startTime: Date; endTime: Date };
+      doctor: { id: string; firstName: string; lastName: string; email: string };
+      doctorProfile: { specialty: string; clinic?: string; designation: string; fee: number } | null;
+    }>
+  > {
+    const appointments = await this.prisma.appointment.findMany({
+      where: { patientId, ...whereClause },
+      include: {
+        slot: { select: { id: true, startTime: true, endTime: true } },
+        doctor: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+          include: {
+            doctorProfile: { select: { specialty: true, designation: true, fee: true } },
+          },
+        },
+      },
+      orderBy: { slot: { startTime: 'desc' } },
+    });
+
+    // Transform to include doctorProfile at top level
+    return appointments.map((appt) => ({
+      ...appt,
+      doctorProfile: appt.doctor?.doctorProfile || null,
+    })) as any;
+  }
 }

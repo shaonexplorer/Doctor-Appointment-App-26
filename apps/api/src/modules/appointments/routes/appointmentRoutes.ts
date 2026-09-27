@@ -17,6 +17,8 @@ import {
   validateCreateAppointment,
   validateUpdateAppointment,
   validateAppointmentFilters,
+  validateTimelineQuery,
+  validateDashboardStatsQuery,
 } from '../validators';
 
 export function createAppointmentRoutes(appointmentController: AppointmentController): Router {
@@ -39,6 +41,12 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
   // Stats
   router.get('/stats/doctor', asyncHandler(appointmentController.getDoctorStats));
   router.get('/stats/patient', asyncHandler(appointmentController.getPatientStats));
+  router.get('/stats/dashboard', validateDashboardStatsQuery, asyncHandler(appointmentController.getDashboardStats));
+
+  // Timeline endpoints
+  router.get('/timeline/upcoming', asyncHandler(appointmentController.getUpcomingWithDetails));
+  router.get('/timeline/completed', asyncHandler(appointmentController.getCompletedWithPrescriptions));
+  router.get('/timeline/medical', validateTimelineQuery, asyncHandler(appointmentController.getMedicalTimeline));
 
   // List appointments with filters
   router.get('/', validateAppointmentFilters, asyncHandler(appointmentController.listAppointments));
