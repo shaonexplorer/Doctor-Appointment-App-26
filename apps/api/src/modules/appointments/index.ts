@@ -18,6 +18,7 @@ import type { PrismaClient } from '@prisma/client';
 import { AppointmentService } from './services/appointmentService';
 import { AppointmentController } from './controllers/appointmentController';
 import { createAppointmentRoutes } from './routes/appointmentRoutes';
+import { createNotificationService } from '../../lib/notificationService';
 
 export interface AppointmentsModule {
   service: AppointmentService;
@@ -30,7 +31,8 @@ export function createAppointmentsModule(
   scheduleRepository: ScheduleRepository,
   prisma: PrismaClient
 ): AppointmentsModule {
-  const service = new AppointmentService(appointmentRepository, scheduleRepository, prisma);
+  const notificationService = createNotificationService();
+  const service = new AppointmentService(appointmentRepository, scheduleRepository, prisma, notificationService);
   const controller = new AppointmentController(service);
   const routes = createAppointmentRoutes(controller);
 

@@ -11,11 +11,16 @@ export interface DoctorCardProps {
   rating?: number;
   reviewCount?: number;
   fee: number;
-  nextAvailableSlot?: Date;
+  nextAvailableSlot?: string | Date;
   isVerified?: boolean;
   clinic?: string;
   onClick?: () => void;
   className?: string;
+}
+
+function toDate(value: string | Date | undefined): Date | undefined {
+  if (!value) return undefined;
+  return value instanceof Date ? value : new Date(value);
 }
 
 export function DoctorCard({
@@ -42,7 +47,9 @@ export function DoctorCard({
     }).format(amount);
   };
 
-  const formatNextSlot = (date: Date) => {
+  const formatNextSlot = (dateValue: string | Date) => {
+    const date = toDate(dateValue);
+    if (!date) return "Check availability";
     const now = new Date();
     const diffMs = date.getTime() - now.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));

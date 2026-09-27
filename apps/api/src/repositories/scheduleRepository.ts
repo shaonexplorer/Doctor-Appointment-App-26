@@ -11,6 +11,21 @@ export interface SlotWithAppointment extends Schedule {
   appointment: Appointment | null;
 }
 
+export interface SlotWithDoctor extends Schedule {
+  doctor: {
+    id: string;
+    specialty: string;
+    designation: string | null;
+    fee: number | null;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+  } | null;
+}
+
 export class ScheduleRepository {
   constructor(private prisma: PrismaClient) {}
 
@@ -30,6 +45,33 @@ export class ScheduleRepository {
     return this.prisma.schedule.findUnique({
       where: { id },
       include: { appointment: true },
+    });
+  }
+
+  /**
+   * Find slot by ID with doctor info
+   */
+  async findByIdWithDoctor(id: string): Promise<SlotWithDoctor | null> {
+    return this.prisma.schedule.findUnique({
+      where: { id },
+      include: {
+        doctor: {
+          select: {
+            id: true,
+            specialty: true,
+            designation: true,
+            fee: true,
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 

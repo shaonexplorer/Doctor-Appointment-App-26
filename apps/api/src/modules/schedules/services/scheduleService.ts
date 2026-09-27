@@ -4,7 +4,7 @@
  */
 
 import type { ScheduleRepository } from '../../../repositories';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Schedule } from '@prisma/client';
 import { SlotStatus } from '@prisma/client';
 import { AppError } from '../../../shared/middleware/errorHandler';
 import type {
@@ -289,6 +289,13 @@ export class ScheduleService {
    */
   async releaseSlot(slotId: string): Promise<ScheduleSlot> {
     return this.scheduleRepository.releaseSlot(slotId);
+  }
+
+  /**
+   * Get slot by ID with doctor info
+   */
+  async getSlotById(slotId: string): Promise<ScheduleSlot | null> {
+    return this.scheduleRepository.findByIdWithDoctor(slotId);
   }
 }
 

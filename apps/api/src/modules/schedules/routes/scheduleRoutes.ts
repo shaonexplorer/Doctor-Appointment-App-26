@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import type { ScheduleController } from '../controllers/scheduleController';
-import { requireAuth } from '../../../shared/middleware/auth';
+import { requireAuth, optionalAuth } from '../../../shared/middleware/auth';
 import { asyncHandler } from '../../../shared/utils';
 import { validateCreateSlot, validateCreateBulkSlots, validateUpdateSlot } from '../validators';
 
@@ -14,6 +14,8 @@ export function createScheduleRoutes(scheduleController: ScheduleController): Ro
 
   // Public routes (no auth required)
   router.get('/doctor/:doctorId/available', asyncHandler(scheduleController.getAvailableSlots));
+  router.get('/availability', asyncHandler(scheduleController.getAvailability));
+  router.get('/:id', optionalAuth, asyncHandler(scheduleController.getSlotById));
 
   // Protected routes (auth required)
   router.use(requireAuth);

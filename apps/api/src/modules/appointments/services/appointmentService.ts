@@ -13,6 +13,7 @@ import {
   UserType,
 } from '@prisma/client';
 import { AppError } from '../../../shared/middleware/errorHandler';
+import { NotificationService } from '../../../lib/notificationService';
 import type {
   AppointmentCreateInput,
   AppointmentUpdateInput,
@@ -26,7 +27,8 @@ export class AppointmentService {
   constructor(
     private appointmentRepository: AppointmentRepository,
     private scheduleRepository: ScheduleRepository,
-    private prisma: PrismaClient
+    private prisma: PrismaClient,
+    private notificationService: NotificationService = new NotificationService()
   ) {}
 
   /**
@@ -57,8 +59,34 @@ export class AppointmentService {
       throw new AppError('NOT_FOUND', 'Doctor not found', 404);
     }
 
+    // Get patient info for notifications
+    const patient = await this.prisma.user.findUnique({
+      where: { id: patientId },
+      select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+    });
+
+    if (!patient) {
+      throw new AppError('NOT_FOUND', 'Patient not found', 404);
+    }
+
+    // Get doctor info for notifications
+    const doctor = await this.prisma.user.findUnique({
+      where: { id: doctorProfile.userId },
+      select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+    });
+
+    if (!doctor) {
+      throw new AppError('NOT_FOUND', 'Doctor user not found', 404);
+    }
+
+    // Get doctor profile for specialty and clinic
+    const doctorProfileFull = await this.prisma.doctorProfile.findUnique({
+      where: { id: slot.doctorId },
+      select: { specialty: true, clinic: true, designation: true, fee: true },
+    });
+
     // Create appointment and lock slot in transaction
-    return this.prisma.$transaction(async (tx) => {
+    const appointment = await this.prisma.$transaction(async (tx) => {
       // Lock the slot
       await tx.schedule.update({
         where: { id: data.slotId },
@@ -66,7 +94,7 @@ export class AppointmentService {
       });
 
       // Create appointment
-      const appointment = await tx.appointment.create({
+      const newAppointment = await tx.appointment.create({
         data: {
           patientId,
           doctorId: doctorProfile.userId,
@@ -90,8 +118,39 @@ export class AppointmentService {
         },
       });
 
-      return appointment;
+      return newAppointment;
     });
+
+    // Send booking confirmation notification
+    const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+    await this.notificationService.sendBookingConfirmation({
+      appointmentId: appointment.id,
+      patientId: patient.id,
+      doctorId: doctor.id,
+      slotId: data.slotId,
+      startTime: appointment.slot!.startTime,
+      endTime: appointment.slot!.endTime,
+      doctorName,
+      specialty: doctorProfileFull?.specialty || 'Unknown',
+      clinic: doctorProfileFull?.clinic || 'Clinic',
+      consultationType: appointment.consultationType,
+    });
+
+    // Queue reminders (in production, these would be scheduled via BullMQ)
+    await this.notificationService.queueAppointmentNotifications({
+      appointmentId: appointment.id,
+      patientId: patient.id,
+      doctorId: doctor.id,
+      slotId: data.slotId,
+      startTime: appointment.slot!.startTime,
+      endTime: appointment.slot!.endTime,
+      doctorName,
+      specialty: doctorProfileFull?.specialty || 'Unknown',
+      clinic: doctorProfileFull?.clinic || 'Clinic',
+      consultationType: appointment.consultationType,
+    });
+
+    return appointment;
   }
 
   /**
@@ -169,7 +228,7 @@ export class AppointmentService {
   }
 
   /**
-   * Cancel appointment
+   * Cancel appointment with 2-hour threshold check
    */
   async cancelAppointment(id: string, userId: string, userType: UserType): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findById(id);
@@ -193,11 +252,56 @@ export class AppointmentService {
       throw new AppError('CONFLICT', 'Cannot cancel a completed appointment', 409);
     }
 
+    // Check 2-hour threshold for patients
+    if (isPatient && !isAdminOrStaff) {
+      const slot = await this.scheduleRepository.findById(appointment.slotId);
+      if (slot) {
+        const appointmentTime = new Date(slot.startTime).getTime();
+        const now = Date.now();
+        const twoHoursInMs = 2 * 60 * 60 * 1000;
+
+        if (appointmentTime - now < twoHoursInMs) {
+          throw new AppError(
+            'FORBIDDEN',
+            'Cancellations within 2 hours of the appointment are not allowed. Please contact the clinic directly.',
+            403
+          );
+        }
+      }
+    }
+
+    // Get slot info for notification
+    const slot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
+    const doctor = appointment.doctor ? {
+      id: appointment.doctor.id,
+      firstName: appointment.doctor.firstName,
+      lastName: appointment.doctor.lastName,
+    } : null;
+
     // Release the slot
     await this.scheduleRepository.releaseSlot(appointment.slotId);
 
     // Update appointment status
-    return this.appointmentRepository.update(id, { status: AppointmentStatus.CANCELLED });
+    const cancelledAppointment = await this.appointmentRepository.update(id, { status: AppointmentStatus.CANCELLED });
+
+    // Send cancellation notification
+    if (doctor && slot) {
+      const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+      await this.notificationService.sendBookingCancellation({
+        appointmentId: appointment.id,
+        patientId: appointment.patientId,
+        doctorId: doctor.id,
+        slotId: appointment.slotId,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        doctorName,
+        specialty: slot.doctor?.specialty || 'Unknown',
+        clinic: slot.doctor?.clinic || 'Clinic',
+        consultationType: appointment.consultationType,
+      });
+    }
+
+    return cancelledAppointment;
   }
 
   /**

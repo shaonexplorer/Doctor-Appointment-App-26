@@ -86,6 +86,23 @@ export class AppointmentController {
   };
 
   /**
+   * Cancel appointment (alternative endpoint)
+   * PATCH /api/appointments/:id/cancel
+   */
+  cancelAppointmentAlt = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const appointment = await this.appointmentService.cancelAppointment(
+        req.params.id,
+        req.user!.id,
+        req.user!.userType
+      );
+      res.json(buildSuccessResponse(appointment));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * List appointments with filters
    * GET /api/appointments
    */

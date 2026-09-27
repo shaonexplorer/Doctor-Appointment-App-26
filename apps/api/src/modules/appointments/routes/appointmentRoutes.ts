@@ -56,6 +56,12 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
     auditAppointmentDelete,
     asyncHandler(appointmentController.cancelAppointment)
   );
+  // Alternative cancel endpoint
+  router.patch(
+    '/:id/cancel',
+    auditAppointmentDelete,
+    asyncHandler(appointmentController.cancelAppointmentAlt)
+  );
 
   return router;
 }
