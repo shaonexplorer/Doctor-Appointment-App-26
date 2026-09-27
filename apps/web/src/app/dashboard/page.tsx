@@ -15,7 +15,7 @@ export default function DashboardRedirectPage() {
     if (!loading && user) {
       switch (user.userType) {
         case UserType.PATIENT:
-          router.push('/dashboard/patient');
+          router.push('/patient/dashboard');
           break;
         case UserType.DOCTOR:
           router.push('/dashboard/doctor');
@@ -27,7 +27,7 @@ export default function DashboardRedirectPage() {
           router.push('/dashboard/admin');
           break;
         default:
-          router.push('/dashboard/patient');
+          router.push('/patient/dashboard');
       }
     }
   }, [user, loading, router]);
@@ -35,7 +35,7 @@ export default function DashboardRedirectPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
         <p className="text-muted-foreground">Loading dashboard...</p>
       </div>
     </div>
