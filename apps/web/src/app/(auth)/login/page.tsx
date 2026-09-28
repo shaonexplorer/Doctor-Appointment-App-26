@@ -116,11 +116,11 @@ export default function LoginPage() {
         return;
       }
 
-      toast({
-        variant: 'success',
-        title: 'Welcome back!',
-        description: 'You have been signed in successfully.',
-      });
+      // toast({
+      //   variant: 'success',
+      //   title: 'Welcome back!',
+      //   description: 'You have been signed in successfully.',
+      // });
 
       void router.push('/dashboard');
       router.refresh();

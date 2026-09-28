@@ -4,17 +4,7 @@ import prettierConfig from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: [
-      'node_modules/',
-      'dist/',
-      'build/',
-      '.next/',
-      'screens/',
-      '*.config.js',
-      '*.config.ts',
-      '**/eslint.config.js',
-      '**/*.eslint.config.js',
-    ],
+    ignores: ['node_modules/', 'dist/', 'build/', '.next/', 'screens/'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -39,6 +29,22 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-misused-promises': ['warn', { checksVoidReturn: false }],
+    },
+  },
+  {
+    // Disable project service and type-aware rules for the ESLint config file itself
+    files: ['eslint.config.js'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   }
 );

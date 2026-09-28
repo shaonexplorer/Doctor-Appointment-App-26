@@ -15,6 +15,6 @@
       "@doctor-appointment-app/shared/*": ["../../packages/shared/src/*"]
     }
   },
-  "include": ["src/**/*", "eslint.config.js"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

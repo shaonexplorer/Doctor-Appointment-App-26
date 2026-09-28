@@ -30,7 +30,7 @@ function Field({
   const isPassword = type === 'password';
 
   return (
-    <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
+    <label className="text-muted-foreground flex flex-col gap-2 text-sm font-semibold">
       <span>
         {label}
         {required && <span className="text-muted-foreground/60"> *</span>}
@@ -39,14 +39,16 @@ function Field({
         {Icon && (
           <Icon
             aria-hidden="true"
-            className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50"
+            className="text-muted-foreground/50 absolute top-1/2 left-3.5 size-4 -translate-y-1/2"
           />
         )}
         <Input
           type={isPassword && visible ? 'text' : type}
           placeholder={placeholder}
-          className={`h-11 w-full rounded-xl border bg-background px-10 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:ring-4 focus:ring-primary/10 ${
-            error ? 'border-destructive focus:border-destructive focus:ring-destructive/10' : 'border-input'
+          className={`bg-background text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:ring-primary/10 h-11 w-full rounded-xl border px-10 text-sm font-normal transition-colors outline-none focus:ring-4 ${
+            error
+              ? 'border-destructive focus:border-destructive focus:ring-destructive/10'
+              : 'border-input'
           }`}
           style={{ paddingLeft: Icon ? '2.75rem' : undefined }}
           aria-invalid={!!error}
@@ -57,13 +59,17 @@ function Field({
             type="button"
             onClick={() => setVisible(!visible)}
             aria-label={visible ? 'Hide password' : 'Show password'}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground"
+            className="text-muted-foreground/50 hover:text-foreground absolute top-1/2 right-3.5 -translate-y-1/2"
           >
             {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         )}
       </span>
-      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+      {error && (
+        <p className="text-destructive text-sm" role="alert">
+          {error}
+        </p>
+      )}
     </label>
   );
 }
@@ -92,7 +98,7 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
     <div className="flex flex-col gap-2">
       <div className="flex gap-1.5">{bars}</div>
       {strength > 0 && (
-        <p className="-mt-2 text-xs text-muted-foreground">
+        <p className="text-muted-foreground -mt-2 text-xs">
           {label} password strength · 8+ characters recommended
         </p>
       )}
@@ -113,9 +119,9 @@ function AuthShell({
 }) {
   return (
     <div className="mx-auto w-full max-w-md">
-      <p className="text-sm font-bold text-primary">{eyebrow}</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p>
+      <p className="text-primary text-sm font-bold">{eyebrow}</p>
+      <h1 className="text-foreground mt-2 text-3xl font-bold tracking-tight">{title}</h1>
+      <p className="text-muted-foreground mt-3 text-sm leading-6">{copy}</p>
       <div className="mt-8">{children}</div>
     </div>
   );
@@ -185,13 +191,13 @@ function ResetPasswordPageContent() {
   };
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-5 py-10">
+    <main className="bg-background flex min-h-screen items-center justify-center px-5 py-10">
       <AuthShell
         eyebrow="Set a new password"
         title="Create a new password"
         copy="Choose a strong password you haven't used before."
       >
-        {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
+        {}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <input type="hidden" {...register('token')} />
           <Field
@@ -214,7 +220,7 @@ function ResetPasswordPageContent() {
           <Button
             type="submit"
             disabled={loading}
-            className="mt-2 h-11 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20"
+            className="bg-primary text-primary-foreground shadow-primary/20 mt-2 h-11 rounded-xl text-sm font-bold shadow-lg"
           >
             {loading ? 'Updating...' : 'Update password'}
             {!loading && <ArrowRight className="size-4" />}
@@ -227,7 +233,13 @@ function ResetPasswordPageContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
+        </div>
+      }
+    >
       <ResetPasswordPageContent />
     </Suspense>
   );

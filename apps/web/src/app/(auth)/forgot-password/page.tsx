@@ -28,7 +28,7 @@ function Field({
   error?: string;
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
+    <label className="text-muted-foreground flex flex-col gap-2 text-sm font-semibold">
       <span>
         {label}
         {required && <span className="text-muted-foreground/60"> *</span>}
@@ -37,13 +37,13 @@ function Field({
         {Icon && (
           <Icon
             aria-hidden="true"
-            className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50"
+            className="text-muted-foreground/50 absolute top-1/2 left-3.5 size-4 -translate-y-1/2"
           />
         )}
         <Input
           type={type}
           placeholder={placeholder}
-          className={`h-11 w-full rounded-xl border bg-background px-10 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:ring-4 focus:ring-primary/10 ${
+          className={`bg-background text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:ring-primary/10 h-11 w-full rounded-xl border px-10 text-sm font-normal transition-colors outline-none focus:ring-4 ${
             error
               ? 'border-destructive focus:border-destructive focus:ring-destructive/10'
               : 'border-input'
@@ -54,7 +54,7 @@ function Field({
         />
       </span>
       {error && (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="text-destructive text-sm" role="alert">
           {error}
         </p>
       )}
@@ -79,7 +79,7 @@ function AuthShell({
     <div className="mx-auto w-full max-w-md">
       <div className="mb-10 lg:hidden">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+          <span className="bg-primary text-primary-foreground shadow-primary/20 grid size-9 place-items-center rounded-xl shadow-lg">
             <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -89,15 +89,15 @@ function AuthShell({
               />
             </svg>
           </span>
-          <span className="text-xl font-bold tracking-tight text-foreground">
+          <span className="text-foreground text-xl font-bold tracking-tight">
             Medi<span className="text-primary">Book</span>
           </span>
         </Link>
       </div>
       {backAction && <div className="mb-8">{backAction}</div>}
-      <p className="text-sm font-bold text-primary">{eyebrow}</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p>
+      <p className="text-primary text-sm font-bold">{eyebrow}</p>
+      <h1 className="text-foreground mt-2 text-3xl font-bold tracking-tight">{title}</h1>
+      <p className="text-muted-foreground mt-3 text-sm leading-6">{copy}</p>
       <div className="mt-8">{children}</div>
     </div>
   );
@@ -158,14 +158,14 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background lg:flex">
+    <main className="bg-background min-h-screen lg:flex">
       <section className="flex min-h-screen flex-1 items-center justify-center px-5 py-10 sm:px-10">
         <AuthShell
           eyebrow="Account recovery"
           title="Forgot your password?"
           copy="Enter your email and we'll send you a secure link to reset your password."
         >
-          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
+          {}
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
             <Field
               label="Email address"
@@ -178,7 +178,7 @@ export default function ForgotPasswordPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="h-11 rounded-xl bg-blue-600 text-sm font-bold text-primary-foreground shadow-lg shadow-blue-600/20"
+              className="text-primary-foreground h-11 rounded-xl bg-blue-600 text-sm font-bold shadow-lg shadow-blue-600/20"
             >
               {loading ? 'Sending...' : 'Send reset link'}
             </Button>
@@ -188,7 +188,7 @@ export default function ForgotPasswordPage() {
             variant="ghost"
             size="sm"
             onClick={() => void router.push('/login')}
-            className="mx-auto mt-7 gap-2 text-sm font-bold text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground mx-auto mt-7 gap-2 text-sm font-bold"
           >
             <ArrowLeft className="size-4" /> Back to sign in
           </Button>

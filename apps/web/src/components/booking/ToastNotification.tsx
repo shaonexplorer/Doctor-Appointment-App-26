@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import { Check, X, AlertCircle, Info, Loader2 } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { Check, X, AlertCircle, Info, Loader2 } from 'lucide-react';
 
-export type ToastVariant = "success" | "error" | "warning" | "info" | "loading";
+export type ToastVariant = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
 export interface ToastNotificationProps {
   isOpen: boolean;
@@ -17,55 +17,56 @@ export interface ToastNotificationProps {
     onClick: () => void;
   };
   duration?: number;
-  position?: "top-right" | "top-left" | "bottom-right" | "bottom-left" | "top-center" | "bottom-center";
+  position?:
+    'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
   className?: string;
 }
 
 const variantConfig = {
   success: {
     icon: Check,
-    iconBg: "bg-green-100 text-green-600",
-    border: "border-green-200",
-    bg: "bg-green-50",
-    titleColor: "text-green-800",
+    iconBg: 'bg-green-100 text-green-600',
+    border: 'border-green-200',
+    bg: 'bg-green-50',
+    titleColor: 'text-green-800',
   },
   error: {
     icon: X,
-    iconBg: "bg-red-100 text-red-600",
-    border: "border-red-200",
-    bg: "bg-red-50",
-    titleColor: "text-red-800",
+    iconBg: 'bg-red-100 text-red-600',
+    border: 'border-red-200',
+    bg: 'bg-red-50',
+    titleColor: 'text-red-800',
   },
   warning: {
     icon: AlertCircle,
-    iconBg: "bg-amber-100 text-amber-600",
-    border: "border-amber-200",
-    bg: "bg-amber-50",
-    titleColor: "text-amber-800",
+    iconBg: 'bg-amber-100 text-amber-600',
+    border: 'border-amber-200',
+    bg: 'bg-amber-50',
+    titleColor: 'text-amber-800',
   },
   info: {
     icon: Info,
-    iconBg: "bg-blue-100 text-blue-600",
-    border: "border-blue-200",
-    bg: "bg-blue-50",
-    titleColor: "text-blue-800",
+    iconBg: 'bg-blue-100 text-blue-600',
+    border: 'border-blue-200',
+    bg: 'bg-blue-50',
+    titleColor: 'text-blue-800',
   },
   loading: {
     icon: Loader2,
-    iconBg: "bg-primary/10 text-primary",
-    border: "border-primary/20",
-    bg: "bg-primary/5",
-    titleColor: "text-primary",
+    iconBg: 'bg-primary/10 text-primary',
+    border: 'border-primary/20',
+    bg: 'bg-primary/5',
+    titleColor: 'text-primary',
   },
 };
 
 const positionClasses = {
-  "top-right": "top-4 right-4",
-  "top-left": "top-4 left-4",
-  "bottom-right": "bottom-4 right-4",
-  "bottom-left": "bottom-4 left-4",
-  "top-center": "top-4 left-1/2 -translate-x-1/2",
-  "bottom-center": "bottom-4 left-1/2 -translate-x-1/2",
+  'top-right': 'top-4 right-4',
+  'top-left': 'top-4 left-4',
+  'bottom-right': 'bottom-4 right-4',
+  'bottom-left': 'bottom-4 left-4',
+  'top-center': 'top-4 left-1/2 -translate-x-1/2',
+  'bottom-center': 'bottom-4 left-1/2 -translate-x-1/2',
 };
 
 export function ToastNotification({
@@ -76,7 +77,7 @@ export function ToastNotification({
   description,
   action,
   duration = 5000,
-  position = "top-right",
+  position = 'top-right',
   className,
 }: ToastNotificationProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -90,7 +91,7 @@ export function ToastNotification({
       setIsVisible(true);
       setIsExiting(false);
 
-      if (variant !== "loading" && duration > 0) {
+      if (variant !== 'loading' && duration > 0) {
         const timer = setTimeout(() => {
           setIsExiting(true);
           setTimeout(() => {
@@ -113,31 +114,29 @@ export function ToastNotification({
   return (
     <div
       className={cn(
-        "fixed z-[70] flex max-w-sm w-full items-start gap-3 rounded-xl border shadow-lg animate-in slide-in-from-top-2 duration-200",
-        "data-[state=closed]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-top-2",
+        'animate-in slide-in-from-top-2 fixed z-[70] flex w-full max-w-sm items-start gap-3 rounded-xl border shadow-lg duration-200',
+        'data-[state=closed]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-top-2',
         positionClasses[position],
         config.border,
         config.bg,
         className
       )}
-      data-state={isExiting ? "closed" : "open"}
+      data-state={isExiting ? 'closed' : 'open'}
       role="alert"
-      aria-live={variant === "error" ? "assertive" : "polite"}
+      aria-live={variant === 'error' ? 'assertive' : 'polite'}
       aria-atomic="true"
     >
-      <div className={cn("shrink-0 grid size-9 place-items-center rounded-lg", config.iconBg)}>
-        {variant === "loading" ? (
+      <div className={cn('grid size-9 shrink-0 place-items-center rounded-lg', config.iconBg)}>
+        {variant === 'loading' ? (
           <Icon className="size-5 animate-spin" aria-hidden="true" />
         ) : (
           <Icon className="size-5" aria-hidden="true" />
         )}
       </div>
 
-      <div className="flex-1 min-w-0">
-        <p className={cn("font-semibold", config.titleColor)}>{title}</p>
-        {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-        )}
+      <div className="min-w-0 flex-1">
+        <p className={cn('font-semibold', config.titleColor)}>{title}</p>
+        {description && <p className="text-muted-foreground mt-1 text-sm">{description}</p>}
         {action && (
           <button
             type="button"
@@ -158,7 +157,7 @@ export function ToastNotification({
             onClose();
           }, 200);
         }}
-        className="shrink-0 rounded-lg p-1 text-muted-foreground hover:bg-black/5 hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground shrink-0 rounded-lg p-1 hover:bg-black/5"
         aria-label="Dismiss notification"
       >
         <X className="size-4" aria-hidden="true" />
@@ -168,7 +167,8 @@ export function ToastNotification({
 }
 
 /* Toast Provider for managing multiple toasts */
-import { createContext, useContext, useCallback, ReactNode } from "react";
+import type { ReactNode } from 'react';
+import { createContext, useContext, useCallback } from 'react';
 
 interface Toast {
   id: string;
@@ -184,7 +184,7 @@ interface Toast {
 
 interface ToastContextType {
   toasts: Toast[];
-  toast: (options: Omit<Toast, "id">) => string;
+  toast: (options: Omit<Toast, 'id'>) => string;
   dismiss: (id: string) => void;
   dismissAll: () => void;
 }
@@ -194,7 +194,7 @@ const ToastContext = createContext<ToastContextType | null>(null);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const toast = useCallback((options: Omit<Toast, "id">) => {
+  const toast = useCallback((options: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substring(2, 9);
     const newToast = { ...options, id };
     setToasts((prev) => [...prev, newToast]);
@@ -233,7 +233,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
+    throw new Error('useToast must be used within a ToastProvider');
   }
   return context;
 }
