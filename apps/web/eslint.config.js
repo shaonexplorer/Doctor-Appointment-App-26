@@ -5,6 +5,7 @@ export default [
   ...baseConfig,
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
+    ignores: ['screens/**'],
     languageOptions: {
       parserOptions: {
         projectService: true,

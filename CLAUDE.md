@@ -169,6 +169,32 @@ apps/api/src/
 - [x] Monthly expenses aggregation (last 6 months by completed appointment fees)
 - [x] Appointments by specialty breakdown for dashboard charts
 
+**Week 7-8 Deliverables Complete (2026-09-28):**
+- [x] **Database Seeding**: 31 doctors across 11 specialties (Cardiology, Dermatology, Internal Medicine, Pediatrics, Neurology, Orthopedics, Psychiatry, Oncology, Ophthalmology, ENT, Urology, Gastroenterology) with 30-day schedules (~100-140 slots each)
+- [x] **TanStack Query v5 Integration** (`apps/web/src/hooks/useDoctors.ts`):
+  - `useInfiniteDoctors()` — Infinite scroll pagination with auto-loading
+  - `useDoctors()` — Page-based pagination with `keepPreviousData`
+  - `useDoctor(id)` — Single doctor profile fetching
+  - `useDoctorSchedule(id)` — Availability slots for booking
+  - Transform functions mapping backend `DoctorSearchResult` → frontend `DoctorCardData`
+- [x] **FindDoctors Component Updated** (`apps/web/src/components/find-doctors/FindDoctors.tsx`):
+  - Removed all hardcoded demo data
+  - Real-time API integration with filter synchronization
+  - Loading skeletons matching DoctorCard layout
+  - Error state with retry button
+  - Empty state with clear filters action
+  - Infinite scroll "Load more doctors" button
+  - Results summary: "Showing X of Y doctors"
+- [x] **Simple Search Implementation** (replaces full-text search):
+  - ILIKE queries across specialty, designation, bio, firstName, lastName
+  - Removed PostgreSQL tsvector/tsquery dependency and materialized view
+  - Both `GET /api/doctors` and `GET /api/doctors/search` use same handler
+  - Search works for: "cardio" → 4 cardiologists, "anderson" → Dr. Michael Anderson, "heart" → cardiac specialists
+- [x] **API Client** (`apps/web/src/lib/api.ts`):
+  - Typed `apiRequest()` with error handling and credentials support
+  - `doctorApi` object with searchDoctors, getDoctorById, getDoctorSchedule methods
+  - Full TypeScript types for requests/responses
+
 ---
 
 ## Commands
@@ -223,7 +249,7 @@ npm run check            # lint + typecheck + format:check
 | **Prisma ORM** | Type-safe DB access; migration management; relation queries without N+1 |
 | **BetterAuth (not NextAuth)** | Framework-agnostic; HttpOnly cookies; extensible plugin system |
 | **Zod (shared package)** | Single source of truth for API contracts; inferred TS types; runtime validation both sides |
-| **TanStack Query + React Hook Form** | Server state caching/optimistic updates; performant forms with Zod resolver |
+| **TanStack Query + React Hook Form** | Server state caching/optimistic updates; performant forms with Zod resolver. TanStack Query v5 with infinite scroll, 1min staleTime, 5min gcTime |
 | **Recharts** | React-native, declarative, accessible, composable dashboards |
 | **Clinical Precision Design System** (`design.md`) | Clinical Cobalt/Emerald/Amber/Red semantic palette; Manrope+Inter typography; 12/8/4-col responsive grid; 4-level elevation; shadcn/ui components mapped to design tokens |
 | **Modular MVC (Feature-based)** | Self-contained modules with controllers, services, routes, validators; single responsibility; easy testing; clear ownership |
@@ -438,6 +464,28 @@ The following pre-built screens exist in `screens/Patient Portal/` and contain p
 | `GET /api/appointments/timeline/upcoming` | Upcoming appointments with details (alias) |
 | `GET /api/appointments/timeline/completed` | Completed appointments with prescriptions (alias) |
 | `GET /api/appointments/timeline/medical` | Medical timeline (alias) |
+
+## Doctor Search API Endpoints (Week 7-8)
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/doctors` | Search doctors with filters (search, specialty, fee range, availability, sort, pagination) |
+| `GET /api/doctors/search` | Alias for doctor search (same as above) |
+| `GET /api/doctors/:id` | Get single doctor profile with schedules |
+| `GET /api/doctors/:id/schedule` | Get doctor's available slots for booking |
+
+**Query Parameters for `/api/doctors`:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `search` | string | Search by name, specialty, designation, bio (ILIKE) |
+| `specialty` | string | Filter by specialty (exact match) |
+| `minFee` / `maxFee` | number | Fee range filter |
+| `availableFrom` / `availableTo` | ISO date | Availability date range |
+| `consultationType` | enum | `IN_PERSON` \| `VIDEO` |
+| `sortBy` | string | `fee` \| `createdAt` \| `specialty` |
+| `sortOrder` | string | `asc` \| `desc` |
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 20, max: 100) |
 
 ## Backend Module Structure
 

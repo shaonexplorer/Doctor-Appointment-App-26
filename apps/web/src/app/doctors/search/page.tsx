@@ -9,7 +9,7 @@ export default function DoctorSearchPage() {
   return (
     <ProtectedRoute allowedRoles={[UserType.PATIENT]}>
       <PatientPortalShell active="Find Doctors">
-        <FindDoctors onOpenProfile={() => {}} />
+        <FindDoctors />
       </PatientPortalShell>
     </ProtectedRoute>
   );

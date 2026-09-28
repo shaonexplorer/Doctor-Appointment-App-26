@@ -23,10 +23,11 @@ export function errorResponse(code: string, message: string, details?: Record<st
 /**
  * Async handler wrapper for Express routes
  * Automatically catches errors and passes to next()
+ * Accepts async functions that return Promise<void> or Promise<any>
  */
-export function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<void>
-) {
+export function asyncHandler<
+  T extends (req: Request, res: Response, next: NextFunction) => Promise<unknown>,
+>(fn: T) {
   return (req: Request, res: Response, next: NextFunction): void => {
     void fn(req, res, next).catch(next);
   };

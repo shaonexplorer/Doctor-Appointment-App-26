@@ -1,40 +1,32 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { ChevronDown, ChevronRight, CircleHelp, Bell, Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
-  ChevronDown,
-  ChevronRight,
-  CircleHelp,
-  Bell,
-  Menu,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { GlobalSearch } from "@/components/global-search";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { GlobalSearch } from '@/components/global-search';
 
 export interface HeaderProps {
   active: string;
   onNavigate: (label: string) => void;
-  collapsed: boolean;
   onMobileMenuOpen: () => void;
   className?: string;
 }
 
-export function Header({
-  active,
-  onNavigate,
-  collapsed,
-  onMobileMenuOpen,
-  className,
-}: HeaderProps) {
+export function Header({ active, onNavigate, onMobileMenuOpen, className }: HeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur-md sm:px-8",
+        'border-border bg-background/90 sticky top-0 z-30 flex h-[76px] items-center justify-between border-b px-4 backdrop-blur-md sm:px-8',
         className
       )}
     >
@@ -48,10 +40,10 @@ export function Header({
         >
           <Menu className="size-5" aria-hidden="true" />
         </Button>
-        <div className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
+        <div className="text-muted-foreground hidden items-center gap-2 text-xs sm:flex">
           <span>Patient portal</span>
           <ChevronRight className="size-3" aria-hidden="true" />
-          <span className="font-semibold text-foreground">{active}</span>
+          <span className="text-foreground font-semibold">{active}</span>
         </div>
       </div>
       <div className="flex items-center gap-2 sm:gap-4">
@@ -60,42 +52,52 @@ export function Header({
           variant="ghost"
           size="icon"
           className="relative"
-          onClick={() => onNavigate("Notifications")}
+          onClick={() => onNavigate('Notifications')}
           aria-label="Notifications"
         >
           <Bell className="size-[18px]" aria-hidden="true" />
-          <span className="absolute right-1.5 top-1.5 size-2 rounded-full border-2 border-background bg-primary" />
+          <span className="border-background bg-primary absolute top-1.5 right-1.5 size-2 rounded-full border-2" />
         </Button>
         <Button variant="ghost" size="icon" className="hidden sm:block" aria-label="Help">
           <CircleHelp className="size-[18px]" aria-hidden="true" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <Button variant="ghost" className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-secondary" aria-expanded={profileOpen}>
+            <div
+              className="hover:bg-secondary flex items-center gap-2 rounded-xl p-1.5"
+              aria-expanded={profileOpen}
+            >
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-[#d9e8ff] text-xs font-bold text-primary">
+                <AvatarFallback className="text-primary bg-[#d9e8ff] text-xs font-bold">
                   SJ
                 </AvatarFallback>
               </Avatar>
-              <ChevronDown className="hidden size-4 text-muted-foreground sm:block" aria-hidden="true" />
-            </Button>
+              <ChevronDown
+                className="text-muted-foreground hidden size-4 sm:block"
+                aria-hidden="true"
+              />
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-44" align="end">
             <DropdownMenuItem
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold hover:bg-secondary"
-              onClick={() => { onNavigate("Profile"); setProfileOpen(false); }}
+              className="hover:bg-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold"
+              onClick={() => {
+                onNavigate('Profile');
+                setProfileOpen(false);
+              }}
             >
               My profile
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold hover:bg-secondary"
-              onClick={() => { onNavigate("Settings"); setProfileOpen(false); }}
+              className="hover:bg-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold"
+              onClick={() => {
+                onNavigate('Settings');
+                setProfileOpen(false);
+              }}
             >
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold hover:bg-secondary"
-            >
+            <DropdownMenuItem className="hover:bg-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold">
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
