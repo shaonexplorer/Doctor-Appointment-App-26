@@ -3,7 +3,7 @@
  * Business logic for doctor operations
  */
 
-import type { DoctorRepository } from '../../../repositories';
+import type { DoctorRepository, DoctorWithUser } from '../../../repositories';
 import { AppError } from '../../../shared/middleware/errorHandler';
 import type {
   DoctorProfileCreateInput,
@@ -18,7 +18,7 @@ export class DoctorService {
   constructor(private doctorRepository: DoctorRepository) {}
 
   /**
-   * Search doctors with filters
+   * Search doctors with filters (supports simple text search)
    */
   async searchDoctors(
     filters: DoctorSearchFilters
@@ -30,24 +30,13 @@ export class DoctorService {
     };
   }
 
-  /**
-   * Full-text search doctors (dedicated search endpoint)
-   * Uses PostgreSQL tsvector/tsquery with materialized view for performance
-   */
-  async fullTextSearchDoctors(
-    filters: DoctorSearchFilters
-  ): Promise<{ data: DoctorSearchResult[]; meta: { total: number; totalPages: number } }> {
-    const result = await this.doctorRepository.fullTextSearch(filters);
-    return {
-      data: result.data.map(this.mapToSearchResult),
-      meta: result.meta,
-    };
-  }
-
-  private mapToSearchResult(doctor: any): DoctorSearchResult {
+  private mapToSearchResult(doctor: DoctorWithUser): DoctorSearchResult {
     return {
       ...doctor,
-      fee: typeof doctor.fee === 'object' && doctor.fee !== null ? Number(doctor.fee) : Number(doctor.fee),
+      fee:
+        typeof doctor.fee === 'object' && doctor.fee !== null
+          ? Number(doctor.fee)
+          : Number(doctor.fee as number),
     };
   }
 
@@ -61,7 +50,10 @@ export class DoctorService {
     }
     return {
       ...doctor,
-      fee: typeof doctor.fee === 'object' && doctor.fee !== null ? Number(doctor.fee) : Number(doctor.fee),
+      fee:
+        typeof doctor.fee === 'object' && doctor.fee !== null
+          ? Number(doctor.fee)
+          : Number(doctor.fee),
     };
   }
 
@@ -75,7 +67,10 @@ export class DoctorService {
     }
     return {
       ...doctor,
-      fee: typeof doctor.fee === 'object' && doctor.fee !== null ? Number(doctor.fee) : Number(doctor.fee),
+      fee:
+        typeof doctor.fee === 'object' && doctor.fee !== null
+          ? Number(doctor.fee)
+          : Number(doctor.fee),
     };
   }
 
@@ -106,7 +101,10 @@ export class DoctorService {
     const created = await this.doctorRepository.create(createData);
     return {
       ...created,
-      fee: typeof created.fee === 'object' && created.fee !== null ? Number(created.fee) : Number(created.fee),
+      fee:
+        typeof created.fee === 'object' && created.fee !== null
+          ? Number(created.fee)
+          : Number(created.fee),
     } as DoctorProfile;
   }
 
@@ -128,7 +126,7 @@ export class DoctorService {
       }
     }
 
-    const updateData: Record<string, any> = {};
+    const updateData: Partial<DoctorProfileUpdateInput> & Record<string, unknown> = {};
     if (data.specialty !== undefined) updateData.specialty = data.specialty;
     if (data.designation !== undefined) updateData.designation = data.designation;
     if (data.licenseNo !== undefined) updateData.licenseNo = data.licenseNo;
@@ -138,7 +136,10 @@ export class DoctorService {
     const updated = await this.doctorRepository.update(userId, updateData);
     return {
       ...updated,
-      fee: typeof updated.fee === 'object' && updated.fee !== null ? Number(updated.fee) : Number(updated.fee),
+      fee:
+        typeof updated.fee === 'object' && updated.fee !== null
+          ? Number(updated.fee)
+          : Number(updated.fee),
     } as DoctorProfile;
   }
 

@@ -150,7 +150,7 @@ function Field({
   const isPassword = type === 'password';
 
   return (
-    <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
+    <label className="text-muted-foreground flex flex-col gap-2 text-sm font-semibold">
       <span>
         {label}
         {required && <span className="text-muted-foreground/60"> *</span>}
@@ -159,13 +159,13 @@ function Field({
         {Icon && (
           <Icon
             aria-hidden="true"
-            className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50"
+            className="text-muted-foreground/50 absolute top-1/2 left-3.5 size-4 -translate-y-1/2"
           />
         )}
         <Input
           type={isPassword && visible ? 'text' : type}
           placeholder={placeholder}
-          className={`h-11 w-full rounded-xl border bg-background px-10 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:ring-4 focus:ring-primary/10 ${
+          className={`bg-background text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:ring-primary/10 h-11 w-full rounded-xl border px-10 text-sm font-normal transition-colors outline-none focus:ring-4 ${
             error
               ? 'border-destructive focus:border-destructive focus:ring-destructive/10'
               : 'border-input'
@@ -179,14 +179,14 @@ function Field({
             type="button"
             onClick={() => setVisible(!visible)}
             aria-label={visible ? 'Hide password' : 'Show password'}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground"
+            className="text-muted-foreground/50 hover:text-foreground absolute top-1/2 right-3.5 -translate-y-1/2"
           >
             {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         )}
       </span>
       {error && (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="text-destructive text-sm" role="alert">
           {error}
         </p>
       )}
@@ -211,18 +211,18 @@ function AuthShell({
     <div className="mx-auto w-full">
       <div className="mb-10 lg:hidden">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+          <span className="bg-primary text-primary-foreground shadow-primary/20 grid size-9 place-items-center rounded-xl shadow-lg">
             <Stethoscope className="size-5" />
           </span>
-          <span className="text-xl font-bold tracking-tight text-foreground">
+          <span className="text-foreground text-xl font-bold tracking-tight">
             Medi<span className="text-primary">Book</span>
           </span>
         </Link>
       </div>
       {backAction && <div className="mb-8">{backAction}</div>}
-      <p className="text-sm font-bold text-primary">{eyebrow}</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p>
+      <p className="text-primary text-sm font-bold">{eyebrow}</p>
+      <h1 className="text-foreground mt-2 text-3xl font-bold tracking-tight">{title}</h1>
+      <p className="text-muted-foreground mt-3 text-sm leading-6">{copy}</p>
       <div className="mt-8">{children}</div>
     </div>
   );
@@ -240,22 +240,22 @@ function RoleChoice({ onSelectRole }: { onSelectRole: (role: Role) => void }) {
           <button
             key={id}
             onClick={() => onSelectRole(id)}
-            className="group flex items-center gap-4 rounded-2xl border border-input bg-background p-4 text-left transition-all hover:border-primary hover:shadow-lg hover:shadow-primary/10"
+            className="group border-input bg-background hover:border-primary hover:shadow-primary/10 flex items-center gap-4 rounded-2xl border p-4 text-left transition-all hover:shadow-lg"
           >
-            <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground">
+            <span className="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground grid size-11 place-items-center rounded-xl">
               <Icon className="size-5" />
             </span>
             <span className="flex-1">
-              <strong className="block text-sm text-foreground">{title}</strong>
-              <span className="mt-1 block text-xs text-muted-foreground">{copy}</span>
+              <strong className="text-foreground block text-sm">{title}</strong>
+              <span className="text-muted-foreground mt-1 block text-xs">{copy}</span>
             </span>
-            <ArrowRight className="size-4 text-muted-foreground/50 group-hover:text-primary" />
+            <ArrowRight className="text-muted-foreground/50 group-hover:text-primary size-4" />
           </button>
         ))}
       </div>
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="text-muted-foreground mt-8 text-center text-sm">
         Already have an account?{' '}
-        <Link href="/login" className="font-bold text-primary hover:underline">
+        <Link href="/login" className="text-primary font-bold hover:underline">
           Sign in
         </Link>
       </p>
@@ -319,16 +319,21 @@ function Signup({
           variant="ghost"
           size="sm"
           onClick={onBack}
-          className="gap-2 text-sm font-bold text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground gap-2 text-sm font-bold"
         >
           <ArrowLeft className="size-4" /> Choose a different account
         </Button>
       }
     >
       <form
-        onSubmit={handleSubmit(onSubmit, (formErrors) => {
-          console.error('Form Validation Failed:', formErrors);
-        })} // eslint-disable-line @typescript-eslint/no-misused-promises
+        onSubmit={handleSubmit(
+          async (data) => {
+            await onSubmit(data);
+          },
+          (formErrors) => {
+            console.error('Form Validation Failed:', formErrors);
+          }
+        )}
         className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto pr-1"
       >
         {/* First Name & Last Name */}
@@ -393,11 +398,11 @@ function Signup({
               {...register('dob')}
               error={errors.dob?.message}
             />
-            <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
+            <label className="text-muted-foreground flex flex-col gap-2 text-sm font-semibold">
               <span>Gender</span>
               <select
                 {...register('gender')}
-                className="h-11 w-full rounded-xl border border-input bg-background px-4 text-sm font-normal text-foreground outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10"
+                className="border-input bg-background text-foreground focus:border-primary focus:ring-primary/10 h-11 w-full rounded-xl border px-4 text-sm font-normal transition-colors outline-none focus:ring-4"
                 aria-invalid={!!errors.gender}
               >
                 <option value="">Select gender</option>
@@ -406,7 +411,7 @@ function Signup({
                 <option value="OTHER">Other</option>
               </select>
               {errors.gender && (
-                <p className="text-sm text-destructive" role="alert">
+                <p className="text-destructive text-sm" role="alert">
                   {errors.gender.message}
                 </p>
               )}
@@ -468,19 +473,19 @@ function Signup({
           </div>
         )}
 
-        <Label className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+        <Label className="text-muted-foreground flex items-start gap-2 text-xs leading-5">
           <input
             type="checkbox"
-            className="mt-1 size-4 rounded border-border accent-primary"
+            className="border-border accent-primary mt-1 size-4 rounded"
             required
             {...register('terms')}
           />
           I agree to the{' '}
-          <Link href="/terms" className="font-bold text-primary hover:underline">
+          <Link href="/terms" className="text-primary font-bold hover:underline">
             Terms of Service
           </Link>{' '}
           and{' '}
-          <Link href="/privacy" className="font-bold text-primary hover:underline">
+          <Link href="/privacy" className="text-primary font-bold hover:underline">
             Privacy Policy
           </Link>
           .
@@ -489,7 +494,7 @@ function Signup({
         <Button
           type="submit"
           disabled={loading}
-          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-60"
+          className="bg-primary text-primary-foreground shadow-primary/20 flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold shadow-lg disabled:opacity-60"
         >
           {loading ? 'Creating account...' : 'Create account'} <ArrowRight className="size-4" />
         </Button>
@@ -515,6 +520,7 @@ export default function RegisterPage() {
 
   const handleSignup = async (data: RegisterFormInput): Promise<void> => {
     // Strip form-only fields before sending to API
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { confirmPassword, terms, ...apiData } = data;
 
     // Determine if doctor from userType (comes from form data)

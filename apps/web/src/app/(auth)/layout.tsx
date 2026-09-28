@@ -10,25 +10,25 @@ export const metadata: Metadata = {
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-background">
+    <div className="bg-background flex h-screen">
       {/* Visual Panel - Hidden on mobile, shown on desktop */}
-      <aside className="relative hidden overflow-hidden bg-cobalt-800 lg:flex lg:w-[44%] lg:flex-col lg:justify-between lg:p-12">
-        <div className="absolute -right-36 -top-32 size-[520px] rounded-full bg-cobalt-500/30 blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 size-[440px] rounded-full bg-cobalt-900/70 blur-2xl" />
+      <aside className="bg-primary/60 relative hidden overflow-hidden lg:flex lg:w-[44%] lg:flex-col lg:justify-between lg:p-12">
+        <div className="bg-primary/30 absolute -top-32 -right-36 size-[520px] rounded-full blur-3xl" />
+        <div className="bg-primary/70 absolute -bottom-32 -left-32 size-[440px] rounded-full blur-2xl" />
 
         <div className="relative z-10">
           <Link href="/" className="mb-10 flex items-center gap-2.5">
-            <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <span className="bg-primary text-primary-foreground shadow-primary/20 grid size-9 place-items-center rounded-xl shadow-lg">
               <Stethoscope className="size-5" />
             </span>
             <span className="text-xl font-bold tracking-tight text-white">
               Medi<span className="text-primary-foreground/80">Book</span>
             </span>
           </Link>
-          <p className="max-w-sm text-4xl font-semibold leading-[1.1] tracking-tight text-white">
+          <p className="max-w-sm text-4xl leading-[1.1] font-semibold tracking-tight text-white">
             Care that feels <span className="text-cobalt-200">personal.</span>
           </p>
-          <p className="mt-5 max-w-sm text-base leading-7 text-cobalt-200">
+          <p className="text-cobalt-200 mt-5 max-w-sm text-base leading-7">
             Your trusted space to find the right care, book appointments, and stay on top of your
             health.
           </p>
@@ -38,11 +38,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="rounded-[2rem] border border-white/20 bg-white/10 p-5 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="grid size-11 place-items-center rounded-2xl bg-cobalt-200 text-cobalt-800">
+                <div className="bg-cobalt-200 text-cobalt-800 grid size-11 place-items-center rounded-2xl">
                   <Stethoscope className="size-5" />
                 </div>
                 <div>
-                  <p className="text-xs text-cobalt-200">Your next visit</p>
+                  <p className="text-cobalt-200 text-xs">Your next visit</p>
                   <p className="font-semibold text-white">Dr. Emily Carter</p>
                 </div>
               </div>
@@ -50,7 +50,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 Confirmed
               </span>
             </div>
-            <div className="mt-5 flex items-center gap-3 border-t border-white/15 pt-4 text-xs text-cobalt-200">
+            <div className="text-cobalt-200 mt-5 flex items-center gap-3 border-t border-white/15 pt-4 text-xs">
               <span className="rounded-lg bg-white/10 px-3 py-2 font-semibold text-white">
                 Wed, 24 Apr
               </span>
@@ -58,9 +58,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               <span className="ml-auto">Video visit</span>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-2 text-xs text-cobalt-200">
+          <div className="text-cobalt-200 mt-4 flex items-center gap-2 text-xs">
             <svg
-              className="size-4 text-cobalt-300"
+              className="text-cobalt-300 size-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

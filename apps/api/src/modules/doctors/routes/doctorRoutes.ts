@@ -15,7 +15,7 @@ export function createDoctorRoutes(doctorController: DoctorController): Router {
 
   // Public routes (no auth required)
   router.get('/', validateDoctorSearch, asyncHandler(doctorController.searchDoctors));
-  router.get('/search', validateDoctorSearch, asyncHandler(doctorController.fullTextSearchDoctors));
+  router.get('/search', validateDoctorSearch, asyncHandler(doctorController.searchDoctors));
   router.get('/:id', auditDoctorProfileAccess, asyncHandler(doctorController.getDoctorById));
   router.get('/:id/schedule', asyncHandler(doctorController.getDoctorSchedule));
 

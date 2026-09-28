@@ -1,105 +1,20 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronDown, Grid2X2, List, Search, SlidersHorizontal, X } from 'lucide-react';
-import { DoctorCard, type DoctorCardData, FilterSidebar, SelectFilter, EmptyState } from './index';
+import { Grid2X2, List, Search, SlidersHorizontal, X, Loader2, AlertCircle } from 'lucide-react';
+import { DoctorCard, FilterSidebar, SelectFilter, EmptyState } from './index';
+import {
+  useInfiniteDoctors,
+  transformDoctorsToCardData,
+  type DoctorSearchFilters,
+} from '@/hooks/useDoctors';
 
 export interface FindDoctorsProps {
-  doctors?: DoctorCardData[];
-  specialties?: string[];
-  onOpenProfile?: () => void;
   className?: string;
 }
 
-const defaultDoctors: DoctorCardData[] = [
-  {
-    name: 'Dr. Michael Anderson',
-    initials: 'MA',
-    designation: 'Senior Consultant Cardiologist',
-    specialties: ['Cardiology', 'Heart & Vascular'],
-    symptoms: ['Chest pain', 'High blood pressure'],
-    experience: '18 years',
-    qualifications: 'MD, FACC',
-    fee: '$85',
-    clinic: 'Heart & Vascular Center',
-    next: 'Today, 4:30 PM',
-    availability: 'Available today',
-    color: 'bg-[#dce8ff] text-primary',
-  },
-  {
-    name: 'Dr. Emily Carter',
-    initials: 'EC',
-    designation: 'Consultant Dermatologist',
-    specialties: ['Dermatology', 'Cosmetic Skin'],
-    symptoms: ['Acne', 'Skin rash'],
-    experience: '12 years',
-    qualifications: 'MD, FAAD',
-    fee: '$70',
-    clinic: 'ClearSkin Clinic',
-    next: 'Tomorrow, 9:00 AM',
-    availability: 'Available this week',
-    color: 'bg-[#fce4f0] text-[#bd5d8c]',
-  },
-  {
-    name: 'Dr. James Wilson',
-    initials: 'JW',
-    designation: 'Internal Medicine Specialist',
-    specialties: ['Internal Medicine', 'Primary Care'],
-    symptoms: ['Fatigue', 'Diabetes care'],
-    experience: '15 years',
-    qualifications: 'MD, FACP',
-    fee: '$60',
-    clinic: 'MediBook Family Clinic',
-    next: 'Wed, Sep 23, 11:00 AM',
-    availability: 'Available this week',
-    color: 'bg-[#e6f7ef] text-[#278e70]',
-  },
-  {
-    name: 'Dr. Olivia Bennett',
-    initials: 'OB',
-    designation: 'Consultant Pediatrician',
-    specialties: ['Pediatrics', 'Child Wellness'],
-    symptoms: ['Fever', 'Child nutrition'],
-    experience: '10 years',
-    qualifications: 'MD, FAAP',
-    fee: '$65',
-    clinic: 'Little Steps Pediatrics',
-    next: 'No appointments today',
-    availability: 'Next week',
-    color: 'bg-[#fff1d9] text-[#b97932]',
-  },
-  {
-    name: 'Dr. Sophia Patel',
-    initials: 'SP',
-    designation: 'Consultant Neurologist',
-    specialties: ['Neurology', 'Sleep Medicine'],
-    symptoms: ['Headaches', 'Sleep issues'],
-    experience: '16 years',
-    qualifications: 'MD, FAAN',
-    fee: '$90',
-    clinic: 'NeuroCare Institute',
-    next: 'Thu, Sep 24, 2:00 PM',
-    availability: 'Available this week',
-    color: 'bg-[#eee8ff] text-[#8062c7]',
-  },
-  {
-    name: 'Dr. Daniel Lee',
-    initials: 'DL',
-    designation: 'Orthopedic Surgeon',
-    specialties: ['Orthopedics', 'Sports Medicine'],
-    symptoms: ['Joint pain', 'Sports injuries'],
-    experience: '20 years',
-    qualifications: 'MD, FAAOS',
-    fee: '$95',
-    clinic: 'Motion & Joint Center',
-    next: 'Fri, Sep 25, 10:30 AM',
-    availability: 'Available this week',
-    color: 'bg-[#e2f3f6] text-[#398a99]',
-  },
-];
-
-const defaultSpecialties = [
+const specialties = [
   'All specialties',
   'Cardiology',
   'Dermatology',
@@ -107,14 +22,15 @@ const defaultSpecialties = [
   'Pediatrics',
   'Neurology',
   'Orthopedics',
+  'Psychiatry',
+  'Oncology',
+  'Ophthalmology',
+  'ENT',
+  'Urology',
+  'Gastroenterology',
 ];
 
-export function FindDoctors({
-  doctors = defaultDoctors,
-  specialties = defaultSpecialties,
-  onOpenProfile,
-  className,
-}: FindDoctorsProps) {
+export function FindDoctors({ className }: FindDoctorsProps) {
   const [query, setQuery] = useState('');
   const [specialty, setSpecialty] = useState('All specialties');
   const [availableToday, setAvailableToday] = useState(false);
@@ -124,28 +40,110 @@ export function FindDoctors({
   const [mobileFilters, setMobileFilters] = useState(false);
   const [notice, setNotice] = useState('');
 
-  const filtered = useMemo(
-    () =>
-      doctors.filter((doctor) => {
-        const haystack = [
-          doctor.name,
-          doctor.designation,
-          ...doctor.specialties,
-          ...doctor.symptoms,
-          doctor.clinic,
-        ]
-          .join(' ')
-          .toLowerCase();
-        return (
-          haystack.includes(query.toLowerCase()) &&
-          (specialty === 'All specialties' || doctor.specialties.includes(specialty)) &&
-          (!availableToday || doctor.availability === 'Available today')
-        );
-      }),
-    [query, specialty, availableToday]
-  );
+  // Build filters for API
+  const filters: Omit<DoctorSearchFilters, 'page'> = {
+    search: query || undefined,
+    specialty: specialty === 'All specialties' ? undefined : specialty,
+    availableFrom: availableToday ? new Date().toISOString() : undefined,
+    consultationType:
+      consultation === 'Any type'
+        ? undefined
+        : consultation === 'In-clinic'
+          ? 'IN_PERSON'
+          : 'VIDEO',
+    limit: 20,
+    sortBy:
+      sort === 'Recommended'
+        ? undefined
+        : sort === 'Experience'
+          ? 'createdAt'
+          : sort === 'Fee: low to high'
+            ? 'fee'
+            : undefined,
+    sortOrder: sort === 'Fee: low to high' ? 'asc' : sort === 'Experience' ? 'desc' : undefined,
+  };
 
-  const action = (label: string) => setNotice(`${label} is ready to open.`);
+  // Fetch doctors using TanStack Query with infinite scrolling
+  const {
+    data,
+    isLoading,
+    isError,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+    refetch,
+  } = useInfiniteDoctors(filters);
+
+  // Transform all fetched pages into a flat array of DoctorCardData
+  const doctors = data?.pages.flatMap((page) => transformDoctorsToCardData(page.data)) ?? [];
+
+  // Client-side filtering for immediate feedback (while API handles primary filtering)
+  const filtered = doctors.filter((doctor) => {
+    const haystack = [
+      doctor.name,
+      doctor.designation,
+      ...doctor.specialties,
+      ...doctor.symptoms,
+      doctor.clinic,
+    ]
+      .join(' ')
+      .toLowerCase();
+    return (
+      haystack.includes(query.toLowerCase()) &&
+      (specialty === 'All specialties' || doctor.specialties.includes(specialty)) &&
+      (!availableToday || doctor.availability === 'Available today')
+    );
+  });
+
+  // Load more handler for infinite scrolling
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Skeleton loader for DoctorCard
+  function DoctorCardSkeleton({ list = false }: { list?: boolean }) {
+    return (
+      <article
+        className={cn(
+          'border-border bg-card animate-pulse rounded-2xl border p-5',
+          list ? 'sm:flex sm:items-center sm:gap-5' : ''
+        )}
+      >
+        <div className="flex items-start gap-4">
+          <div className="bg-muted grid size-14 shrink-0 place-items-center rounded-2xl" />
+          <div className="min-w-0 flex-1">
+            <div className="bg-muted mb-2 h-5 w-3/4 rounded" />
+            <div className="bg-muted h-4 w-1/2 rounded" />
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <span className="bg-muted h-5 w-20 rounded-full" />
+              <span className="bg-muted h-5 w-20 rounded-full" />
+            </div>
+          </div>
+        </div>
+        <div className="border-border mt-4 grid gap-3 border-y py-4 text-xs sm:grid-cols-2">
+          <div className="bg-muted h-10 w-full rounded" />
+          <div className="bg-muted h-10 w-full rounded" />
+          <div className="bg-muted h-10 w-full rounded" />
+          <div className="bg-muted h-10 w-full rounded" />
+        </div>
+        <div className="bg-muted mt-4 mb-4 h-4 w-full rounded" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1">
+            <div className="bg-muted mb-1 h-3 w-1/3 rounded" />
+            <div className="bg-muted mb-1 h-6 w-1/4 rounded" />
+            <div className="bg-muted h-3 w-1/2 rounded" />
+          </div>
+          <div className="flex gap-2">
+            <div className="bg-muted h-9 w-28 rounded-xl" />
+            <div className="bg-primary h-9 w-28 rounded-xl" />
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <div className={cn('flex flex-col gap-6', className)}>
@@ -262,7 +260,36 @@ export function FindDoctors({
               </div>
             </div>
           </div>
-          {filtered.length === 0 ? (
+          {/* Loading state */}
+          {isLoading && (
+            <div className={view === 'grid' ? 'grid gap-4 xl:grid-cols-2' : 'flex flex-col gap-4'}>
+              {[...Array(6)].map((_, i) => (
+                <DoctorCardSkeleton key={i} list={view === 'list'} />
+              ))}
+            </div>
+          )}
+
+          {/* Error state */}
+          {isError && (
+            <div className="border-destructive/20 bg-destructive/5 rounded-2xl border p-6 text-center">
+              <AlertCircle className="text-destructive mx-auto size-8" aria-hidden="true" />
+              <h2 className="text-destructive mt-4 text-lg font-black">Failed to load doctors</h2>
+              <p className="text-muted-foreground mx-auto mt-2 max-w-sm text-sm">
+                {error instanceof Error
+                  ? error.message
+                  : 'An unexpected error occurred. Please try again.'}
+              </p>
+              <button
+                onClick={() => void refetch()}
+                className="bg-primary text-primary-foreground mt-5 rounded-xl px-4 py-2.5 text-xs font-bold"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!isLoading && !isError && filtered.length === 0 && (
             <EmptyState
               onClear={() => {
                 setQuery('');
@@ -270,38 +297,53 @@ export function FindDoctors({
                 setAvailableToday(false);
               }}
             />
-          ) : (
-            <div className={view === 'grid' ? 'grid gap-4 xl:grid-cols-2' : 'flex flex-col gap-4'}>
-              {filtered.map((doctor) => (
-                <DoctorCard
-                  key={doctor.name}
-                  doctor={doctor}
-                  list={view === 'list'}
-                  onAction={action}
-                  onOpenProfile={onOpenProfile}
-                />
-              ))}
-            </div>
           )}
-          <div className="border-border bg-card mt-6 flex items-center justify-between rounded-xl border px-4 py-3">
-            <p className="text-muted-foreground text-xs">
-              Showing 1&ndash;{filtered.length} of 48 doctors
-            </p>
-            <div className="flex items-center gap-1">
-              <button className="bg-primary text-primary-foreground rounded-lg px-3 py-2 text-xs font-bold">
-                1
-              </button>
-              <button className="text-muted-foreground hover:bg-secondary rounded-lg px-3 py-2 text-xs font-bold">
-                2
-              </button>
-              <button className="text-muted-foreground hover:bg-secondary rounded-lg px-3 py-2 text-xs font-bold">
-                3
-              </button>
-              <button className="text-muted-foreground hover:bg-secondary rounded-lg p-2">
-                <ChevronDown className="size-4 -rotate-90" />
-              </button>
-            </div>
-          </div>
+
+          {/* Doctors list */}
+          {!isLoading && !isError && filtered.length > 0 && (
+            <>
+              <div
+                className={view === 'grid' ? 'grid gap-4 xl:grid-cols-2' : 'flex flex-col gap-4'}
+              >
+                {filtered.map((doctor) => (
+                  <DoctorCard key={doctor.id} doctor={doctor} list={view === 'list'} />
+                ))}
+              </div>
+
+              {/* Load more / Infinite scroll trigger */}
+              {hasNextPage && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={isFetchingNextPage}
+                    className="border-border bg-card hover:bg-secondary flex items-center justify-center gap-2 rounded-xl border px-6 py-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isFetchingNextPage ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        Loading more...
+                      </>
+                    ) : (
+                      'Load more doctors'
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Results summary */}
+              <div className="border-border bg-card mt-6 flex items-center justify-between rounded-xl border px-4 py-3">
+                <p className="text-muted-foreground text-xs">
+                  Showing {filtered.length} of {data?.pages[0].meta.total ?? filtered.length}{' '}
+                  doctors
+                </p>
+                {hasNextPage && (
+                  <span className="text-muted-foreground text-xs">
+                    {isFetchingNextPage ? 'Loading...' : 'Scroll or click to load more'}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
         </section>
       </div>
       {mobileFilters && (

@@ -33,7 +33,7 @@ function Field({
   const isPassword = type === 'password';
 
   return (
-    <label className="flex flex-col gap-2 text-sm font-semibold text-muted-foreground">
+    <label className="text-muted-foreground flex flex-col gap-2 text-sm font-semibold">
       <span>
         {label}
         {required && <span className="text-muted-foreground/60"> *</span>}
@@ -42,13 +42,13 @@ function Field({
         {Icon && (
           <Icon
             aria-hidden="true"
-            className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50"
+            className="text-muted-foreground/50 absolute top-1/2 left-3.5 size-4 -translate-y-1/2"
           />
         )}
         <Input
           type={isPassword && visible ? 'text' : type}
           placeholder={placeholder}
-          className="h-11 w-full rounded-xl border border-input bg-background px-10 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:ring-4 focus:ring-primary/10"
+          className="border-input bg-background text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:ring-primary/10 h-11 w-full rounded-xl border px-10 text-sm font-normal transition-colors outline-none focus:ring-4"
           style={{ paddingLeft: Icon ? '2.75rem' : undefined }}
           {...props}
         />
@@ -57,7 +57,7 @@ function Field({
             type="button"
             onClick={() => setVisible(!visible)}
             aria-label={visible ? 'Hide password' : 'Show password'}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground"
+            className="text-muted-foreground/50 hover:text-foreground absolute top-1/2 right-3.5 -translate-y-1/2"
           >
             {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
@@ -69,7 +69,7 @@ function Field({
 
 function Divider() {
   return (
-    <div className="my-2 flex items-center gap-3 text-xs font-medium text-muted-foreground/60">
+    <div className="text-muted-foreground/60 my-2 flex items-center gap-3 text-xs font-medium">
       <Separator className="flex-1" />
       <span>or</span>
       <Separator className="flex-1" />
@@ -139,7 +139,7 @@ export default function LoginPage() {
     <div className="mx-auto w-full max-w-md">
       <div className="mb-10 lg:hidden">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+          <span className="bg-primary text-primary-foreground shadow-primary/20 grid size-9 place-items-center rounded-xl shadow-lg">
             <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -149,21 +149,21 @@ export default function LoginPage() {
               />
             </svg>
           </span>
-          <span className="text-xl font-bold tracking-tight text-foreground">
+          <span className="text-foreground text-xl font-bold tracking-tight">
             Medi<span className="text-primary">Book</span>
           </span>
         </Link>
       </div>
 
-      <p className="text-sm font-bold text-primary">Welcome back</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">
+      <p className="text-primary text-sm font-bold">Welcome back</p>
+      <h1 className="text-foreground mt-2 text-3xl font-bold tracking-tight">
         Sign in to your account
       </h1>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+      <p className="text-muted-foreground mt-3 text-sm leading-6">
         Manage your appointments and stay connected to your care team.
       </p>
 
-      {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
+      {}
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-5">
         <Field
           label="Email address"
@@ -174,7 +174,7 @@ export default function LoginPage() {
           aria-invalid={!!errors.email}
         />
         {errors.email && (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="text-destructive text-sm" role="alert">
             {errors.email.message}
           </p>
         )}
@@ -188,21 +188,21 @@ export default function LoginPage() {
           aria-invalid={!!errors.password}
         />
         {errors.password && (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="text-destructive text-sm" role="alert">
             {errors.password.message}
           </p>
         )}
 
         <div className="flex items-center justify-between text-xs">
-          <label className="flex items-center gap-2 font-medium text-muted-foreground">
+          <label className="text-muted-foreground flex items-center gap-2 font-medium">
             <input
               type="checkbox"
-              className="size-4 rounded border-border accent-primary"
+              className="border-border accent-primary size-4 rounded"
               {...register('rememberMe')}
             />
             Remember me
           </label>
-          <Link href="/forgot-password" className="font-bold text-primary hover:underline">
+          <Link href="/forgot-password" className="text-primary font-bold hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -210,7 +210,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           disabled={loading}
-          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-blue-600/90 disabled:opacity-60 dark:bg-blue-600"
+          className="bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90 dark:bg-primary flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold shadow-lg transition-colors disabled:opacity-60"
           size="lg"
         >
           {loading ? 'Signing in...' : 'Sign in'}
@@ -223,16 +223,16 @@ export default function LoginPage() {
       <Button
         type="button"
         variant="outline"
-        className="mx-auto flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-input bg-background text-sm font-bold text-foreground hover:bg-muted"
+        className="border-input bg-background text-foreground hover:bg-muted mx-auto flex h-11 w-full items-center justify-center gap-3 rounded-xl border text-sm font-bold"
         size="lg"
       >
         <span className="text-base font-bold text-blue-500">G</span>
         Continue with Google
       </Button>
 
-      <p className="mt-2 text-center text-sm text-muted-foreground">
+      <p className="text-muted-foreground mt-2 text-center text-sm">
         New to MediBook?{' '}
-        <Link href="/register" className="font-bold text-primary hover:underline">
+        <Link href="/register" className="text-primary font-bold hover:underline">
           Create an account
         </Link>
       </p>
