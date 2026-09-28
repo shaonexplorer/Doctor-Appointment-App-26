@@ -170,7 +170,7 @@ apps/api/src/
 - [x] Appointments by specialty breakdown for dashboard charts
 
 **Week 7-8 Deliverables Complete (2026-09-28):**
-- [x] **Database Seeding**: 31 doctors across 11 specialties (Cardiology, Dermatology, Internal Medicine, Pediatrics, Neurology, Orthopedics, Psychiatry, Oncology, Ophthalmology, ENT, Urology, Gastroenterology) with 30-day schedules (~100-140 slots each)
+- [x] **Database Seeding**: 31 doctors across 11 specialties (Cardiology, Dermatology, Internal Medicine, Pediatrics, Neurology, Orthopedics, Psychiatry, Oncology, Ophthalmology, ENT, Urology, Gastroenterology) with 30-day schedules (~273-350 slots each, 20-minute intervals)
 - [x] **TanStack Query v5 Integration** (`apps/web/src/hooks/useDoctors.ts`):
   - `useInfiniteDoctors()` — Infinite scroll pagination with auto-loading
   - `useDoctors()` — Page-based pagination with `keepPreviousData`

@@ -567,13 +567,14 @@ function generateSchedules(doctorId: string, startDate: Date, days: number = 30)
     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
     if (isWeekend && Math.random() > 0.3) continue;
 
-    // Morning slots (9 AM - 12 PM)
-    const morningSlots = Math.floor(Math.random() * 3) + 2; // 2-4 slots
+    // Morning slots (9 AM - 12 PM) - 20 minute slots
+    const morningSlots = Math.floor(Math.random() * 6) + 4; // 4-9 slots (20 min each = ~1.3 to 3 hours)
     for (let i = 0; i < morningSlots; i++) {
       const slotStart = new Date(date);
-      slotStart.setHours(9 + i, 0, 0, 0);
+      slotStart.setHours(9, 0, 0, 0);
+      slotStart.setMinutes(slotStart.getMinutes() + i * 20);
       const slotEnd = new Date(slotStart);
-      slotEnd.setHours(slotStart.getHours() + 1);
+      slotEnd.setMinutes(slotEnd.getMinutes() + 20);
 
       // 80% available, 15% booked, 5% cancelled
       const rand = Math.random();
@@ -589,13 +590,14 @@ function generateSchedules(doctorId: string, startDate: Date, days: number = 30)
       });
     }
 
-    // Afternoon slots (1 PM - 4 PM)
-    const afternoonSlots = Math.floor(Math.random() * 3) + 1; // 1-3 slots
+    // Afternoon slots (1 PM - 4 PM) - 20 minute slots
+    const afternoonSlots = Math.floor(Math.random() * 6) + 3; // 3-8 slots (20 min each = ~1 to 2.6 hours)
     for (let i = 0; i < afternoonSlots; i++) {
       const slotStart = new Date(date);
-      slotStart.setHours(13 + i, 0, 0, 0);
+      slotStart.setHours(13, 0, 0, 0);
+      slotStart.setMinutes(slotStart.getMinutes() + i * 20);
       const slotEnd = new Date(slotStart);
-      slotEnd.setHours(slotStart.getHours() + 1);
+      slotEnd.setMinutes(slotEnd.getMinutes() + 20);
 
       const rand = Math.random();
       let status = SlotStatus.AVAILABLE;
