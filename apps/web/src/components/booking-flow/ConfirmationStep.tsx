@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { Clock3, ShieldCheck } from "lucide-react";
-import { StepHeading } from "./StepHeading";
-import { ActionRow } from "./ActionRow";
-import { SummaryRow } from "./SummaryRow";
-import { ErrorBox } from "./ErrorBox";
-import { LoadingState } from "./LoadingState";
+import { cn } from '@/lib/utils';
+import { Clock3 } from 'lucide-react';
+import { StepHeading } from './StepHeading';
+import { ActionRow } from './ActionRow';
+import { SummaryRow } from './SummaryRow';
+import { ErrorBox } from './ErrorBox';
+import { LoadingState } from './LoadingState';
 
-export type ConfirmationStatus = "idle" | "loading" | "conflict" | "failure";
+export type ConfirmationStatus = 'idle' | 'loading' | 'conflict' | 'failure';
 
 export interface ConfirmationStepProps {
   date: string;
@@ -19,10 +19,17 @@ export interface ConfirmationStepProps {
   onBack: () => void;
   onConfirm: () => void;
   onRetry: () => void;
-  doctor?: string;
-  clinic?: string;
-  patient?: string;
-  fee?: string;
+  doctor?: {
+    name: string;
+    designation: string;
+    specialties: string[];
+    clinic: string;
+    fee: string;
+  };
+  patient?: {
+    name: string;
+    email: string;
+  };
   className?: string;
 }
 
@@ -35,13 +42,15 @@ export function ConfirmationStep({
   onBack,
   onConfirm,
   onRetry,
-  doctor = "Dr. Michael Anderson &middot; Cardiology",
-  clinic = "Heart & Vascular Center, New York",
-  patient = "Sarah Johnson &middot; sarah.johnson@example.com",
-  fee = "$85",
+  doctor,
+  patient,
   className,
 }: ConfirmationStepProps) {
-  const displaySymptoms = symptoms || tags.join(", ") || "Routine consultation";
+  const displaySymptoms = symptoms || tags.join(', ') || 'Routine consultation';
+  const doctorName = doctor ? `${doctor.name} • ${doctor.specialties[0] ?? ''}` : 'Unknown Doctor';
+  const clinicName = doctor?.clinic ?? 'Clinic not specified';
+  const patientName = patient ? `${patient.name} • ${patient.email}` : 'Patient not specified';
+  const fee = doctor?.fee ?? '$0';
 
   return (
     <div className={cn(className)}>
@@ -51,15 +60,17 @@ export function ConfirmationStep({
         description="Please check the details before reserving this appointment."
       />
       <div className="mt-7 grid gap-5 lg:grid-cols-[1.2fr_.8fr]">
-        <div className="rounded-2xl border border-border bg-background p-5">
-          <SummaryRow label="Doctor" value={doctor} />
-          <SummaryRow label="Date & time" value={`${date} &middot; ${time}`} />
-          <SummaryRow label="Clinic" value={clinic} />
-          <SummaryRow label="Patient" value={patient} />
+        <div className="border-border bg-background rounded-2xl border p-5">
+          <SummaryRow label="Doctor" value={doctorName} />
+          <SummaryRow label="Date & Time" value={`${date} • ${time}`} />
+          <SummaryRow label="Clinic" value={clinicName} />
+          <SummaryRow label="Patient" value={patientName} />
           <SummaryRow label="Symptoms" value={displaySymptoms} />
         </div>
-        <div className="rounded-2xl border border-border bg-secondary/50 p-5">
-          <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Payment status</p>
+        <div className="border-border bg-secondary/50 rounded-2xl border p-5">
+          <p className="text-muted-foreground text-xs font-black tracking-wider uppercase">
+            Payment status
+          </p>
           <div className="mt-3 flex items-center justify-between">
             <span className="text-lg font-black">Consultation fee</span>
             <span className="text-2xl font-black">{fee}</span>
@@ -68,31 +79,31 @@ export function ConfirmationStep({
             <Clock3 className="size-4" aria-hidden="true" />
             Pending
           </div>
-          <p className="mt-4 text-xs leading-5 text-muted-foreground">
+          <p className="text-muted-foreground mt-4 text-xs leading-5">
             No payment is captured until your appointment is successfully reserved.
           </p>
         </div>
       </div>
-      {status === "loading" && <LoadingState />}
-      {status === "conflict" && (
+      {status === 'loading' && <LoadingState />}
+      {status === 'conflict' && (
         <ErrorBox
           title="This slot was just booked"
           text="Choose another available time to continue."
           onClick={onRetry}
         />
       )}
-      {status === "failure" && (
+      {status === 'failure' && (
         <ErrorBox
           title="Booking could not be completed"
-          text="We couldn&apos;t reserve this appointment. Please try again."
+          text="We couldn't reserve this appointment. Please try again."
           onClick={onRetry}
         />
       )}
       <ActionRow
-        label={status === "loading" ? "Reserving..." : "Confirm Appointment"}
+        label={status === 'loading' ? 'Reserving...' : 'Confirm Appointment'}
         onClick={onConfirm}
         onBack={onBack}
-        disabled={status === "loading"}
+        disabled={status === 'loading'}
       />
     </div>
   );

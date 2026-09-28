@@ -133,6 +133,8 @@ export function transformDoctorToCardData(doctor: DoctorSearchResult): DoctorCar
     next: nextAvailable,
     availability,
     color,
+    rating: 4.9, // Default rating - would come from reviews API
+    reviews: 0, // Default reviews count - would come from reviews API
   };
 }
 
@@ -177,6 +179,8 @@ export function transformDoctorProfileToCardData(doctor: DoctorProfile): DoctorC
     next: nextAvailable,
     availability,
     color,
+    rating: 4.9, // Default rating - would come from reviews API
+    reviews: 0, // Default reviews count - would come from reviews API
   };
 }
 
@@ -195,6 +199,8 @@ export interface DoctorCardData {
   next: string;
   availability: string;
   color: string;
+  rating: number;
+  reviews: number;
 }
 
 // Helper functions

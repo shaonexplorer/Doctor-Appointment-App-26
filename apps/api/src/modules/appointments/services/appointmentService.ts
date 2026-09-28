@@ -21,6 +21,7 @@ import type {
   Appointment,
   DoctorStats,
   PatientStats,
+  TimelineEntry,
 } from '../types';
 
 export class AppointmentService {
@@ -79,10 +80,10 @@ export class AppointmentService {
       throw new AppError('NOT_FOUND', 'Doctor user not found', 404);
     }
 
-    // Get doctor profile for specialty and clinic
+    // Get doctor profile for specialty and clinic (bio is used as clinic)
     const doctorProfileFull = await this.prisma.doctorProfile.findUnique({
       where: { id: slot.doctorId },
-      select: { specialty: true, clinic: true, designation: true, fee: true },
+      select: { specialty: true, bio: true, designation: true, fee: true },
     });
 
     // Create appointment and lock slot in transaction
@@ -132,7 +133,7 @@ export class AppointmentService {
       endTime: appointment.slot!.endTime,
       doctorName,
       specialty: doctorProfileFull?.specialty || 'Unknown',
-      clinic: doctorProfileFull?.clinic || 'Clinic',
+      clinic: doctorProfileFull?.bio || 'Clinic',
       consultationType: appointment.consultationType,
     });
 
@@ -146,7 +147,7 @@ export class AppointmentService {
       endTime: appointment.slot!.endTime,
       doctorName,
       specialty: doctorProfileFull?.specialty || 'Unknown',
-      clinic: doctorProfileFull?.clinic || 'Clinic',
+      clinic: doctorProfileFull?.bio || 'Clinic',
       consultationType: appointment.consultationType,
     });
 
@@ -272,17 +273,21 @@ export class AppointmentService {
 
     // Get slot info for notification
     const slot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
-    const doctor = appointment.doctor ? {
-      id: appointment.doctor.id,
-      firstName: appointment.doctor.firstName,
-      lastName: appointment.doctor.lastName,
-    } : null;
+    const doctor = appointment.doctor
+      ? {
+          id: appointment.doctor.id,
+          firstName: appointment.doctor.firstName,
+          lastName: appointment.doctor.lastName,
+        }
+      : null;
 
     // Release the slot
     await this.scheduleRepository.releaseSlot(appointment.slotId);
 
     // Update appointment status
-    const cancelledAppointment = await this.appointmentRepository.update(id, { status: AppointmentStatus.CANCELLED });
+    const cancelledAppointment = await this.appointmentRepository.update(id, {
+      status: AppointmentStatus.CANCELLED,
+    });
 
     // Send cancellation notification
     if (doctor && slot) {
@@ -348,7 +353,7 @@ export class AppointmentService {
     totalAppointments: number;
     totalExpenses: number;
     prescriptionCompliance: number;
-    nextAppointment: any;
+    nextAppointment: Appointment | null;
     appointmentsByStatus: Record<AppointmentStatus, number>;
     appointmentsBySpecialty: Array<{ specialty: string; count: number }>;
     monthlyExpenses: Array<{ month: string; amount: number }>;
@@ -357,7 +362,10 @@ export class AppointmentService {
     const appointmentStats = await this.appointmentRepository.getPatientStats(patientId);
 
     // Get upcoming appointments with details for next appointment
-    const upcomingAppointments = await this.appointmentRepository.getUpcomingWithDetails(patientId, 1);
+    const upcomingAppointments = await this.appointmentRepository.getUpcomingWithDetails(
+      patientId,
+      1
+    );
     const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
 
     // Get monthly expenses (last 6 months)
@@ -407,13 +415,13 @@ export class AppointmentService {
     patientId: string,
     query: { page: number; limit: number; type?: string; dateFrom?: string; dateTo?: string }
   ): Promise<{
-    data: any[];
+    data: TimelineEntry[];
     meta: { total: number; page: number; limit: number; totalPages: number };
   }> {
     const { page, limit, type, dateFrom, dateTo } = query;
     const skip = (page - 1) * limit;
 
-    const whereClause: any = { patientId };
+    const whereClause: Record<string, unknown> = { patientId };
 
     if (dateFrom || dateTo) {
       whereClause.createdAt = {};
@@ -450,7 +458,7 @@ export class AppointmentService {
     ]);
 
     // Transform to timeline entries
-    const timelineEntries: any[] = [];
+    const timelineEntries: TimelineEntry[] = [];
 
     // Add appointments
     for (const appt of appointments) {
@@ -511,7 +519,9 @@ export class AppointmentService {
 
   // Private helper methods
 
-  private async getMonthlyExpenses(patientId: string): Promise<Array<{ month: string; amount: number }>> {
+  private async getMonthlyExpenses(
+    patientId: string
+  ): Promise<Array<{ month: string; amount: number }>> {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -553,7 +563,9 @@ export class AppointmentService {
     return result;
   }
 
-  private async getAppointmentsBySpecialty(patientId: string): Promise<Array<{ specialty: string; count: number }>> {
+  private async getAppointmentsBySpecialty(
+    patientId: string
+  ): Promise<Array<{ specialty: string; count: number }>> {
     const appointments = await this.prisma.appointment.findMany({
       where: { patientId },
       include: {

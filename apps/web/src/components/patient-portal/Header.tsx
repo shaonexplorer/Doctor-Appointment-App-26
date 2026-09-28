@@ -17,6 +17,7 @@ export interface HeaderProps {
   active: string;
   onNavigate: (label: string) => void;
   onMobileMenuOpen: () => void;
+  collapsed?: boolean;
   className?: string;
 }
 

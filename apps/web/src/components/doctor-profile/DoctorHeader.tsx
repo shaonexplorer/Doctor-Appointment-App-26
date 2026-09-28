@@ -18,6 +18,7 @@ export interface DoctorHeaderProps {
     avatarColor: string;
   };
   onBook?: () => void;
+  onBack?: () => void;
   selectedTime?: string;
   onNotice?: (message: string) => void;
   className?: string;
@@ -30,6 +31,7 @@ export function DoctorHeader({
   onNotice,
   className,
 }: DoctorHeaderProps) {
+  console.log(doctor);
   return (
     <section
       className={cn(
@@ -59,7 +61,8 @@ export function DoctorHeader({
                 <Star className="size-3.5 fill-current" aria-hidden="true" />
                 {doctor.rating} ({doctor.reviews} reviews)
               </span>
-              <span>{doctor.experience} experience</span>
+              {/* <span>{doctor.experience} experience</span> */}
+              <span>12 Years experience</span>
             </div>
           </div>
         </div>

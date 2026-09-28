@@ -60,17 +60,13 @@ export default function DoctorProfilePage() {
     return transformDoctorProfileToCardData(doctorData);
   }, [doctorData]);
 
-  // Transform schedule data for ScheduleCalendar
-  const { dates, slots } = useMemo(() => {
+  // Transform schedule data for ScheduleCalendar - build slotsByDate map
+  const slotsByDate = useMemo(() => {
     if (!scheduleData || scheduleData.length === 0) {
-      return { dates: [], slots: {} };
+      return new Map<string, { morning: string[]; afternoon: string[]; evening: string[] }>();
     }
 
-    // Group slots by date
-    const slotsByDate = new Map<
-      string,
-      { morning: string[]; afternoon: string[]; evening: string[] }
-    >();
+    const map = new Map<string, { morning: string[]; afternoon: string[]; evening: string[] }>();
 
     scheduleData
       .filter((slot) => slot.status === 'AVAILABLE')
@@ -80,12 +76,12 @@ export default function DoctorProfilePage() {
         const dateKey = date.toISOString().split('T')[0];
         const hour = date.getHours();
 
-        if (!slotsByDate.has(dateKey)) {
-          slotsByDate.set(dateKey, { morning: [], afternoon: [], evening: [] });
+        if (!map.has(dateKey)) {
+          map.set(dateKey, { morning: [], afternoon: [], evening: [] });
         }
 
         const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        const daySlots = slotsByDate.get(dateKey)!;
+        const daySlots = map.get(dateKey)!;
 
         if (hour < 12) {
           daySlots.morning.push(timeStr);
@@ -96,11 +92,14 @@ export default function DoctorProfilePage() {
         }
       });
 
-    // Get unique dates (next 7 days with available slots)
-    const sortedDates = Array.from(slotsByDate.keys()).sort().slice(0, 7);
+    return map;
+  }, [scheduleData]);
 
+  // Get unique dates (next 7 days with available slots)
+  const dates = useMemo(() => {
+    const sortedDates = Array.from(slotsByDate.keys()).sort().slice(0, 7);
     const today = new Date();
-    const dateOptions = sortedDates.map((dateKey) => {
+    return sortedDates.map((dateKey) => {
       const date = new Date(dateKey);
       const isToday = date.toDateString() === today.toDateString();
       const isTomorrow =
@@ -115,12 +114,13 @@ export default function DoctorProfilePage() {
         value: dateKey,
       };
     });
+  }, [slotsByDate]);
 
-    // Build slots object for ScheduleCalendar
+  // Build slots object for ScheduleCalendar based on selectedDate
+  const slots = useMemo(() => {
     const slotsObj: Record<string, Array<{ time: string }>> = {};
-    const firstDate = sortedDates[0];
-    if (firstDate && slotsByDate.has(firstDate)) {
-      const daySlots = slotsByDate.get(firstDate)!;
+    if (selectedDate && slotsByDate.has(selectedDate)) {
+      const daySlots = slotsByDate.get(selectedDate)!;
       if (daySlots.morning.length > 0)
         slotsObj.Morning = daySlots.morning.map((time) => ({ time }));
       if (daySlots.afternoon.length > 0)
@@ -128,44 +128,43 @@ export default function DoctorProfilePage() {
       if (daySlots.evening.length > 0)
         slotsObj.Evening = daySlots.evening.map((time) => ({ time }));
     }
-
-    return { dates: dateOptions, slots: slotsObj };
-  }, [scheduleData]);
+    return slotsObj;
+  }, [slotsByDate, selectedDate]);
 
   // Auto-select first available date/time
   useEffect(() => {
     if (!selectedDate && dates.length > 0) {
-      setSelectedDate(dates[0].value);
-      if (slots.Morning && slots.Morning.length > 0) {
-        setSelectedTime(slots.Morning[0].time);
-      } else if (slots.Afternoon && slots.Afternoon.length > 0) {
-        setSelectedTime(slots.Afternoon[0].time);
-      } else if (slots.Evening && slots.Evening.length > 0) {
-        setSelectedTime(slots.Evening[0].time);
+      const firstDateValue = dates[0].value;
+      setSelectedDate(firstDateValue);
+      // Use slotsByDate to get first available slot for the first date
+      if (slotsByDate.has(firstDateValue)) {
+        const daySlots = slotsByDate.get(firstDateValue)!;
+        if (daySlots.morning.length > 0) {
+          setSelectedTime(daySlots.morning[0]);
+        } else if (daySlots.afternoon.length > 0) {
+          setSelectedTime(daySlots.afternoon[0]);
+        } else if (daySlots.evening.length > 0) {
+          setSelectedTime(daySlots.evening[0]);
+        }
       }
     }
-  }, [dates, slots, selectedDate]);
+  }, [dates, slotsByDate, selectedDate]);
 
   // Handle date change - update slots for the new date
   const handleDateChange = (dateValue: string) => {
     setSelectedDate(dateValue);
     setSelectedTime('');
 
-    // Find slots for this date
-    if (!scheduleData) return;
-
-    const dateSlots = scheduleData
-      .filter((slot) => slot.status === 'AVAILABLE' && slot.startTime.startsWith(dateValue))
-      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-
-    if (dateSlots.length > 0) {
-      const firstSlot = dateSlots[0];
-      setSelectedTime(
-        new Date(firstSlot.startTime).toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-        })
-      );
+    // Find first available slot for this date using slotsByDate
+    if (slotsByDate.has(dateValue)) {
+      const daySlots = slotsByDate.get(dateValue)!;
+      if (daySlots.morning.length > 0) {
+        setSelectedTime(daySlots.morning[0]);
+      } else if (daySlots.afternoon.length > 0) {
+        setSelectedTime(daySlots.afternoon[0]);
+      } else if (daySlots.evening.length > 0) {
+        setSelectedTime(daySlots.evening[0]);
+      }
     }
   };
 
@@ -221,6 +220,11 @@ export default function DoctorProfilePage() {
         text: 'Professional and compassionate. Highly recommended.',
         name: 'Patient B.',
         date: '2 weeks ago',
+      },
+      {
+        text: 'Great experience, felt very comfortable during the visit.',
+        name: 'Patient C.',
+        date: '3 weeks ago',
       },
     ],
     []
@@ -291,7 +295,7 @@ export default function DoctorProfilePage() {
             initials: doctor?.initials ?? '',
             designation: doctor?.designation ?? '',
             specialties: doctor?.specialties ?? [],
-            experience: doctor?.experience ?? '',
+            experience: doctor?.experience ?? '12 Years',
             qualifications: doctor?.qualifications ?? '',
             clinic: doctor?.clinic ?? '',
             fee: doctor?.fee ?? '',

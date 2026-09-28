@@ -207,4 +207,61 @@ export const doctorApi = {
   },
 };
 
+// Appointment API types
+export interface AppointmentCreateInput {
+  slotId: string;
+  symptoms?: string | null;
+  notes?: string | null;
+  consultationType?: 'IN_PERSON' | 'VIDEO';
+}
+
+export interface AppointmentResponse {
+  id: string;
+  slotId: string;
+  patientId: string;
+  doctorId: string;
+  status: string;
+  symptoms: string | null;
+  notes: string | null;
+  paymentStatus: string;
+  consultationType: string;
+  createdAt: string;
+  updatedAt: string;
+  slot: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    doctorId: string;
+  };
+  patient: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+  };
+  doctor: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+  };
+}
+
+// Appointment API functions
+export const appointmentApi = {
+  /**
+   * Book a new appointment
+   * POST /api/appointments
+   */
+  bookAppointment: async (input: AppointmentCreateInput): Promise<AppointmentResponse> => {
+    return apiRequest<AppointmentResponse>('/api/appointments', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+};
+
 export { ApiError };

@@ -59,5 +59,25 @@ export interface PatientStats {
   totalSpent: number;
 }
 
+export interface TimelineEntry {
+  id: string;
+  type: 'appointment' | 'prescription';
+  date: Date;
+  title: string;
+  description: string;
+  doctorName: string;
+  doctorSpecialty: string;
+  clinic: string;
+  appointmentId?: string;
+  appointmentStatus?: AppointmentStatus;
+  consultationType?: ConsultationType;
+  symptoms?: string | null;
+  prescriptionId?: string;
+  diagnosis?: string;
+  medications?: string;
+  tests?: string;
+  notes?: string;
+}
+
 export type { AppointmentCreateInput, AppointmentUpdateInput, AppointmentFilters };
 export { AppointmentStatus, PaymentStatus, ConsultationType };
