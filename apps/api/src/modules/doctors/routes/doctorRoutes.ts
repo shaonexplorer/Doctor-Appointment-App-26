@@ -14,33 +14,10 @@ export function createDoctorRoutes(doctorController: DoctorController): Router {
   const router = Router();
 
   // Public routes (no auth required)
-  router.get(
-    '/',
-    validateDoctorSearch,
-    asyncHandler((req, res, next) => {
-      void doctorController.searchDoctors(req, res, next);
-    })
-  );
-  router.get(
-    '/search',
-    validateDoctorSearch,
-    asyncHandler((req, res, next) => {
-      void doctorController.searchDoctors(req, res, next);
-    })
-  );
-  router.get(
-    '/:id',
-    auditDoctorProfileAccess,
-    asyncHandler((req, res, next) => {
-      void doctorController.getDoctorById(req, res, next);
-    })
-  );
-  router.get(
-    '/:id/schedule',
-    asyncHandler((req, res, next) => {
-      void doctorController.getDoctorSchedule(req, res, next);
-    })
-  );
+  router.get('/', validateDoctorSearch, asyncHandler(doctorController.searchDoctors));
+  router.get('/search', validateDoctorSearch, asyncHandler(doctorController.searchDoctors));
+  router.get('/:id', auditDoctorProfileAccess, asyncHandler(doctorController.getDoctorById));
+  router.get('/:id/schedule', asyncHandler(doctorController.getDoctorSchedule));
 
   // Protected routes (auth required)
   router.use(requireAuth);
@@ -52,26 +29,20 @@ export function createDoctorRoutes(doctorController: DoctorController): Router {
     doctorMiddleware,
     auditDoctorProfileUpdate,
     validateCreateProfile,
-    asyncHandler((req, res, next) => {
-      void doctorController.createProfile(req, res, next);
-    })
+    asyncHandler(doctorController.createProfile)
   );
   router.get(
     '/profile/me',
     doctorMiddleware,
     auditDoctorProfileAccess,
-    asyncHandler((req, res, next) => {
-      void doctorController.getMyProfile(req, res, next);
-    })
+    asyncHandler(doctorController.getMyProfile)
   );
   router.patch(
     '/profile/me',
     doctorMiddleware,
     auditDoctorProfileUpdate,
     validateUpdateProfile,
-    asyncHandler((req, res, next) => {
-      void doctorController.updateMyProfile(req, res, next);
-    })
+    asyncHandler(doctorController.updateMyProfile)
   );
 
   return router;

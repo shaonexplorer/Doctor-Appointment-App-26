@@ -4,7 +4,7 @@
  */
 
 import type { PrismaClient, DoctorProfile, Schedule } from '@prisma/client';
-import type { UserType, SlotStatus } from '@prisma/client';
+import { UserType, SlotStatus } from '@prisma/client';
 import type { DoctorSearchFilters, PaginatedResponse } from '@doctor-appointment-app/shared';
 import type { Prisma } from '@prisma/client';
 
