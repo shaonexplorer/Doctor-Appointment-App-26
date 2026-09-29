@@ -8,34 +8,196 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Doctor Appointment App** — A full-stack TypeScript monorepo for a healthcare appointment management platform with four user roles (Admin, Staff, Doctor, Patient), built with Next.js 15 (App Router) frontend and Express.js backend.
 
-**Planned Architecture** (from `specs/techstack.md`):
+**Architecture**:
 ```
 monorepo/
 ├── apps/
-│   ├── web/          # Next.js 15 + React 19 (App Router, RSC, Server Actions)
+│   ├── web/          # Next.js 15 + React 18 (App Router, RSC, Server Actions)
 │   └── api/          # Express.js + TypeScript (REST API, Prisma, BetterAuth)
 ├── packages/
 │   └── shared/       # Zod schemas, TypeScript types, constants, utilities
-└── specs/            # Product documentation (mission, roadmap, techstack)
+├── specs/            # Product documentation (mission, roadmap, techstack)
+```
+
+**Backend Architecture (Modular MVC)**:
+```
+apps/api/src/
+├── modules/                    # Feature-based modules (self-contained)
+│   ├── auth/                   # Authentication (register, login, password reset, email verification)
+│   │   ├── controllers/        # Request/response handling
+│   │   ├── services/           # Business logic
+│   │   ├── routes/             # Route definitions
+│   │   ├── validators/         # Zod schemas + validation middleware
+│   │   └── types/              # Module-specific types
+│   ├── users/                  # User profiles & admin management
+│   ├── doctors/                # Doctor discovery, profiles, schedules
+│   ├── schedules/              # Slot management (CRUD, bulk, availability)
+│   ├── appointments/           # Booking, cancellation, stats
+│   ├── prescriptions/          # Prescription CRUD, recent lists
+│   ├── patients/               # Patient dashboard, medical timeline, appointments
+│   │   ├── controllers/        # Request/response handling
+│   │   ├── services/           # Business logic
+│   │   ├── routes/             # Route definitions
+│   │   ├── validators/         # Zod schemas + validation middleware
+│   │   └── types/              # Module-specific types
+│   └── index.ts                # Module factory (createAllModules)
+├── repositories/               # Data access layer (shared Prisma repositories)
+├── lib/                        # Core infrastructure (BetterAuth, Redis, Rate Limiter, Prisma Adapter)
+├── shared/                     # Shared utilities
+│   ├── middleware/             # Auth, error handler, request logger
+│   ├── utils/                  # Response builders, helpers
+│   ├── types/                  # Common types (ApiResponse, PaginationParams, UserRole)
+│   ├── config/                 # Centralized configuration
+│   └── index.ts
+└── index.ts                    # Application entry point
 ```
 
 ---
 
-## Current State
+## Current State (Week 1, 2 & 3 Complete ✅)
 
-**Repository is in pre-development phase.** Only specifications exist:
-- `specs.md` — Original detailed specification
-- `specs/mission.md` — Vision, objectives, success metrics
-- `specs/roadmap.md` — 8-phase, 24-week delivery plan
-- `specs/techstack.md` — Complete technology decisions with rationale
-- `client/` — Empty (planned: Next.js app)
-- `server/` — Empty (planned: Express API)
+**Phase 1: Foundation — Week 1 Deliverables Complete:**
+
+- [x] **Monorepo Scaffolding**: npm workspaces with 3 packages (`apps/web`, `apps/api`, `packages/shared`)
+- [x] **Next.js 15 App Router**: Configured with TypeScript, Tailwind CSS, Turbopack
+- [x] **Express.js API**: TypeScript server with Prisma, BetterAuth, structured routes
+- [x] **Shared Package**: Zod schemas, TypeScript types, constants, utilities with project references
+- [x] **TypeScript Config**: Root + workspace configs with project references for type safety
+- [x] **Code Quality**: ESLint, Prettier, Husky pre-commit hooks, lint-staged
+- [x] **Prisma Schema**: Complete database schema with all core models
+- [x] **CI/CD Pipeline**: GitHub Actions workflow (lint, typecheck, test, build, deploy)
+
+**Phase 1: Foundation — Week 2 Deliverables Complete (Authentication System):**
+
+- [x] **BetterAuth Integration**: Configured in `apps/api` with Prisma adapter
+- [x] **JWT Token Generation**: HttpOnly, Secure, SameSite=Strict (production) / Lax (development) cookies
+- [x] **Password Hashing**: bcrypt with cost factor 12
+- [x] **Authentication Endpoints**:
+  - `POST /api/auth/register` — User registration with role selection (PATIENT/DOCTOR)
+  - `POST /api/auth/login` — Email/password login
+  - `POST /api/auth/logout` — Session termination with cookie clearing
+  - `POST /api/auth/forgot-password` — Password reset request (rate limited: 10 req/min)
+  - `POST /api/auth/reset-password` — Password reset confirmation
+  - `GET /api/auth/me` — Current session user with profile data
+  - `POST /api/auth/verify-email` — Email verification with token
+  - `POST /api/auth/resend-verification` — Resend verification email
+- [x] **Email Verification Flow**: Required for registration, time-limited tokens (24 hours)
+- [x] **Rate Limiting (Redis-backed)**:
+  - Login: 5 requests/minute
+  - Register: 3 requests/hour
+  - Password reset (forgot + reset): 10 requests/minute
+  - Email verification: 3 requests/hour
+  - General API: 100 requests/minute
+- [x] **CORS Configuration**: Restricted to `FRONTEND_URL` only
+- [x] **Helmet.js Security Headers**: CSP disabled for API, HSTS, X-Frame-Options enabled
+- [x] **User Profile Endpoints**:
+  - `GET /api/users/me` — Current user profile with relations
+  - `PATCH /api/users/me` — Update profile (role-specific fields)
+  - `GET /api/users/:id` — Admin/Staff view any user
+  - `GET /api/users` — Admin/Staff list users with pagination
+  - `DELETE /api/users/:id` — Admin delete user
+- [x] **RBAC Middleware**: `requireRole`, `requireAnyRole`, `requireMinimumRole`, `optionalAuth`
+- [x] **Prisma Schema Updates**: Added Session, VerificationToken, Account models for BetterAuth
+
+**Phase 1: Foundation — Week 3 Deliverables Complete (RBAC & Protected Routes):**
+
+- [x] **BetterAuth Session Management**: Added `multiSession` plugin (max 5 concurrent sessions per user)
+- [x] **BetterAuth Audit Logging**: Added `dash` plugin from `@better-auth/infra` for automatic auth event logging
+- [x] **Custom Audit Logging Middleware**: Created `auditLogger.ts` for PHI access tracking
+- [x] **PHI Access Audit Logging** applied to sensitive endpoints:
+  - User profiles (`GET /api/users/me`, `GET /api/users/:id`, `PATCH /api/users/me`, `DELETE /api/users/:id`)
+  - Prescriptions (`GET /api/prescriptions/:id`, `POST /api/prescriptions`, `PATCH /api/prescriptions/:id`, `DELETE /api/prescriptions/:id`)
+  - Appointments (`GET /api/appointments/:id`, `POST /api/appointments`, `PATCH /api/appointments/:id`, `DELETE /api/appointments/:id`)
+  - Doctor profiles (`GET /api/doctors/:id`, `POST /api/doctors/profile`, `GET /api/doctors/profile/me`, `PATCH /api/doctors/profile/me`)
+- [x] **Audit Log Model**: Already exists in Prisma schema with indexes for userId, resource, resourceId, createdAt
+- [x] **Audit Log Helpers**: `logAuthEvent`, `getUserAuditLogs`, `getResourceAuditLogs` for querying audit trails
+- [x] **Dependency**: Added `@better-auth/infra@^0.4.9` (requires `--legacy-peer-deps` due to zod v4 peer dependency)
 
 ---
 
-## Commands (Planned)
+## Phase 2: Doctor Discovery & Patient Portal — Week 5 COMPLETED ✅ (2026-09-27)
 
-Once the monorepo is scaffolded with npm workspaces:
+**Specs Created:**
+- `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/plan.md` — 4-week implementation plan
+- `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/requirements.md` — Detailed requirements
+
+**Design Screens Available for Component Extraction:**
+- `screens/Patient Portal/patient-dashboard.tsx` — Dashboard with KPIs, charts, timeline, quick actions
+- `screens/Patient Portal/patient-appointments.tsx` — Tabbed appointments with search, filter, drawer, cancel modal
+- `screens/Patient Portal/patient-portal-shell.tsx` — Full portal layout with sidebar, header, mobile nav
+- `screens/Patient Portal/patient-records.tsx` — Medical records with category nav, prescription list, preview
+- `screens/Patient Portal/patient-profile-settings.tsx` — Profile/settings with form fields, toggles, avatar upload
+- `screens/Patient Portal/booking-flow.tsx` — 5-step booking flow with stepper, date/time picker, symptoms, confirmation
+- `screens/Patient Portal/doctor-profile.tsx` — Doctor profile with hero, about, schedule calendar, reviews
+- `screens/Patient Portal/find-doctors.tsx` — Doctor search with filters, grid/list view, empty state
+- `screens/Patient Portal/global-search.tsx` — Command palette (⌘K) with role-based results
+- `screens/Patient Portal/notification-center.tsx` — Notifications with tabs, filters, preferences
+
+> **⚠️ STRICT**: Extract reusable components from these screens per the Development Workflow section above.
+
+**Week 5 Deliverables Complete:**
+- [x] Doctor profile CRUD operations (Admin/Staff create, Doctor updates own)
+- [x] Full-text search across name, specialty, designation, symptoms
+- [x] Doctor listing with filters (specialty, availability, fee range)
+- [x] PostgreSQL full-text search setup with materialized views
+- [x] All 8 reusable components extracted: `DoctorCard`, `SpecialtyChip`, `AvailabilityIndicator`, `FeeDisplay`, `SearchInput`, `FilterSidebar`, `LoadingSkeleton`, `EmptyState`
+- [x] Doctor Search Page with infinite scroll/pagination
+- [x] Doctor Detail Page with hero, about, schedule calendar, time slot picker
+
+**Week 6 Deliverables Complete (2026-09-27):**
+- [x] Slot availability API with real-time status
+- [x] Booking flow: select slot → symptom notes → confirm
+- [x] Atomic slot locking (DB transaction) preventing double-booking
+- [x] Appointment confirmation + email/SMS notification stubs
+
+**Week 7 Deliverables Complete (2026-09-28):**
+- [x] **Patient Module** (`apps/api/src/modules/patients/`) — New modular MVC module
+  - Dashboard stats endpoint: `GET /api/patients/dashboard/stats`
+  - Medical timeline endpoint: `GET /api/patients/timeline` (appointments + prescriptions)
+  - Upcoming appointments: `GET /api/patients/appointments/upcoming`
+  - Completed appointments: `GET /api/patients/appointments/completed`
+- [x] **Enhanced Appointments Module** with new endpoints:
+  - Dashboard stats: `GET /api/appointments/stats/dashboard`
+  - Upcoming with details: `GET /api/appointments/timeline/upcoming`
+  - Completed with prescriptions: `GET /api/appointments/timeline/completed`
+  - Medical timeline: `GET /api/appointments/timeline/medical`
+- [x] **Repository enhancements**:
+  - `getUpcomingWithDetails()` - Upcoming appointments with doctor profile
+  - `getCompletedWithPrescriptions()` - Completed appointments with Rx links
+  - `findManyForTimeline()` - Appointments for timeline view
+- [x] Prescription compliance calculation (completed appointments with prescriptions / total completed)
+- [x] Monthly expenses aggregation (last 6 months by completed appointment fees)
+- [x] Appointments by specialty breakdown for dashboard charts
+
+**Week 7-8 Deliverables Complete (2026-09-28):**
+- [x] **Database Seeding**: 31 doctors across 11 specialties (Cardiology, Dermatology, Internal Medicine, Pediatrics, Neurology, Orthopedics, Psychiatry, Oncology, Ophthalmology, ENT, Urology, Gastroenterology) with 30-day schedules (~273-350 slots each, 20-minute intervals)
+- [x] **TanStack Query v5 Integration** (`apps/web/src/hooks/useDoctors.ts`):
+  - `useInfiniteDoctors()` — Infinite scroll pagination with auto-loading
+  - `useDoctors()` — Page-based pagination with `keepPreviousData`
+  - `useDoctor(id)` — Single doctor profile fetching
+  - `useDoctorSchedule(id)` — Availability slots for booking
+  - Transform functions mapping backend `DoctorSearchResult` → frontend `DoctorCardData`
+- [x] **FindDoctors Component Updated** (`apps/web/src/components/find-doctors/FindDoctors.tsx`):
+  - Removed all hardcoded demo data
+  - Real-time API integration with filter synchronization
+  - Loading skeletons matching DoctorCard layout
+  - Error state with retry button
+  - Empty state with clear filters action
+  - Infinite scroll "Load more doctors" button
+  - Results summary: "Showing X of Y doctors"
+- [x] **Simple Search Implementation** (replaces full-text search):
+  - ILIKE queries across specialty, designation, bio, firstName, lastName
+  - Removed PostgreSQL tsvector/tsquery dependency and materialized view
+  - Both `GET /api/doctors` and `GET /api/doctors/search` use same handler
+  - Search works for: "cardio" → 4 cardiologists, "anderson" → Dr. Michael Anderson, "heart" → cardiac specialists
+- [x] **API Client** (`apps/web/src/lib/api.ts`):
+  - Typed `apiRequest()` with error handling and credentials support
+  - `doctorApi` object with searchDoctors, getDoctorById, getDoctorSchedule methods
+  - Full TypeScript types for requests/responses
+
+---
+
+## Commands
 
 ```bash
 # Install dependencies
@@ -58,6 +220,7 @@ npm run db:generate --workspace=api   # Prisma generate
 npm run db:push --workspace=api       # Push schema to DB
 npm run db:migrate --workspace=api    # Run migrations
 npm run db:studio --workspace=api     # Prisma Studio
+npm run db:seed --workspace=api       # Seed development data
 
 # Testing
 npm run test             # Vitest (unit) + Playwright (E2E)
@@ -70,6 +233,7 @@ npm run typecheck        # tsc --noEmit across monorepo
 
 # Code Quality
 npm run format           # Prettier
+npm run format:check     # Check formatting
 npm run check            # lint + typecheck + format:check
 ```
 
@@ -85,8 +249,11 @@ npm run check            # lint + typecheck + format:check
 | **Prisma ORM** | Type-safe DB access; migration management; relation queries without N+1 |
 | **BetterAuth (not NextAuth)** | Framework-agnostic; HttpOnly cookies; extensible plugin system |
 | **Zod (shared package)** | Single source of truth for API contracts; inferred TS types; runtime validation both sides |
-| **TanStack Query + React Hook Form** | Server state caching/optimistic updates; performant forms with Zod resolver |
+| **TanStack Query + React Hook Form** | Server state caching/optimistic updates; performant forms with Zod resolver. TanStack Query v5 with infinite scroll, 1min staleTime, 5min gcTime |
 | **Recharts** | React-native, declarative, accessible, composable dashboards |
+| **Clinical Precision Design System** (`design.md`) | Clinical Cobalt/Emerald/Amber/Red semantic palette; Manrope+Inter typography; 12/8/4-col responsive grid; 4-level elevation; shadcn/ui components mapped to design tokens |
+| **Modular MVC (Feature-based)** | Self-contained modules with controllers, services, routes, validators; single responsibility; easy testing; clear ownership |
+| **Module Factory Pattern** | Dependency injection via `createAllModules(repositories, prisma)`; decoupled, testable, replaceable |
 
 ---
 
@@ -122,7 +289,19 @@ Critical enums: `user_type` (ADMIN/STAFF/DOCTOR/PATIENT), `slot_status` (AVAILAB
 
 ---
 
-## Environment Variables (Planned)
+## Environment Variables
+
+**Backend** (`apps/api/.env`):
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/doctor_appointment
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=<32-char-random>
+BETTER_AUTH_SECRET=<32-char-random>
+BETTER_AUTH_URL=http://localhost:4000
+FRONTEND_URL=http://localhost:3000
+PORT=4000
+NODE_ENV=development
+```
 
 **Frontend** (`apps/web/.env.local`):
 ```
@@ -131,38 +310,120 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 ```
 
-**Backend** (`apps/api/.env`):
+> **Note**: PostgreSQL 16+ and Redis 7+ must be running locally (not via Docker). Update `DATABASE_URL` and `REDIS_URL` if using different hosts/ports.
 ```
-DATABASE_URL=postgresql://...
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=...
-BETTER_AUTH_SECRET=...
-BETTER_AUTH_URL=http://localhost:4000
-FRONTEND_URL=http://localhost:3000
-PORT=4000
-NODE_ENV=development
-```
+
+---
+
+## Design System (`design.md` — Clinical Precision)
+
+**Color Palette** (WCAG 2.1 AA compliant):
+- **Primary**: `#1E40AF` (Clinical Cobalt) — core actions, navigation, booking triggers
+- **Secondary**: `#059669` (Vital Emerald) — confirmed bookings, available slots, positive states
+- **Tertiary**: `#D97706` (Triage Amber) — pending slots, holds, unconfirmed records
+- **Destructive**: `#DC2626` (Critical Red) — cancellations, no-shows, emergency alerts
+- **Neutral**: `#0F172A` (Deep Navy) — primary typography, icons, table headers
+- **Surfaces**: `#F8FAFC` (canvas), `#F1F5F9` (panels), `#FFFFFF` (cards), `#E2E8F0`/`#CBD5E1` (borders)
+
+**Typography**:
+- **Manrope** — display/headlines (page titles, modals, KPIs)
+- **Inter** — clinical data, forms, tables, schedules (tabular nums: `tnum`, `zero`)
+
+**Layout**: 12-col desktop (1200px+, 2rem gutters, 2.5rem margins), 8-col tablet (768-1199px), 4-col mobile (<768px); 8pt rhythm
+
+**Elevation**: 4 levels — Level 0 (canvas), Level 1 (cards/rows, 1px outline + ambient shadow), Level 2 (active slots/popovers), Level 3 (modals/drawers with backdrop blur)
+
+**Components**: Buttons (Primary/Secondary/Ghost/Destructive), Chips (Available/Pending/Cancelled/Neutral), Form Fields (40px/44px, focus/error rings), Selection Controls (18px, 1.5px border), Medical Cards (1.25rem padding, avatar + status tag), Time Slot Pickers (36px, 6px radius, selected=Primary fill)
+
+**✅ CSS Variables Configured** (2026-09-27): The `globals.css` now correctly maps Clinical Precision colors to HSL CSS variables consumed by Tailwind. All semantic color tokens (`--primary`, `--secondary`, `--tertiary`, `--destructive`, `--background`, `--card`, `--muted`, `--border`, etc.) are properly defined for both light and dark modes. The `tertiary` color is now available as Tailwind utilities (`bg-tertiary`, `text-tertiary`, `border-tertiary`).
 
 ---
 
 ## Security Requirements
 
 - Role-based authorization on every mutation
-- Rate limiting on auth endpoints
+- Rate limiting on auth endpoints (5 req/min login, 3 req/hour register)
 - Helmet.js security headers, CORS restricted to frontend origin
 - Prisma parameterized queries (SQL injection prevention)
 - HttpOnly cookies with SameSite + CSRF protection
 - Audit logging for all PHI access
 - Dependency scanning in CI
+- Bcrypt password hashing (cost factor 12)
 
 ---
 
 ## Development Workflow
 
 1. **Start with shared package** — Define Zod schemas and types first
-2. **Backend API** — Implement REST endpoints with validation, auth middleware
+2. **Backend API (Modular MVC)**:
+   - Add feature module under `apps/api/src/modules/{feature}/`
+   - Define types in `types/`
+   - Add Zod validators in `validators/`
+   - Implement service in `services/`
+   - Implement controller in `controllers/`
+   - Define routes in `routes/`
+   - Export from module `index.ts`
+   - Register in `modules/index.ts` factory
 3. **Frontend** — Build UI with Server Components, use Server Actions for mutations
 4. **Shared types** — Keep in sync via `packages/shared`; import in both apps
+
+**Patient Portal Navigation (Updated 2026-09-27):**
+- `PatientPortalShell` now handles navigation internally via `routeMap` (no `onNavigate` prop needed)
+- Active page auto-detected from `pathname` if not provided
+- Pages simply use `<PatientPortalShell active="Label">` without `onNavigate` callback
+- Route mapping defined in `apps/web/src/components/patient-portal/PatientPortalShell.tsx`
+
+---
+
+## ⚠️ STRICT INSTRUCTION: Component Extraction from Design Screens
+
+**When implementing Phase 2 (Doctor Discovery & Patient Portal) features, you MUST extract and reuse components from `screens/Patient Portal/` instead of creating new ones from scratch.**
+
+### Screens Available for Extraction
+
+The following pre-built screens exist in `screens/Patient Portal/` and contain production-ready, design-system-compliant components:
+
+| Screen File | Key Reusable Components |
+|-------------|------------------------|
+| `patient-dashboard.tsx` | `Metric`, `Panel`, `Detail`, `Reminder`, `Action`, `EmptyDashboardState`, `DashboardErrorState`, timeline, charts (PieChart, BarChart) |
+| `patient-appointments.tsx` | `AppointmentCard`, `Status` chip, `AppointmentDrawer`, `CancelModal`, `EmptyState`, tab navigation, search/filter |
+| `patient-portal-shell.tsx` | Sidebar navigation, header with search/notifications/profile, mobile nav, `Brand`, `Metric`, `Activity` |
+| `patient-records.tsx` | Category navigation, `PrescriptionList`, `DocumentPlaceholder`, `PrescriptionPreview`, `Info` cards |
+| `patient-profile-settings.tsx` | `field` input component, `toggle` switch, profile avatar, sections for personal/medical info, notifications, privacy |
+
+### Extraction Rules (MANDATORY)
+
+1. **Before creating ANY new component**, check `screens/Patient Portal/` for existing implementations
+2. **Extract to `apps/web/src/components/`** — Create reusable components in the web app's component library
+3. **Map to Design System** — Ensure extracted components use Clinical Precision tokens from `design.md`:
+   - Colors: Primary (`#1E40AF`), Secondary (`#059669`), Tertiary (`#D97706`), Destructive (`#DC2626`)
+   - Typography: Manrope (headlines), Inter (clinical data)
+   - Elevation: Level 0-3 shadows
+   - Border radius: 6px (slots), 8px (cards), 12px (modals)
+   - Spacing: 8pt rhythm
+4. **Remove hardcoded values** — Replace mock data with props, use TypeScript interfaces
+5. **Add proper accessibility** — ARIA labels, keyboard navigation, focus management
+6. **Make responsive** — Use 4/8/12 column breakpoints per design.md
+
+### Component Mapping for Phase 2 Features
+
+| Phase 2 Feature | Source Screen | Components to Extract |
+|-----------------|---------------|----------------------|
+| Patient Dashboard (Week 7) | `patient-dashboard.tsx` | KPI cards, Timeline, Charts, Quick Actions, Panels |
+| Patient Appointments (Week 7) | `patient-appointments.tsx` | AppointmentCard, Tabs, Search/Filter, Drawer, CancelModal |
+| Doctor Search Results | `patient-portal-shell.tsx` + `patient-dashboard.tsx` | DoctorCard (from Metric/Action), SpecialtyChip, AvailabilityIndicator |
+| Booking Flow Steps | `patient-portal-shell.tsx` (BookingFlow import) | Step indicator, progress bar, confirmation summary |
+| Medical Records | `patient-records.tsx` | CategoryNav, DocumentList, PreviewModal |
+| Profile/Settings | `patient-profile-settings.tsx` | FormField, ToggleSwitch, AvatarUpload, Section |
+
+### Implementation Order
+
+1. **Week 5**: Extract `DoctorCard`, `SpecialtyChip`, `AvailabilityIndicator`, `FeeDisplay` from dashboard/appointment patterns
+2. **Week 6**: Extract `TimeSlotPicker`, `SlotGrid`, `BookingSummary` from portal shell booking flow
+3. **Week 7**: Extract full dashboard, appointments, records components as listed above
+4. **Week 8**: Polish extracted components, add tests, accessibility audit
+
+**DO NOT create duplicate components. DO NOT ignore the design system tokens. ALWAYS extract first, then adapt.**
 
 ---
 
@@ -171,6 +432,82 @@ NODE_ENV=development
 - `specs/techstack.md` — Complete stack with versions, architecture diagram, migration paths
 - `specs/roadmap.md` — Phase breakdown, milestones, dependency graph, risk mitigation
 - `specs/mission.md` — Vision, success metrics, guiding principles
+- `design.md` — **Clinical Precision** design system (colors, typography, layout, elevation, components)
+- `specs/1 - Foundation - 2026-09-17/plan.md` — Phase 1 implementation plan
+- `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/plan.md` — Phase 2 implementation plan
+- `specs/02 - Doctor Discovery & Patient Portal - 2026-09-27/requirements.md` — Phase 2 detailed requirements
+- `screens/Patient Portal/` — Design screens for component extraction (10 screens)
+
+## Patient Portal Routes (Active)
+
+| Route | Page | Shell Active Label |
+|-------|------|-------------------|
+| `/patient/dashboard` | Patient Dashboard | `Dashboard` |
+| `/patient/appointments` | Appointments | `Appointments` |
+| `/patient/records` | Medical Records | `Medical Records` |
+| `/patient/profile` | Profile | `Profile` |
+| `/patient/settings` | Settings | `Settings` |
+| `/patient/notifications` | Notification Center | `Notifications` |
+| `/doctors/search` | Find Doctors | `Find Doctors` |
+| `/doctors/[id]` | Doctor Profile | `Doctor Profile` |
+| `/doctors/[id]/book` | Booking Flow | `Book Appointment` |
+
+## New Patient API Endpoints (Week 7)
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/patients/dashboard/stats` | Patient dashboard KPIs, charts data (upcoming, total, expenses, compliance) |
+| `GET /api/patients/timeline` | Medical timeline (appointments + prescriptions) with filters |
+| `GET /api/patients/appointments/upcoming` | Upcoming appointments with doctor/slot details |
+| `GET /api/patients/appointments/completed` | Completed appointments with prescription links |
+| `GET /api/appointments/stats/dashboard` | Dashboard stats (alias for patient module) |
+| `GET /api/appointments/timeline/upcoming` | Upcoming appointments with details (alias) |
+| `GET /api/appointments/timeline/completed` | Completed appointments with prescriptions (alias) |
+| `GET /api/appointments/timeline/medical` | Medical timeline (alias) |
+
+## Doctor Search API Endpoints (Week 7-8)
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/doctors` | Search doctors with filters (search, specialty, fee range, availability, sort, pagination) |
+| `GET /api/doctors/search` | Alias for doctor search (same as above) |
+| `GET /api/doctors/:id` | Get single doctor profile with schedules |
+| `GET /api/doctors/:id/schedule` | Get doctor's available slots for booking |
+
+**Query Parameters for `/api/doctors`:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `search` | string | Search by name, specialty, designation, bio (ILIKE) |
+| `specialty` | string | Filter by specialty (exact match) |
+| `minFee` / `maxFee` | number | Fee range filter |
+| `availableFrom` / `availableTo` | ISO date | Availability date range |
+| `consultationType` | enum | `IN_PERSON` \| `VIDEO` |
+| `sortBy` | string | `fee` \| `createdAt` \| `specialty` |
+| `sortOrder` | string | `asc` \| `desc` |
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 20, max: 100) |
+
+## Backend Module Structure
+
+Each feature module follows this structure:
+```
+modules/{feature}/
+├── types/index.ts        # Module-specific TypeScript interfaces
+├── validators/index.ts   # Zod schemas + typed validation middleware
+├── services/{Feature}Service.ts  # Business logic (depends on repositories)
+├── controllers/{Feature}Controller.ts  # HTTP handlers (depends on services)
+├── routes/{feature}Routes.ts         # Express router (depends on controller)
+└── index.ts              # Module factory + exports
+```
+
+**Dependency Flow**: `Repository → Service → Controller → Routes`
+
+**Adding a New Module**:
+1. Create `modules/newFeature/` with subdirectories
+2. Define types, validators, service, controller, routes
+3. Export factory in `index.ts` (e.g., `createNewFeatureModule()`)
+4. Register in `modules/index.ts` → `createAllModules()`
+5. Mount in `src/index.ts` → `app.use('/api/new-feature', modules.newFeature.routes)`
 
 ---
 
@@ -192,7 +529,7 @@ NODE_ENV=development
 
 ### Shadcn/ui (Component Library)
 
-This project uses **shadcn/ui** with Tailwind CSS. Use the `shadcn` skill for:
+This project uses **shadcn/ui** with Tailwind CSS, customized to the **Clinical Precision** design system (`design.md`). Use the `shadcn` skill for:
 - Adding, searching, fixing, debugging, styling, composing components
 - Chat interfaces, component registries, presets, `--preset` codes
 - `shadcn init`, `create an app with --preset`, `switch to --preset`
@@ -201,9 +538,19 @@ This project uses **shadcn/ui** with Tailwind CSS. Use the `shadcn` skill for:
 1. Check if shadcn/ui has a suitable component via the skill
 2. Use the skill for installation, customization, composition guidance
 3. Follow project's `components.json` configuration
+4. **Map design tokens from `design.md`** — colors, typography, spacing, radius, elevation to Tailwind config
 
 **Component Principles:**
 - Accessible by default (Radix UI primitives)
 - Customizable via Tailwind + CSS variables
 - Copy-paste ownership (not a dependency)
 - Compose complex UIs from primitives
+
+**Design Token Mapping (from `design.md`):**
+| Design Token | Tailwind Config |
+|--------------|-----------------|
+| Colors (primary, secondary, tertiary, error, surfaces) | `theme.extend.colors` + CSS variables |
+| Typography (Manrope/Inter, scale, weights) | `theme.extend.fontFamily`, `fontSize`, `fontWeight` |
+| Spacing (gutter, margin, space-*) | `theme.extend.spacing` |
+| Radius (sm, DEFAULT, md, lg, xl, full) | `theme.extend.borderRadius` |
+| Elevation (Level 0-3 shadows) | `theme.extend.boxShadow` |
