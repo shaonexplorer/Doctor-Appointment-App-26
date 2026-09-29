@@ -7,7 +7,12 @@ import type { Response, NextFunction } from 'express';
 import type { AppointmentService } from '../services/appointmentService';
 import { buildSuccessResponse, buildPaginatedResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
-import type { AppointmentFilters, TimelineQuery } from '../validators';
+import type {
+  AppointmentFilters,
+  AppointmentCreateInput,
+  AppointmentUpdateInput,
+  TimelineQuery,
+} from '../validators';
 
 export class AppointmentController {
   constructor(private appointmentService: AppointmentService) {}
@@ -19,7 +24,7 @@ export class AppointmentController {
   bookAppointment = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData as AppointmentFilters;
+      const validatedData = req.validatedData as AppointmentCreateInput;
 
       const appointment = await this.appointmentService.bookAppointment(
         req.user!.id,
@@ -55,7 +60,7 @@ export class AppointmentController {
   updateAppointment = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData as AppointmentFilters;
+      const validatedData = req.validatedData as AppointmentUpdateInput;
 
       const appointment = await this.appointmentService.updateAppointment(
         req.params.id,
@@ -193,7 +198,10 @@ export class AppointmentController {
   getUpcomingWithDetails = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-      const appointments = await this.appointmentService.getUpcomingWithDetails(req.user!.id, limit);
+      const appointments = await this.appointmentService.getUpcomingWithDetails(
+        req.user!.id,
+        limit
+      );
       res.json(buildSuccessResponse(appointments));
     } catch (error) {
       next(error);
@@ -204,10 +212,17 @@ export class AppointmentController {
    * Get completed appointments with prescription links
    * GET /api/appointments/timeline/completed
    */
-  getCompletedWithPrescriptions = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  getCompletedWithPrescriptions = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-      const appointments = await this.appointmentService.getCompletedWithPrescriptions(req.user!.id, limit);
+      const appointments = await this.appointmentService.getCompletedWithPrescriptions(
+        req.user!.id,
+        limit
+      );
       res.json(buildSuccessResponse(appointments));
     } catch (error) {
       next(error);

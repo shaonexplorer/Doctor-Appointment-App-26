@@ -215,6 +215,18 @@ export interface AppointmentCreateInput {
   consultationType?: 'IN_PERSON' | 'VIDEO';
 }
 
+export interface AppointmentFilters {
+  status?: string | string[];
+  search?: string;
+  specialty?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 export interface AppointmentResponse {
   id: string;
   slotId: string;
@@ -248,6 +260,85 @@ export interface AppointmentResponse {
     lastName: string;
     phone: string | null;
   };
+  doctorProfile?: {
+    specialty: string;
+    clinic?: string;
+    designation: string;
+    fee: number;
+  } | null;
+  prescriptions?: Array<{
+    id: string;
+    diagnosis: string;
+    createdAt: string;
+  }>;
+}
+
+export interface PaginatedAppointmentsResponse {
+  data: AppointmentResponse[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// Patient dashboard stats
+export interface PatientDashboardStats {
+  upcomingAppointments: number;
+  totalAppointments: number;
+  totalExpenses: number;
+  prescriptionCompliance: number;
+  nextAppointment: {
+    id: string;
+    doctorName: string;
+    doctorSpecialty: string;
+    clinic: string;
+    startTime: string;
+    endTime: string;
+    consultationType: string;
+    status: string;
+  } | null;
+  appointmentsByStatus: Record<string, number>;
+  appointmentsBySpecialty: Array<{ specialty: string; count: number }>;
+  monthlyExpenses: Array<{ month: string; amount: number }>;
+}
+
+// Medical timeline
+export interface MedicalTimelineEntry {
+  id: string;
+  type: 'appointment' | 'prescription';
+  date: string;
+  title: string;
+  description: string;
+  doctorName: string;
+  doctorSpecialty: string;
+  clinic: string;
+  appointmentId?: string;
+  appointmentStatus?: string;
+  consultationType?: string;
+  symptoms?: string | null;
+  prescriptionId?: string;
+  diagnosis?: string;
+  medications?: Array<{
+    name: string;
+    dosage: string;
+    frequency: string;
+    duration: string;
+    instructions: string | null;
+  }>;
+  tests?: string | null;
+  notes?: string | null;
+}
+
+export interface MedicalTimelineResponse {
+  data: MedicalTimelineEntry[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 // Appointment API functions
@@ -260,6 +351,94 @@ export const appointmentApi = {
     return apiRequest<AppointmentResponse>('/api/appointments', {
       method: 'POST',
       body: JSON.stringify(input),
+    });
+  },
+
+  /**
+   * Get patient dashboard stats
+   * GET /api/appointments/stats/dashboard
+   */
+  getDashboardStats: async (): Promise<PatientDashboardStats> => {
+    return apiRequest<PatientDashboardStats>('/api/appointments/stats/dashboard');
+  },
+
+  /**
+   * Get patient medical timeline
+   * GET /api/appointments/timeline/medical
+   */
+  getMedicalTimeline: async (filters?: AppointmentFilters): Promise<MedicalTimelineResponse> => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          if (Array.isArray(value)) {
+            value.forEach((v) => params.append(key, String(v)));
+          } else {
+            params.append(key, String(value));
+          }
+        }
+      });
+    }
+    return apiRequest<MedicalTimelineResponse>(
+      `/api/appointments/timeline/medical?${params.toString()}`
+    );
+  },
+
+  /**
+   * Get upcoming appointments with details
+   * GET /api/appointments/timeline/upcoming
+   */
+  getUpcomingWithDetails: async (limit = 10): Promise<AppointmentResponse[]> => {
+    return apiRequest<AppointmentResponse[]>(`/api/appointments/timeline/upcoming?limit=${limit}`);
+  },
+
+  /**
+   * Get completed appointments with prescriptions
+   * GET /api/appointments/timeline/completed
+   */
+  getCompletedWithPrescriptions: async (limit = 10): Promise<AppointmentResponse[]> => {
+    return apiRequest<AppointmentResponse[]>(`/api/appointments/timeline/completed?limit=${limit}`);
+  },
+
+  /**
+   * List appointments with filters (patient view)
+   * GET /api/appointments
+   */
+  listAppointments: async (filters: AppointmentFilters): Promise<PaginatedAppointmentsResponse> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        if (Array.isArray(value)) {
+          value.forEach((v) => params.append(key, String(v)));
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+    return apiRequest<PaginatedAppointmentsResponse>(`/api/appointments?${params.toString()}`);
+  },
+
+  /**
+   * Cancel appointment
+   * DELETE /api/appointments/:id
+   */
+  cancelAppointment: async (id: string): Promise<AppointmentResponse> => {
+    return apiRequest<AppointmentResponse>(`/api/appointments/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Reschedule appointment
+   * PATCH /api/appointments/:id
+   */
+  rescheduleAppointment: async (
+    id: string,
+    data: { slotId: string }
+  ): Promise<AppointmentResponse> => {
+    return apiRequest<AppointmentResponse>(`/api/appointments/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
     });
   },
 };

@@ -331,8 +331,18 @@ export const AppointmentUpdateSchema = z.object({
   consultationType: z.nativeEnum(ConsultationType).optional(),
 });
 
+// Helper to accept both single value and array for status filter
+const statusArrayOrSingle = z.preprocess(
+  (val) => {
+    if (val === undefined || val === null) return undefined;
+    if (Array.isArray(val)) return val;
+    return [val];
+  },
+  z.array(z.nativeEnum(AppointmentStatus))
+);
+
 export const AppointmentFiltersSchema = z.object({
-  status: z.array(z.nativeEnum(AppointmentStatus)).optional(),
+  status: statusArrayOrSingle.optional(),
   dateFrom: z.string().datetime({ offset: true }).optional(),
   dateTo: z.string().datetime({ offset: true }).optional(),
   doctorId: z.string().cuid().optional(),

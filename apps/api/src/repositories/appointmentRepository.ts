@@ -367,7 +367,12 @@ export class AppointmentRepository {
       createdAt: Date;
       slot: { id: string; startTime: Date; endTime: Date };
       doctor: { id: string; firstName: string; lastName: string; email: string };
-      doctorProfile: { specialty: string; clinic?: string; designation: string; fee: number } | null;
+      doctorProfile: {
+        specialty: string;
+        clinic?: string;
+        designation: string;
+        fee: number;
+      } | null;
     }>
   > {
     const appointments = await this.prisma.appointment.findMany({
@@ -381,7 +386,6 @@ export class AppointmentRepository {
       include: {
         slot: { select: { id: true, startTime: true, endTime: true } },
         doctor: {
-          select: { id: true, firstName: true, lastName: true, email: true },
           include: {
             doctorProfile: { select: { specialty: true, designation: true, fee: true } },
           },
@@ -391,11 +395,19 @@ export class AppointmentRepository {
       take: limit,
     });
 
-    // Transform to include doctorProfile at top level
+    // Transform to include doctorProfile at top level, select only needed doctor fields
     return appointments.map((appt) => ({
       ...appt,
+      doctor: appt.doctor
+        ? {
+            id: appt.doctor.id,
+            firstName: appt.doctor.firstName,
+            lastName: appt.doctor.lastName,
+            email: appt.doctor.email,
+          }
+        : null,
       doctorProfile: appt.doctor?.doctorProfile || null,
-    })) as any;
+    }));
   }
 
   /**
@@ -416,7 +428,12 @@ export class AppointmentRepository {
       completedAt: Date | null;
       slot: { id: string; startTime: Date; endTime: Date };
       doctor: { id: string; firstName: string; lastName: string; email: string };
-      doctorProfile: { specialty: string; clinic?: string; designation: string; fee: number } | null;
+      doctorProfile: {
+        specialty: string;
+        clinic?: string;
+        designation: string;
+        fee: number;
+      } | null;
       prescriptions: Array<{ id: string; diagnosis: string; createdAt: Date }>;
     }>
   > {
@@ -428,7 +445,6 @@ export class AppointmentRepository {
       include: {
         slot: { select: { id: true, startTime: true, endTime: true } },
         doctor: {
-          select: { id: true, firstName: true, lastName: true, email: true },
           include: {
             doctorProfile: { select: { specialty: true, designation: true, fee: true } },
           },
@@ -442,11 +458,19 @@ export class AppointmentRepository {
       take: limit,
     });
 
-    // Transform to include doctorProfile at top level
+    // Transform to include doctorProfile at top level, select only needed doctor fields
     return appointments.map((appt) => ({
       ...appt,
+      doctor: appt.doctor
+        ? {
+            id: appt.doctor.id,
+            firstName: appt.doctor.firstName,
+            lastName: appt.doctor.lastName,
+            email: appt.doctor.email,
+          }
+        : null,
       doctorProfile: appt.doctor?.doctorProfile || null,
-    })) as any;
+    }));
   }
 
   /**
@@ -454,7 +478,7 @@ export class AppointmentRepository {
    */
   async findManyForTimeline(
     patientId: string,
-    whereClause: any = {}
+    whereClause: Prisma.AppointmentWhereInput = {}
   ): Promise<
     Array<{
       id: string;
@@ -465,7 +489,12 @@ export class AppointmentRepository {
       createdAt: Date;
       slot: { id: string; startTime: Date; endTime: Date };
       doctor: { id: string; firstName: string; lastName: string; email: string };
-      doctorProfile: { specialty: string; clinic?: string; designation: string; fee: number } | null;
+      doctorProfile: {
+        specialty: string;
+        clinic?: string;
+        designation: string;
+        fee: number;
+      } | null;
     }>
   > {
     const appointments = await this.prisma.appointment.findMany({
@@ -473,7 +502,6 @@ export class AppointmentRepository {
       include: {
         slot: { select: { id: true, startTime: true, endTime: true } },
         doctor: {
-          select: { id: true, firstName: true, lastName: true, email: true },
           include: {
             doctorProfile: { select: { specialty: true, designation: true, fee: true } },
           },
@@ -482,10 +510,18 @@ export class AppointmentRepository {
       orderBy: { slot: { startTime: 'desc' } },
     });
 
-    // Transform to include doctorProfile at top level
+    // Transform to include doctorProfile at top level, select only needed doctor fields
     return appointments.map((appt) => ({
       ...appt,
+      doctor: appt.doctor
+        ? {
+            id: appt.doctor.id,
+            firstName: appt.doctor.firstName,
+            lastName: appt.doctor.lastName,
+            email: appt.doctor.email,
+          }
+        : null,
       doctorProfile: appt.doctor?.doctorProfile || null,
-    })) as any;
+    }));
   }
 }
