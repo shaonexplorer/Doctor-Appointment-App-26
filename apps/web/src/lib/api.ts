@@ -207,6 +207,74 @@ export const doctorApi = {
   },
 };
 
+// User Profile API types
+export interface UserProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  userType: string;
+  emailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  doctorProfile?: {
+    id: string;
+    specialty: string;
+    designation: string;
+    licenseNo: string;
+    bio: string | null;
+    fee: number;
+    isVerified: boolean;
+  } | null;
+  patientProfile?: {
+    id: string;
+    dob: string | null;
+    gender: string | null;
+    address: string | null;
+    emergencyContact: string | null;
+  } | null;
+}
+
+export interface UpdateProfileInput {
+  firstName?: string;
+  lastName?: string;
+  phone?: string | null;
+  // Patient fields
+  dob?: string | null;
+  gender?: string | null;
+  address?: string | null;
+  emergencyContact?: string | null;
+  // Doctor fields
+  specialty?: string;
+  designation?: string;
+  licenseNo?: string;
+  bio?: string | null;
+  fee?: number;
+}
+
+// User Profile API functions
+export const userApi = {
+  /**
+   * Get current user profile
+   * GET /api/users/me
+   */
+  getProfile: async (): Promise<UserProfile> => {
+    return apiRequest<UserProfile>('/api/users/me');
+  },
+
+  /**
+   * Update current user profile
+   * PATCH /api/users/me
+   */
+  updateProfile: async (data: UpdateProfileInput): Promise<UserProfile> => {
+    return apiRequest<UserProfile>('/api/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
 // Appointment API types
 export interface AppointmentCreateInput {
   slotId: string;
