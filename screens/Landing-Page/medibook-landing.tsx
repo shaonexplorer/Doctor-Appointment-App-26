@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Panel } from '@/components/patient-dashboard/Panel';
+import { Metric } from '@/components/patient-dashboard/Metric';
 import {
   ArrowRight,
   Baby,
@@ -35,7 +37,7 @@ const specialties = [
   ['Orthopedics', Stethoscope],
   ['Internal Medicine', Hospital],
   ['Gynecology', UsersRound],
-  ['Dentistry', Dental],
+  ['Dentistry', Cross],
 ] as const;
 
 const features = [
@@ -80,16 +82,18 @@ export function MediBookLanding() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f7fafc] text-[#17324d]">
-      <header className="sticky top-0 z-20 border-b border-[#e1ebf1]/80 bg-[#f7fafc]/95 backdrop-blur">
+    <main className="bg-background text-foreground min-h-screen overflow-hidden">
+      <header className="border-border/80 bg-background/95 sticky top-0 z-20 border-b backdrop-blur">
         <div className="mx-auto flex max-w-[1240px] items-center justify-between px-5 py-4 lg:px-8">
           <a href="#top" className="flex items-center gap-2.5" aria-label="MediBook home">
-            <span className="flex size-10 items-center justify-center rounded-[13px] bg-[#2563eb] text-white shadow-[0_8px_18px_rgba(37,99,235,.2)]">
+            <span className="bg-primary flex size-10 items-center justify-center rounded-[13px] text-white shadow-[0_8px_18px_rgba(37,99,235,.2)]">
               <HeartPulse className="size-5" />
             </span>
             <span>
               <span className="block text-[17px] font-extrabold tracking-[-.03em]">MediBook</span>
-              <span className="block text-[10px] font-medium text-[#7890a1]">Care, connected.</span>
+              <span className="text-muted-foreground block text-[10px] font-medium">
+                Care, connected.
+              </span>
             </span>
           </a>
           <nav className="hidden items-center gap-7 lg:flex" aria-label="Main navigation">
@@ -103,14 +107,14 @@ export function MediBookLanding() {
               <a
                 key={label}
                 href={href}
-                className="text-[13px] font-semibold text-[#60798b] transition-colors hover:text-[#2563eb]"
+                className="text-muted-foreground hover:text-primary text-[13px] font-semibold transition-colors"
               >
                 {label}
               </a>
             ))}
           </nav>
           <div className="hidden items-center gap-2.5 sm:flex">
-            <Button variant="ghost" size="sm">
+            <Button variant="outline" size="sm">
               Log in
             </Button>
             <Button size="sm">
@@ -127,7 +131,7 @@ export function MediBookLanding() {
         </div>
         {mobileOpen && (
           <nav
-            className="border-t border-[#e1ebf1] bg-white px-5 py-4 lg:hidden"
+            className="border-border bg-card border-t px-5 py-4 lg:hidden"
             aria-label="Mobile navigation"
           >
             <div className="flex flex-col gap-1">
@@ -137,13 +141,13 @@ export function MediBookLanding() {
                     key={label}
                     href={`#${label === 'Find Doctors' ? 'find-doctors' : label === 'How It Works' ? 'how-it-works' : label === 'About' ? 'about' : 'for-doctors'}`}
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-3 py-3 text-sm font-semibold text-[#60798b] hover:bg-[#f3f7fa]"
+                    className="text-muted-foreground hover:bg-muted rounded-lg px-3 py-3 text-sm font-semibold"
                   >
                     {label}
                   </a>
                 )
               )}
-              <div className="mt-2 flex gap-2 border-t border-[#edf2f5] pt-3">
+              <div className="border-muted mt-2 flex gap-2 border-t pt-3">
                 <Button variant="outline" className="flex-1">
                   Log in
                 </Button>
@@ -158,50 +162,50 @@ export function MediBookLanding() {
         id="top"
         className="relative mx-auto max-w-[1240px] px-5 pt-14 pb-16 lg:px-8 lg:pt-24 lg:pb-24"
       >
-        <div className="absolute top-0 -right-24 -z-0 size-80 rounded-full bg-[#dff1ff] blur-3xl" />
+        <div className="bg-primary/10 absolute top-0 -right-24 -z-0 size-80 rounded-full blur-3xl" />
         <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[1.03fr_.97fr] lg:gap-16">
           <div>
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#c9e1f2] bg-white px-3 py-1.5 text-[11px] font-bold text-[#2563eb]">
-              <span className="size-1.5 rounded-full bg-[#39b88a]" />
+            <div className="border-muted bg-card text-primary mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-bold">
+              <span className="bg-success size-1.5 rounded-full" />
               Trusted care, on your terms
             </div>
-            <h1 className="max-w-xl text-[clamp(2.7rem,6vw,5rem)] leading-[.98] font-extrabold tracking-[-.065em] text-[#17324d]">
-              Healthcare appointments, <span className="text-[#2563eb]">made simple.</span>
+            <h1 className="text-foreground max-w-xl text-[clamp(2.7rem,6vw,5rem)] leading-[.98] font-extrabold tracking-[-.065em]">
+              Healthcare appointments, <span className="text-primary">made simple.</span>
             </h1>
-            <p className="mt-6 max-w-lg text-base leading-7 text-[#668093]">
+            <p className="text-muted-foreground mt-6 max-w-lg text-base leading-7">
               Find qualified doctors, see real-time availability, and book the care you need online.
               MediBook makes every step feel clear and human.
             </p>
             <form
               id="find-doctors"
               onSubmit={handleSearch}
-              className="mt-8 rounded-2xl border border-[#dce8ee] bg-white p-2 shadow-[0_14px_35px_rgba(30,73,104,.09)]"
+              className="border-muted bg-card mt-8 rounded-2xl border p-2 shadow-[0_14px_35px_rgba(30,73,104,.09)]"
             >
               <div className="grid gap-1 md:grid-cols-[1.3fr_1fr_1fr_auto]">
-                <label className="flex items-center gap-2 rounded-xl px-3 py-2.5 focus-within:bg-[#f5f9fc]">
-                  <Search className="size-4 shrink-0 text-[#8ba2af]" />
+                <label className="focus-within:bg-muted flex items-center gap-2 rounded-xl px-3 py-2.5">
+                  <Search className="text-muted-foreground size-4 shrink-0" />
                   <span className="sr-only">Search doctor</span>
                   <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#9aadb8]"
+                    className="placeholder:text-muted-foreground/50 min-w-0 flex-1 bg-transparent text-sm outline-none"
                     placeholder="Doctor or specialty"
                   />
                 </label>
-                <label className="flex items-center gap-2 rounded-xl border-t border-[#edf2f5] px-3 py-2.5 md:border-t-0 md:border-l">
-                  <Stethoscope className="size-4 shrink-0 text-[#8ba2af]" />
+                <label className="border-muted flex items-center gap-2 rounded-xl border-t px-3 py-2.5 md:border-t-0 md:border-l">
+                  <Stethoscope className="text-muted-foreground size-4 shrink-0" />
                   <span className="sr-only">Specialty</span>
-                  <select className="min-w-0 flex-1 bg-transparent text-sm text-[#60798b] outline-none">
+                  <select className="text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none">
                     <option>Any specialty</option>
                     <option>Cardiology</option>
                     <option>Dermatology</option>
                     <option>Pediatrics</option>
                   </select>
                 </label>
-                <label className="flex items-center gap-2 rounded-xl border-t border-[#edf2f5] px-3 py-2.5 md:border-t-0 md:border-l">
-                  <MapPin className="size-4 shrink-0 text-[#8ba2af]" />
+                <label className="border-muted flex items-center gap-2 rounded-xl border-t px-3 py-2.5 md:border-t-0 md:border-l">
+                  <MapPin className="text-muted-foreground size-4 shrink-0" />
                   <span className="sr-only">Location</span>
-                  <select className="min-w-0 flex-1 bg-transparent text-sm text-[#60798b] outline-none">
+                  <select className="text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none">
                     <option>Any location</option>
                     <option>Downtown clinic</option>
                     <option>Northside clinic</option>
@@ -213,88 +217,94 @@ export function MediBookLanding() {
               </div>
             </form>
             {searchNotice && (
-              <p role="status" className="mt-3 text-xs font-semibold text-[#2563eb]">
+              <p role="status" className="text-primary mt-3 text-xs font-semibold">
                 {searchNotice}
               </p>
             )}
-            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-semibold text-[#7890a1]">
+            <div className="text-muted-foreground mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-semibold">
               <span className="flex items-center gap-2">
-                <Check className="size-4 text-[#39b88a]" />
+                <Check className="text-success size-4" />
                 Verified doctors
               </span>
               <span className="flex items-center gap-2">
-                <ShieldCheck className="size-4 text-[#39b88a]" />
+                <ShieldCheck className="text-success size-4" />
                 Private by design
               </span>
               <span className="flex items-center gap-2">
-                <Clock3 className="size-4 text-[#39b88a]" />
+                <Clock3 className="text-success size-4" />
                 Flexible appointments
               </span>
             </div>
           </div>
           <div className="relative">
-            <div className="relative mx-auto max-w-[510px] overflow-hidden rounded-[28px] border border-[#d8e8ee] bg-[#e8f4f7] p-3 shadow-[0_26px_60px_rgba(42,91,116,.16)]">
-              <div className="rounded-[21px] bg-white p-5 sm:p-7">
+            <div className="border-muted bg-muted/50 relative mx-auto max-w-[510px] overflow-hidden rounded-[28px] border p-3 shadow-[0_26px_60px_rgba(42,91,116,.16)]">
+              <div className="bg-card elevation-1 rounded-[21px] p-5 sm:p-7">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold tracking-[.16em] text-[#8ba2af] uppercase">
+                    <p className="text-muted-foreground text-[10px] font-bold tracking-[.16em] uppercase">
                       Your care dashboard
                     </p>
                     <p className="mt-1 text-xl font-extrabold tracking-tight">
                       Good morning, Sarah
                     </p>
                   </div>
-                  <div className="flex size-10 items-center justify-center rounded-full bg-[#dcecff] text-[#2563eb]">
+                  <div className="bg-primary/20 text-primary flex size-10 items-center justify-center rounded-full">
                     <CircleUserRound className="size-5" />
                   </div>
                 </div>
                 <div className="mt-6 grid grid-cols-3 gap-2">
-                  <div className="rounded-xl bg-[#eef7ff] p-3">
-                    <CalendarCheck2 className="size-4 text-[#2563eb]" />
-                    <p className="mt-3 text-lg font-extrabold">02</p>
-                    <p className="text-[10px] text-[#7890a1]">Upcoming visits</p>
-                  </div>
-                  <div className="rounded-xl bg-[#effbf6] p-3">
-                    <FileText className="size-4 text-[#39a77f]" />
-                    <p className="mt-3 text-lg font-extrabold">08</p>
-                    <p className="text-[10px] text-[#7890a1]">Health records</p>
-                  </div>
-                  <div className="rounded-xl bg-[#fff8e9] p-3">
-                    <Pill className="size-4 text-[#c48a2b]" />
-                    <p className="mt-3 text-lg font-extrabold">03</p>
-                    <p className="text-[10px] text-[#7890a1]">Prescriptions</p>
-                  </div>
+                  <Metric
+                    label="Upcoming visits"
+                    value="02"
+                    icon={<CalendarCheck2 className="size-4" />}
+                    tone="bg-primary/10 text-primary"
+                  />
+                  <Metric
+                    label="Health records"
+                    value="08"
+                    icon={<FileText className="size-4" />}
+                    tone="bg-success/10 text-success"
+                  />
+                  <Metric
+                    label="Prescriptions"
+                    value="03"
+                    icon={<Pill className="size-4" />}
+                    tone="bg-warning/10 text-warning"
+                  />
                 </div>
-                <div className="mt-6 rounded-2xl border border-[#e6eef2] p-4">
+                <div className="border-muted mt-6 rounded-2xl border p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-bold tracking-[.12em] text-[#8ba2af] uppercase">
+                      <p className="text-muted-foreground text-[10px] font-bold tracking-[.12em] uppercase">
                         Next appointment
                       </p>
                       <p className="mt-1 text-sm font-extrabold">Dr. Emily Carter</p>
-                      <p className="mt-1 text-xs text-[#7890a1]">
+                      <p className="text-muted-foreground mt-1 text-xs">
                         Cardiology · Tue, Sep 22 at 10:30 AM
                       </p>
                     </div>
-                    <span className="rounded-full bg-[#e9f8f2] px-2.5 py-1 text-[10px] font-bold text-[#2e9170]">
+                    <span className="bg-success/20 text-success rounded-full px-2.5 py-1 text-[10px] font-bold">
                       Confirmed
                     </span>
                   </div>
-                  <div className="mt-4 flex items-center justify-between rounded-xl bg-[#f5f9fc] px-3 py-2.5">
-                    <span className="flex items-center gap-2 text-xs font-semibold text-[#60798b]">
-                      <VideoIcon /> Video visit
+                  <div className="bg-muted/50 mt-4 flex items-center justify-between rounded-xl px-3 py-2.5">
+                    <span className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
+                      <span className="bg-primary/20 text-primary flex size-4 items-center justify-center rounded text-[8px] font-bold">
+                        ▶
+                      </span>{' '}
+                      Video visit
                     </span>
-                    <ArrowRight className="size-4 text-[#2563eb]" />
+                    <ArrowRight className="text-primary size-4" />
                   </div>
                 </div>
               </div>
             </div>
-            <div className="absolute -bottom-5 -left-5 flex items-center gap-3 rounded-2xl border border-[#dce8ee] bg-white p-3 shadow-[0_12px_28px_rgba(42,91,116,.14)]">
-              <div className="flex size-9 items-center justify-center rounded-full bg-[#e8f7f2] text-[#2e9170]">
+            <div className="border-muted bg-card absolute -bottom-5 -left-5 flex items-center gap-3 rounded-2xl border p-3 shadow-[0_12px_28px_rgba(42,91,116,.14)]">
+              <div className="bg-success/20 text-success flex size-9 items-center justify-center rounded-full">
                 <CalendarCheck2 className="size-4" />
               </div>
               <div>
-                <p className="text-[10px] text-[#7890a1]">Appointments booked</p>
+                <p className="text-muted-foreground text-[10px]">Appointments booked</p>
                 <p className="text-sm font-extrabold">12,400+ this month</p>
               </div>
             </div>
@@ -302,20 +312,20 @@ export function MediBookLanding() {
         </div>
       </section>
 
-      <section className="border-y border-[#e5eef2] bg-white py-5">
-        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-center gap-x-10 gap-y-3 px-5 text-xs font-semibold text-[#7890a1] lg:justify-between lg:px-8">
+      <section className="border-muted bg-card border-y py-5">
+        <div className="text-muted-foreground mx-auto flex max-w-[1240px] flex-wrap items-center justify-center gap-x-10 gap-y-3 px-5 text-xs font-semibold lg:justify-between lg:px-8">
           <span>Trusted by patients and care teams at</span>
-          <span className="tracking-wide text-[#9bb0bc]">NORTHSTAR HEALTH</span>
-          <span className="tracking-wide text-[#9bb0bc]">wellpoint clinics</span>
-          <span className="tracking-wide text-[#9bb0bc]">HEARTLAND MEDICAL</span>
-          <span className="tracking-wide text-[#9bb0bc]">carebridge</span>
+          <span className="text-muted-foreground/50 tracking-wide">NORTHSTAR HEALTH</span>
+          <span className="text-muted-foreground/50 tracking-wide">wellpoint clinics</span>
+          <span className="text-muted-foreground/50 tracking-wide">HEARTLAND MEDICAL</span>
+          <span className="text-muted-foreground/50 tracking-wide">carebridge</span>
         </div>
       </section>
 
       <section className="mx-auto max-w-[1240px] px-5 py-20 lg:px-8 lg:py-24">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-bold tracking-[.18em] text-[#2563eb] uppercase">
+            <p className="text-primary text-xs font-bold tracking-[.18em] uppercase">
               Find the right care
             </p>
             <h2 className="mt-3 text-3xl font-extrabold tracking-[-.04em] sm:text-4xl">
@@ -324,7 +334,7 @@ export function MediBookLanding() {
           </div>
           <a
             href="#find-doctors"
-            className="flex items-center gap-2 text-sm font-bold text-[#2563eb]"
+            className="text-primary flex items-center gap-2 text-sm font-bold"
           >
             Browse all specialties <ArrowRight className="size-4" />
           </a>
@@ -334,28 +344,28 @@ export function MediBookLanding() {
             <a
               key={name}
               href="#find-doctors"
-              className="group rounded-2xl border border-[#e0ebf0] bg-white p-4 transition-all hover:-translate-y-1 hover:border-[#aacbf0] hover:shadow-[0_10px_25px_rgba(30,73,104,.08)]"
+              className="group border-muted bg-card hover:border-primary/30 rounded-2xl border p-4 transition-all hover:-translate-y-1 hover:shadow-[0_10px_25px_rgba(30,73,104,.08)]"
             >
-              <span className="flex size-10 items-center justify-center rounded-xl bg-[#eef5ff] text-[#2563eb] transition-colors group-hover:bg-[#2563eb] group-hover:text-white">
+              <span className="bg-primary/20 text-primary group-hover:bg-primary flex size-10 items-center justify-center rounded-xl transition-colors group-hover:text-white">
                 <Icon className="size-5" />
               </span>
               <p className="mt-4 text-xs leading-4 font-bold">{name}</p>
-              <p className="mt-1 text-[10px] text-[#8ba2af]">Explore care</p>
+              <p className="text-muted-foreground mt-1 text-[10px]">Explore care</p>
             </a>
           ))}
         </div>
       </section>
 
-      <section id="how-it-works" className="bg-white py-20 lg:py-24">
+      <section id="how-it-works" className="bg-card py-20 lg:py-24">
         <div className="mx-auto max-w-[1240px] px-5 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold tracking-[.18em] text-[#2563eb] uppercase">
+            <p className="text-primary text-xs font-bold tracking-[.18em] uppercase">
               How it works
             </p>
             <h2 className="mt-3 text-3xl font-extrabold tracking-[-.04em] sm:text-4xl">
               Care is easier in four simple steps.
             </h2>
-            <p className="mt-4 text-sm leading-6 text-[#7890a1]">
+            <p className="text-muted-foreground mt-4 text-sm leading-6">
               From your first search to your follow-up, MediBook keeps the experience
               straightforward.
             </p>
@@ -368,13 +378,13 @@ export function MediBookLanding() {
               ['04', 'Meet your doctor', 'Arrive prepared with reminders and your health history.'],
             ].map(([number, title, copy], index) => (
               <div key={number} className="relative text-center md:text-left">
-                <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#eaf2ff] text-lg font-extrabold text-[#2563eb] md:mx-0">
+                <div className="bg-primary/20 text-primary mx-auto flex size-14 items-center justify-center rounded-2xl text-lg font-extrabold md:mx-0">
                   {number}
                 </div>
                 <h3 className="mt-5 text-base font-extrabold">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#7890a1]">{copy}</p>
+                <p className="text-muted-foreground mt-2 text-sm leading-6">{copy}</p>
                 {index < 3 && (
-                  <ArrowRight className="absolute top-5 right-[-20px] hidden size-5 text-[#c3d8e2] md:block" />
+                  <ArrowRight className="text-muted-foreground/50 absolute top-5 right-[-20px] hidden size-5 md:block" />
                 )}
               </div>
             ))}
@@ -384,7 +394,7 @@ export function MediBookLanding() {
 
       <section className="mx-auto max-w-[1240px] px-5 py-20 lg:px-8 lg:py-24">
         <div className="max-w-2xl">
-          <p className="text-xs font-bold tracking-[.18em] text-[#2563eb] uppercase">
+          <p className="text-primary text-xs font-bold tracking-[.18em] uppercase">
             One connected experience
           </p>
           <h2 className="mt-3 text-3xl font-extrabold tracking-[-.04em] sm:text-4xl">
@@ -395,32 +405,32 @@ export function MediBookLanding() {
           {features.map(([title, copy, Icon]) => (
             <div
               key={title}
-              className="rounded-2xl border border-[#e0ebf0] bg-white p-6 transition-shadow hover:shadow-[0_12px_28px_rgba(30,73,104,.07)]"
+              className="border-muted bg-card rounded-2xl border p-6 transition-shadow hover:shadow-[0_12px_28px_rgba(30,73,104,.07)]"
             >
-              <span className="flex size-11 items-center justify-center rounded-xl bg-[#eef5ff] text-[#2563eb]">
+              <span className="bg-primary/20 text-primary flex size-11 items-center justify-center rounded-xl">
                 <Icon className="size-5" />
               </span>
               <h3 className="mt-5 text-base font-extrabold">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-[#7890a1]">{copy}</p>
+              <p className="text-muted-foreground mt-2 text-sm leading-6">{copy}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section id="for-doctors" className="bg-[#17324d] py-20 text-white lg:py-24">
+      <section id="for-doctors" className="bg-muted/50 text-muted-foreground/90 py-20 lg:py-24">
         <div className="mx-auto grid max-w-[1240px] items-center gap-12 px-5 lg:grid-cols-[.9fr_1.1fr] lg:px-8">
           <div>
-            <p className="text-xs font-bold tracking-[.18em] text-[#9bc9ff] uppercase">
+            <p className="text-primary text-xs font-bold tracking-[.18em] uppercase">
               For doctors and clinics
             </p>
             <h2 className="mt-4 text-3xl font-extrabold tracking-[-.04em] sm:text-4xl">
               More time for care. Less time on admin.
             </h2>
-            <p className="mt-5 max-w-lg text-sm leading-7 text-[#c5d7e8]">
+            <p className="text-muted-foreground/60 mt-5 max-w-lg text-sm leading-7">
               Give your team a clearer way to manage availability, appointments, and patient
               relationships from one calm workspace.
             </p>
-            <Button className="mt-8 bg-white text-[#2563eb] hover:bg-[#eef5ff]">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 mt-8">
               Explore MediBook for teams <ArrowRight data-icon="inline-end" />
             </Button>
           </div>
@@ -431,11 +441,15 @@ export function MediBookLanding() {
               ['Generate prescriptions', 'Create clear digital prescriptions faster.'],
               ['Monitor performance', 'See appointments and practice analytics.'],
             ].map(([title, copy]) => (
-              <div key={title} className="rounded-2xl border border-white/10 bg-white/[.07] p-5">
-                <Check className="size-5 text-[#7fe0ba]" />
+              <Panel
+                key={title}
+                title={title}
+                className="border-muted bg-card/50 rounded-2xl border p-5"
+              >
+                <Check className="text-success size-5" />
                 <h3 className="mt-4 text-sm font-extrabold">{title}</h3>
-                <p className="mt-2 text-xs leading-5 text-[#b5cadb]">{copy}</p>
-              </div>
+                <p className="text-muted-foreground/50 mt-2 text-xs leading-5">{copy}</p>
+              </Panel>
             ))}
           </div>
         </div>
@@ -443,49 +457,49 @@ export function MediBookLanding() {
 
       <section id="about" className="mx-auto max-w-[1240px] px-5 py-20 lg:px-8 lg:py-24">
         <div className="grid gap-6 lg:grid-cols-2">
-          <blockquote className="rounded-3xl bg-[#eaf4ff] p-8 sm:p-10">
-            <div className="flex gap-1 text-[#f0ae43]">★★★★★</div>
-            <p className="mt-6 text-xl leading-8 font-bold tracking-[-.02em]">
+          <blockquote className="bg-primary/10 rounded-3xl p-8 sm:p-10">
+            <div className="text-warning flex gap-1">★★★★★</div>
+            <p className="mt-6 text-xl leading-8 font-extrabold tracking-[-.02em]">
               “I found a cardiologist who had an opening that worked with my schedule. Booking took
               less than two minutes.”
             </p>
             <footer className="mt-8 flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-full bg-white text-[#2563eb]">
+              <span className="bg-card text-primary flex size-10 items-center justify-center rounded-full">
                 <UserRound className="size-5" />
               </span>
               <span>
                 <strong className="block text-sm">Maya R.</strong>
-                <span className="text-xs text-[#7890a1]">MediBook patient</span>
+                <span className="text-muted-foreground text-xs">MediBook patient</span>
               </span>
             </footer>
           </blockquote>
-          <blockquote className="rounded-3xl bg-[#eff9f5] p-8 sm:p-10">
-            <div className="flex gap-1 text-[#f0ae43]">★★★★★</div>
-            <p className="mt-6 text-xl leading-8 font-bold tracking-[-.02em]">
+          <blockquote className="bg-success/10 rounded-3xl p-8 sm:p-10">
+            <div className="text-warning flex gap-1">★★★★★</div>
+            <p className="mt-6 text-xl leading-8 font-extrabold tracking-[-.02em]">
               “MediBook gives our front desk one source of truth. We spend less time coordinating
               and more time welcoming patients.”
             </p>
             <footer className="mt-8 flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-full bg-white text-[#2e9170]">
+              <span className="bg-card text-success flex size-10 items-center justify-center rounded-full">
                 <Stethoscope className="size-5" />
               </span>
               <span>
                 <strong className="block text-sm">Dr. Daniel Kim</strong>
-                <span className="text-xs text-[#7890a1]">Clinic director</span>
+                <span className="text-muted-foreground text-xs">Clinic director</span>
               </span>
             </footer>
           </blockquote>
         </div>
       </section>
 
-      <section className="border-y border-[#e1ebf1] bg-white py-10">
+      <section className="border-muted bg-card border-y py-10">
         <div className="mx-auto flex max-w-[900px] flex-col items-center gap-4 px-5 text-center sm:flex-row sm:text-left">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#e8f7f2] text-[#2e9170]">
+          <span className="bg-success/20 text-success flex size-12 shrink-0 items-center justify-center rounded-2xl">
             <ShieldCheck className="size-6" />
           </span>
           <div>
             <h2 className="text-base font-extrabold">Your health information deserves care.</h2>
-            <p className="mt-1 text-sm leading-6 text-[#7890a1]">
+            <p className="text-muted-foreground mt-1 text-sm leading-6">
               MediBook uses secure authentication, protected medical information, and role-based
               access so the right people see the right information.
             </p>
@@ -494,71 +508,78 @@ export function MediBookLanding() {
       </section>
 
       <section className="mx-auto max-w-[1240px] px-5 py-20 lg:px-8">
-        <div className="overflow-hidden rounded-[28px] bg-[#2563eb] px-6 py-12 text-center text-white sm:px-10 lg:py-16">
-          <p className="text-xs font-bold tracking-[.18em] text-[#bfdbff] uppercase">
+        <div className="bg-primary overflow-hidden rounded-[28px] px-6 py-12 text-center text-white sm:px-10 lg:py-16">
+          <p className="text-primary-foreground text-xs font-bold tracking-[.18em] uppercase">
             Start feeling in control
           </p>
-          <h2 className="mt-4 text-3xl font-extrabold tracking-[-.04em] sm:text-5xl">
-            Take control of your
-            <br className="hidden sm:block" /> healthcare journey.
-          </h2>
-          <p className="mx-auto mt-5 max-w-lg text-sm leading-6 text-[#dceaff]">
-            Find the care that fits your life and make your next appointment the easiest one yet.
+          <p className="text-muted-foreground mt-4 max-w-lg text-sm leading-6">
+            Join thousands of patients who trust MediBook to simplify their healthcare journey. Book
+            your first appointment in under 60 seconds – no forms, no hassle, just care.
           </p>
-          <Button className="mt-8 bg-white text-[#2563eb] hover:bg-[#eef5ff]">
-            Get started today <ArrowRight data-icon="inline-end" />
-          </Button>
+          <div className="mt-6 flex justify-center gap-4">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+              Get started today <ArrowRight data-icon="inline-end" />
+            </Button>
+            <Button variant="outline">Learn how it works</Button>
+          </div>
         </div>
       </section>
 
-      <footer className="border-t border-[#e1ebf1] bg-white">
-        <div className="mx-auto grid max-w-[1240px] gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:px-8">
-          <div>
-            <a href="#top" className="flex items-center gap-2.5">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-[#2563eb] text-white">
-                <HeartPulse className="size-4" />
-              </span>
-              <span className="text-base font-extrabold">MediBook</span>
-            </a>
-            <p className="mt-4 max-w-xs text-sm leading-6 text-[#7890a1]">
-              A simpler way to connect people with the care they need.
-            </p>
-          </div>
-          {[
-            ['Product', 'Find doctors', 'Book an appointment', 'Patient portal'],
-            ['Company', 'About MediBook', 'For doctors', 'For clinics'],
-            ['Resources', 'How it works', 'Help center', 'Care guides'],
-            ['Support', 'Contact us', 'Privacy', 'Terms'],
-          ].map(([heading, ...links]) => (
-            <div key={heading}>
-              <h3 className="text-xs font-extrabold tracking-[.12em] text-[#17324d] uppercase">
-                {heading}
-              </h3>
-              <div className="mt-4 flex flex-col gap-3">
-                {links.map((link) => (
-                  <a key={link} href="#top" className="text-sm text-[#7890a1] hover:text-[#2563eb]">
-                    {link}
-                  </a>
-                ))}
-              </div>
+      <footer className="border-muted bg-background/95 border-t py-10 backdrop-blur">
+        <div className="mx-auto max-w-[1240px] px-5 lg:px-8">
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
+            <div className="flex flex-col items-center gap-3 text-center sm:text-left">
+              <a href="#top" className="flex items-center gap-2.5">
+                <span className="bg-primary flex size-10 items-center justify-center rounded-[13px] text-white shadow-[0_8px_18px_rgba(37,99,235,.2)]">
+                  <HeartPulse className="size-5" />
+                </span>
+                <span>
+                  <span className="block text-[17px] font-extrabold tracking-[-.03em]">
+                    MediBook
+                  </span>
+                  <span className="text-muted-foreground block text-[10px] font-medium">
+                    Care, connected.
+                  </span>
+                </span>
+              </a>
+              <p className="text-muted-foreground text-[12px]">
+                © {new Date().getFullYear()} MediBook. All rights reserved.
+              </p>
             </div>
-          ))}
-        </div>
-        <div className="border-t border-[#edf2f5] px-5 py-5 text-center text-xs text-[#9aadb8] lg:px-8">
-          © 2026 MediBook. Care, connected.
+            <nav className="flex flex-col gap-2 sm:flex-row sm:gap-8">
+              {[
+                ['Find Doctors', '#find-doctors'],
+                ['How It Works', '#how-it-works'],
+                ['For Doctors', '#for-doctors'],
+                ['For Patients', '#for-doctors'],
+                ['About', '#about'],
+                ['Privacy', '#'],
+                ['Terms', '#'],
+                ['Contact', '#'],
+              ].map(([label, href]) => (
+                <a
+                  key={label}
+                  href={href}
+                  className="text-muted-foreground hover:text-primary text-[12px] font-medium transition-colors"
+                >
+                  {label}
+                </a>
+              ))}
+            </nav>
+          </div>
+          <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row">
+            <a href="#" className="text-muted-foreground hover:text-primary text-[11px]">
+              Accessibility
+            </a>
+            <a href="#" className="text-muted-foreground hover:text-primary text-[11px]">
+              Security
+            </a>
+            <a href="#" className="text-muted-foreground hover:text-primary text-[11px]">
+              Status
+            </a>
+          </div>
         </div>
       </footer>
     </main>
   );
-}
-
-function VideoIcon() {
-  return (
-    <span className="flex size-4 items-center justify-center rounded bg-[#dcecff] text-[8px] font-bold text-[#2563eb]">
-      ▶
-    </span>
-  );
-}
-function Dental() {
-  return <Cross className="size-5" />;
 }
