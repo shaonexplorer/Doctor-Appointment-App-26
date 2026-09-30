@@ -176,6 +176,7 @@ apps/api/src/
 - [x] **Routing Structure** (`apps/web/src/app/doctor/`) — Protected routes with DOCTOR role
   - `layout.tsx` — Doctor portal layout with ProtectedRoute (DOCTOR role)
   - `dashboard/page.tsx` — Dashboard page with all components wired, mock data
+  - `schedule/page.tsx` — Doctor schedule page with ScheduleGrid component (mock data)
 - [x] **Component Extraction Complete** — All 10 dashboard components extracted from `doctor-dashboard.tsx` design screen
 - [x] **TypeScript Clean** — Zero compilation errors, all prop interfaces exported
 - [x] **ESLint Clean** — Zero linting errors in new/modified files
@@ -526,10 +527,10 @@ The following pre-built screens exist in `screens/Doctor Portal/` and contain pr
 1. **Week 8 (COMPLETE)**: Extract dashboard components from `doctor-dashboard.tsx` ✅
    - `DoctorMetric`, `ChartCard`, `UpcomingAppointments`, `ScheduleTimeline`, `RecentPatients`, `VolumeChart`, `UtilizationDonutChart`, `RevenueStackedBarChart`, `QuickActions`, `Legend`
    - Doctor Portal Shell: `DoctorPortalShell`, `DoctorSidebar`, `DoctorHeader`, `DoctorMobileSidebar`, `DoctorMobileNav`
-2. **Week 9**: Extract remaining components from design screens
+2. **Week 9 (COMPLETE)**: Extract remaining components from design screens
    - Appointments: `AppointmentTabs`, `AppointmentTable`, `AppointmentCard`, `AppointmentDrawer`, `CancelDialog`, `RescheduleDialog`
    - Patients: `PatientTable`, `PatientCard`, `PatientDrawer`, `PatientFilters`
-   - Schedule: `ScheduleGrid`, `SlotCell`, `BulkActions`, `GenerateSlotsDialog`, `ScheduleLegend`
+   - Schedule: `ScheduleGrid`, `SlotCell`, `BulkActions`, `GenerateSlotsDialog`, `ScheduleLegend` ✅
    - Prescriptions: `PrescriptionForm`, `PrescriptionPreview`, `MedicationRow`
    - Consultation: `ConsultationSidebar`, `ConsultationNotes`, `PrescriptionBuilder`
    - Profile: `ProfileHero`, `AboutSection`, `ClinicInfoSection`, `ScheduleCalendar`, `Reviews`
