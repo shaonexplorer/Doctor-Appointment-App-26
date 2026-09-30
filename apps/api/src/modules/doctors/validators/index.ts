@@ -4,7 +4,7 @@
  */
 
 import type { ZodTypeAny } from 'zod';
-import type { Request, Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
 import {
   DoctorSearchFiltersSchema,

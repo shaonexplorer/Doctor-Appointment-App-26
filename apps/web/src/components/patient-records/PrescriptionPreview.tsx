@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { Check, Download, FileText, Printer, X } from "lucide-react";
-import { Info } from "./Info";
-import { Section } from "./Section";
+import { cn } from '@/lib/utils';
+import { Download, Printer, X } from 'lucide-react';
+import { Info } from './Info';
+import { Section } from './Section';
 
 export interface PrescriptionPreviewProps {
   isOpen: boolean;
@@ -39,28 +39,28 @@ export function PrescriptionPreview({
   if (!isOpen) return null;
 
   const defaultPrescription = {
-    id: "RX-2026-003988",
-    doctor: "Dr. Sarah Williams &middot; General Medicine",
-    patient: "Sarah Johnson",
-    diagnosis: "Annual wellness check-up",
-    created: "August 18, 2026",
+    id: 'RX-2026-003988',
+    doctor: 'Dr. Sarah Williams &middot; General Medicine',
+    patient: 'Sarah Johnson',
+    diagnosis: 'Annual wellness check-up',
+    created: 'August 18, 2026',
     medications: [
       {
-        name: "Amoxicillin",
-        dosage: "500 mg",
-        frequency: "3 times daily",
-        duration: "7 days",
-        instructions: "After meals",
+        name: 'Amoxicillin',
+        dosage: '500 mg',
+        frequency: '3 times daily',
+        duration: '7 days',
+        instructions: 'After meals',
       },
     ],
-    tests: ["CBC", "ECG", "Lipid Profile"],
+    tests: ['CBC', 'ECG', 'Lipid Profile'],
   };
 
   const data = prescription || defaultPrescription;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4"
+      className="bg-foreground/30 fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -68,7 +68,7 @@ export function PrescriptionPreview({
     >
       <div
         className={cn(
-          "max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl sm:p-8",
+          'bg-card max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl p-6 shadow-2xl sm:p-8',
           className
         )}
         onClick={(e) => e.stopPropagation()}
@@ -76,13 +76,13 @@ export function PrescriptionPreview({
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-wider text-primary">Prescription</p>
+            <p className="text-primary text-xs font-black tracking-wider uppercase">Prescription</p>
             <h2 className="mt-2 text-2xl font-black">{data.id}</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-2 text-muted-foreground hover:bg-secondary"
+            className="text-muted-foreground hover:bg-secondary rounded-xl p-2"
             aria-label="Close preview"
           >
             <X className="size-5" aria-hidden="true" />
@@ -90,7 +90,7 @@ export function PrescriptionPreview({
         </div>
 
         {/* Info Grid */}
-        <div className="mt-6 grid gap-3 rounded-2xl bg-secondary p-4 sm:grid-cols-2">
+        <div className="bg-secondary mt-6 grid gap-3 rounded-2xl p-4 sm:grid-cols-2">
           <Info label="Doctor" value={data.doctor} />
           <Info label="Patient" value={data.patient} />
           <Info label="Diagnosis" value={data.diagnosis} />
@@ -102,7 +102,7 @@ export function PrescriptionPreview({
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[620px] text-left text-sm">
               <thead>
-                <tr className="border-b border-border text-xs text-muted-foreground">
+                <tr className="border-border text-muted-foreground border-b text-xs">
                   <th className="pb-3">Medication</th>
                   <th className="pb-3">Dosage</th>
                   <th className="pb-3">Frequency</th>
@@ -112,7 +112,7 @@ export function PrescriptionPreview({
               </thead>
               <tbody>
                 {data.medications.map((med, index) => (
-                  <tr key={index} className="border-b border-border">
+                  <tr key={index} className="border-border border-b">
                     <td className="py-4 font-black">{med.name}</td>
                     <td className="py-4">{med.dosage}</td>
                     <td className="py-4">{med.frequency}</td>
@@ -129,7 +129,7 @@ export function PrescriptionPreview({
         <Section title="Test recommendations">
           <div className="mt-3 flex flex-wrap gap-2">
             {data.tests.map((test) => (
-              <span key={test} className="rounded-full bg-secondary px-3 py-2 text-xs font-bold">
+              <span key={test} className="bg-secondary rounded-full px-3 py-2 text-xs font-bold">
                 {test}
               </span>
             ))}
@@ -137,11 +137,11 @@ export function PrescriptionPreview({
         </Section>
 
         {/* Actions */}
-        <div className="mt-8 flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
+        <div className="border-border mt-8 flex flex-col-reverse gap-2 border-t pt-5 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onPrint}
-            className="flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-xs font-bold hover:bg-secondary"
+            className="border-border hover:bg-secondary flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-bold"
           >
             <Printer className="size-4" aria-hidden="true" />
             Print
@@ -149,7 +149,7 @@ export function PrescriptionPreview({
           <button
             type="button"
             onClick={onDownload}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-xs font-bold text-primary-foreground"
+            className="bg-primary text-primary-foreground flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-bold"
           >
             <Download className="size-4" aria-hidden="true" />
             Download PDF

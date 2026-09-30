@@ -4,7 +4,7 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import { AppointmentStatus, ConsultationType } from '@prisma/client';
+import { AppointmentStatus } from '@prisma/client';
 import { AppError } from '../../../shared/middleware/errorHandler';
 import type {
   PatientDashboardStats,
@@ -14,6 +14,9 @@ import type {
   UpcomingAppointmentDetail,
   CompletedAppointmentDetail,
   TimelineQuery,
+  DoctorPatientListItem,
+  DoctorPatientListResponse,
+  DoctorPatientDetail,
 } from '../types';
 import type { AppointmentRepository, PrescriptionRepository } from '../../../repositories';
 
@@ -32,8 +35,12 @@ export class PatientService {
     const appointmentStats = await this.appointmentRepository.getPatientStats(patientId);
 
     // Get upcoming appointments with details for next appointment
-    const upcomingAppointments = await this.appointmentRepository.getUpcomingWithDetails(patientId, 1);
-    const nextAppointment = upcomingAppointments.length > 0 ? this.formatNextAppointment(upcomingAppointments[0]) : null;
+    const upcomingAppointments = await this.appointmentRepository.getUpcomingWithDetails(
+      patientId,
+      1
+    );
+    const nextAppointment =
+      upcomingAppointments.length > 0 ? this.formatNextAppointment(upcomingAppointments[0]) : null;
 
     // Get monthly expenses (last 6 months)
     const monthlyExpenses = await this.getMonthlyExpenses(patientId);
@@ -71,7 +78,7 @@ export class PatientService {
     const { page, limit, type, dateFrom, dateTo } = query;
     const skip = (page - 1) * limit;
 
-    const whereClause: any = { patientId };
+    const whereClause: Record<string, unknown> = { patientId };
 
     if (dateFrom || dateTo) {
       whereClause.createdAt = {};
@@ -124,7 +131,7 @@ export class PatientService {
         clinic: rx.appointment.doctorProfile?.clinic || 'Clinic',
         prescriptionId: rx.id,
         diagnosis: rx.diagnosis,
-        medications: rx.medications as any,
+        medications: rx.medications as string | object,
         tests: rx.tests,
         notes: rx.notes,
       });
@@ -151,14 +158,20 @@ export class PatientService {
   /**
    * Get upcoming appointments with full details
    */
-  async getUpcomingWithDetails(patientId: string, limit: number = 10): Promise<UpcomingAppointmentDetail[]> {
+  async getUpcomingWithDetails(
+    patientId: string,
+    limit: number = 10
+  ): Promise<UpcomingAppointmentDetail[]> {
     return this.appointmentRepository.getUpcomingWithDetails(patientId, limit);
   }
 
   /**
    * Get completed appointments with prescription links
    */
-  async getCompletedWithPrescriptions(patientId: string, limit: number = 10): Promise<CompletedAppointmentDetail[]> {
+  async getCompletedWithPrescriptions(
+    patientId: string,
+    limit: number = 10
+  ): Promise<CompletedAppointmentDetail[]> {
     return this.appointmentRepository.getCompletedWithPrescriptions(patientId, limit);
   }
 
@@ -177,7 +190,9 @@ export class PatientService {
     };
   }
 
-  private async getMonthlyExpenses(patientId: string): Promise<Array<{ month: string; amount: number }>> {
+  private async getMonthlyExpenses(
+    patientId: string
+  ): Promise<Array<{ month: string; amount: number }>> {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -219,7 +234,9 @@ export class PatientService {
     return result;
   }
 
-  private async getAppointmentsBySpecialty(patientId: string): Promise<Array<{ specialty: string; count: number }>> {
+  private async getAppointmentsBySpecialty(
+    patientId: string
+  ): Promise<Array<{ specialty: string; count: number }>> {
     const appointments = await this.prisma.appointment.findMany({
       where: { patientId },
       include: {
@@ -261,6 +278,266 @@ export class PatientService {
     });
 
     return Math.round((prescriptions / completedAppointments.length) * 100);
+  }
+
+  // ==================== DOCTOR PORTAL ENDPOINTS ====================
+
+  /**
+   * Get doctor's patient list (Doctor Portal)
+   */
+  async getDoctorPatientList(
+    doctorId: string,
+    query: {
+      page: number;
+      limit: number;
+      search?: string;
+      condition?: string;
+      status?: 'all' | 'active' | 'inactive';
+      sortBy?: 'lastVisit' | 'nextAppointment' | 'name' | 'totalAppointments';
+      sortOrder?: 'asc' | 'desc';
+    }
+  ): Promise<DoctorPatientListResponse> {
+    const {
+      page,
+      limit,
+      search,
+      condition,
+      status,
+      sortBy = 'lastVisit',
+      sortOrder = 'desc',
+    } = query;
+    const skip = (page - 1) * limit;
+
+    // Get all patients who have had appointments with this doctor
+    const patientsWithAppointments = await this.prisma.appointment.findMany({
+      where: {
+        doctorId,
+        status: { in: [AppointmentStatus.COMPLETED, AppointmentStatus.SCHEDULED] },
+      },
+      select: {
+        patientId: true,
+      },
+      distinct: ['patientId'],
+    });
+
+    const patientIds = patientsWithAppointments.map((a) => a.patientId);
+
+    if (patientIds.length === 0) {
+      return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
+    }
+
+    // Build where clause for patient search
+    const patientWhere: Record<string, unknown> = {
+      id: { in: patientIds },
+    };
+
+    if (search) {
+      patientWhere.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Get patients with their profiles
+    const patients = await this.prisma.user.findMany({
+      where: patientWhere,
+      include: {
+        patientProfile: true,
+      },
+      skip,
+      take: limit,
+      orderBy: { [sortBy === 'name' ? 'firstName' : sortBy]: sortOrder },
+    });
+
+    // For each patient, get appointment stats and conditions
+    const patientListItems: DoctorPatientListItem[] = [];
+
+    for (const patient of patients) {
+      // Get appointments with this doctor
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          doctorId,
+          patientId: patient.id,
+        },
+        include: {
+          slot: { select: { startTime: true } },
+          prescriptions: {
+            select: {
+              diagnosis: true,
+              medications: true,
+            },
+          },
+        },
+        orderBy: { slot: { startTime: 'desc' } },
+      });
+
+      const completedAppointments = appointments.filter(
+        (a) => a.status === AppointmentStatus.COMPLETED
+      );
+      const upcomingAppointments = appointments.filter(
+        (a) => a.status === AppointmentStatus.SCHEDULED && a.slot.startTime > new Date()
+      );
+
+      // Extract conditions from prescriptions
+      const conditions = new Set<string>();
+      for (const appt of completedAppointments) {
+        for (const rx of appt.prescriptions) {
+          if (rx.diagnosis) {
+            conditions.add(rx.diagnosis);
+          }
+        }
+      }
+
+      const lastVisit = completedAppointments[0]?.slot.startTime || null;
+      const nextAppointment = upcomingAppointments[0]?.slot.startTime || null;
+
+      patientListItems.push({
+        id: patient.id,
+        email: patient.email,
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        phone: patient.phone,
+        dob: patient.patientProfile?.dob || null,
+        gender: patient.patientProfile?.gender || null,
+        address: patient.patientProfile?.address || null,
+        emergencyContact: patient.patientProfile?.emergencyContact || null,
+        lastVisit,
+        nextAppointment,
+        totalAppointments: appointments.length,
+        completedAppointments: completedAppointments.length,
+        conditions: Array.from(conditions),
+        avatarUrl: null, // Could be added later if avatar field exists
+      });
+    }
+
+    // Apply status filter
+    let filtered = patientListItems;
+    if (status === 'active') {
+      filtered = patientListItems.filter((p) => p.nextAppointment !== null);
+    } else if (status === 'inactive') {
+      filtered = patientListItems.filter((p) => p.nextAppointment === null);
+    }
+
+    // Apply condition filter
+    if (condition) {
+      filtered = filtered.filter((p) =>
+        p.conditions.some((c) => c.toLowerCase().includes(condition.toLowerCase()))
+      );
+    }
+
+    // Get total count for pagination (without pagination)
+    const totalPatients = await this.prisma.user.count({
+      where: patientWhere,
+    });
+
+    return {
+      data: filtered,
+      meta: {
+        total: totalPatients,
+        page,
+        limit,
+        totalPages: Math.ceil(totalPatients / limit),
+      },
+    };
+  }
+
+  /**
+   * Get doctor's patient detail (for Patient Drawer)
+   */
+  async getDoctorPatientDetail(doctorId: string, patientId: string): Promise<DoctorPatientDetail> {
+    // Verify patient has appointments with this doctor
+    const hasAppointment = await this.prisma.appointment.findFirst({
+      where: { doctorId, patientId },
+    });
+
+    if (!hasAppointment) {
+      throw new AppError('NOT_FOUND', 'Patient not found or not associated with this doctor', 404);
+    }
+
+    const patient = await this.prisma.user.findUnique({
+      where: { id: patientId },
+      include: { patientProfile: true },
+    });
+
+    if (!patient) {
+      throw new AppError('NOT_FOUND', 'Patient not found', 404);
+    }
+
+    // Get all appointments with this doctor
+    const appointments = await this.prisma.appointment.findMany({
+      where: { doctorId, patientId },
+      include: {
+        slot: { select: { startTime: true } },
+        prescriptions: {
+          select: {
+            id: true,
+            diagnosis: true,
+            medications: true,
+            createdAt: true,
+          },
+        },
+        doctor: {
+          include: {
+            doctorProfile: { select: { specialty: true } },
+          },
+        },
+      },
+      orderBy: { slot: { startTime: 'desc' } },
+    });
+
+    const completedAppointments = appointments.filter(
+      (a) => a.status === AppointmentStatus.COMPLETED
+    );
+
+    // Build appointment history
+    const appointmentHistory = appointments.map((appt) => ({
+      id: appt.id,
+      date: appt.slot.startTime,
+      status: appt.status,
+      specialty: appt.doctor.doctorProfile?.specialty || 'Unknown',
+      diagnosis: appt.prescriptions[0]?.diagnosis || null,
+      prescriptionCount: appt.prescriptions.length,
+    }));
+
+    // Build prescription history
+    const prescriptionHistory = completedAppointments.flatMap((appt) =>
+      appt.prescriptions.map((rx) => ({
+        id: rx.id,
+        date: rx.createdAt,
+        diagnosis: rx.diagnosis,
+        medications: rx.medications as string | object,
+      }))
+    );
+
+    return {
+      id: patient.id,
+      email: patient.email,
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      phone: patient.phone,
+      dob: patient.patientProfile?.dob || null,
+      gender: patient.patientProfile?.gender || null,
+      address: patient.patientProfile?.address || null,
+      emergencyContact: patient.patientProfile?.emergencyContact || null,
+      lastVisit: completedAppointments[0]?.slot.startTime || null,
+      nextAppointment:
+        appointments.find(
+          (a) => a.status === AppointmentStatus.SCHEDULED && a.slot.startTime > new Date()
+        )?.slot.startTime || null,
+      totalAppointments: appointments.length,
+      completedAppointments: completedAppointments.length,
+      conditions: Array.from(
+        new Set(
+          completedAppointments.flatMap((a) =>
+            a.prescriptions.map((rx) => rx.diagnosis).filter(Boolean)
+          )
+        )
+      ),
+      avatarUrl: null,
+      appointments: appointmentHistory,
+      prescriptions: prescriptionHistory,
+    };
   }
 }
 

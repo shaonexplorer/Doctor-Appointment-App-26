@@ -5,7 +5,8 @@
 
 import { Router } from 'express';
 import type { AppointmentController } from '../controllers/appointmentController';
-import { requireAuth } from '../../../shared/middleware/auth';
+import { requireAuth, requireRole } from '../../../shared/middleware/auth';
+import { UserType } from '@doctor-appointment-app/shared';
 import { asyncHandler } from '../../../shared/utils';
 import {
   auditAppointmentAccess,
@@ -17,6 +18,7 @@ import {
   validateCreateAppointment,
   validateUpdateAppointment,
   validateAppointmentFilters,
+  validateDoctorAppointmentFilters,
   validateTimelineQuery,
   validateDashboardStatsQuery,
 } from '../validators';
@@ -41,15 +43,45 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
   // Stats
   router.get('/stats/doctor', asyncHandler(appointmentController.getDoctorStats));
   router.get('/stats/patient', asyncHandler(appointmentController.getPatientStats));
-  router.get('/stats/dashboard', validateDashboardStatsQuery, asyncHandler(appointmentController.getDashboardStats));
+  router.get(
+    '/stats/dashboard',
+    validateDashboardStatsQuery,
+    asyncHandler(appointmentController.getDashboardStats)
+  );
+  router.get(
+    '/stats/doctor-dashboard',
+    asyncHandler(appointmentController.getDoctorDashboardStats)
+  );
 
   // Timeline endpoints
   router.get('/timeline/upcoming', asyncHandler(appointmentController.getUpcomingWithDetails));
-  router.get('/timeline/completed', asyncHandler(appointmentController.getCompletedWithPrescriptions));
-  router.get('/timeline/medical', validateTimelineQuery, asyncHandler(appointmentController.getMedicalTimeline));
+  router.get(
+    '/timeline/completed',
+    asyncHandler(appointmentController.getCompletedWithPrescriptions)
+  );
+  router.get(
+    '/timeline/medical',
+    validateTimelineQuery,
+    asyncHandler(appointmentController.getMedicalTimeline)
+  );
 
-  // List appointments with filters
+  // List appointments with filters (patient/admin view)
   router.get('/', validateAppointmentFilters, asyncHandler(appointmentController.listAppointments));
+
+  // Doctor Portal endpoints (doctor only)
+  const doctorMiddleware = requireRole(UserType.DOCTOR);
+  router.get(
+    '/doctor',
+    doctorMiddleware,
+    validateDoctorAppointmentFilters,
+    asyncHandler(appointmentController.getDoctorAppointments)
+  );
+  router.get(
+    '/doctor/:id',
+    doctorMiddleware,
+    auditAppointmentAccess,
+    asyncHandler(appointmentController.getDoctorAppointmentDetail)
+  );
 
   // Single appointment operations
   router.get('/:id', auditAppointmentAccess, asyncHandler(appointmentController.getAppointment));

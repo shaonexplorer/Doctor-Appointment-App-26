@@ -24,6 +24,15 @@ export { AppointmentCreateSchema, AppointmentUpdateSchema, AppointmentFiltersSch
 
 export type { AppointmentCreateInput, AppointmentUpdateInput, AppointmentFilters };
 
+// Doctor appointment filters (extends base filters, removes doctorId since it's inferred from auth)
+export const DoctorAppointmentFiltersSchema = AppointmentFiltersSchema.omit({
+  doctorId: true,
+}).extend({
+  // Doctor-specific filters
+  patientSearch: z.string().optional(), // Search by patient name
+  dateRange: z.enum(['today', 'week', 'month', 'custom']).optional(),
+});
+
 // Timeline query params (for timeline endpoints)
 export const TimelineQuerySchema = PaginationParamsSchema.extend({
   type: z.enum(['all', 'appointments', 'prescriptions']).optional(),
@@ -40,12 +49,14 @@ export const DashboardStatsQuerySchema = z.object({
 // Type exports
 export type TimelineQuery = z.infer<typeof TimelineQuerySchema>;
 export type DashboardStatsQuery = z.infer<typeof DashboardStatsQuerySchema>;
+// DoctorAppointmentFilters is exported from types/index.ts
 
 // Module-specific validation helpers
 export const appointmentValidators = {
   create: AppointmentCreateSchema,
   update: AppointmentUpdateSchema,
   filters: AppointmentFiltersSchema,
+  doctorFilters: DoctorAppointmentFiltersSchema,
   timelineQuery: TimelineQuerySchema,
   dashboardStatsQuery: DashboardStatsQuerySchema,
 } as const;
@@ -96,5 +107,9 @@ export function createQueryValidationMiddleware<T extends ZodTypeAny>(schema: T)
 export const validateCreateAppointment = createValidationMiddleware(AppointmentCreateSchema);
 export const validateUpdateAppointment = createValidationMiddleware(AppointmentUpdateSchema);
 export const validateAppointmentFilters = createQueryValidationMiddleware(AppointmentFiltersSchema);
+export const validateDoctorAppointmentFilters = createQueryValidationMiddleware(
+  DoctorAppointmentFiltersSchema
+);
 export const validateTimelineQuery = createQueryValidationMiddleware(TimelineQuerySchema);
-export const validateDashboardStatsQuery = createQueryValidationMiddleware(DashboardStatsQuerySchema);
+export const validateDashboardStatsQuery =
+  createQueryValidationMiddleware(DashboardStatsQuerySchema);

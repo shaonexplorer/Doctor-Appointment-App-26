@@ -12,6 +12,7 @@ import type {
   DoctorProfile,
   DoctorSearchResult,
   DoctorSchedule,
+  DoctorProfileWithStats,
 } from '../types';
 
 export class DoctorService {
@@ -149,6 +150,106 @@ export class DoctorService {
   async getSchedule(doctorId: string, startDate?: Date, endDate?: Date): Promise<DoctorSchedule[]> {
     const schedules = await this.doctorRepository.getSchedule(doctorId, startDate, endDate);
     return schedules as DoctorSchedule[];
+  }
+
+  /**
+   * Get doctor profile with stats (for Doctor Portal)
+   */
+  async getMyProfileWithStats(userId: string): Promise<DoctorProfileWithStats> {
+    const doctor = await this.doctorRepository.findByUserIdWithUser(userId);
+    if (!doctor) {
+      throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
+    }
+
+    // Get appointment stats
+    const { AppointmentStatus, SlotStatus, PrismaClient } = await import('@prisma/client');
+
+    // We need to use the repository's prisma client or create a new one
+    // For now, we'll use a dynamic import to avoid circular dependencies
+    const prismaClient = new PrismaClient();
+
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+      const weekStart = new Date(todayStart);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+      const [
+        totalAppointments,
+        todayAppointments,
+        weeklyAppointments,
+        totalSlotsThisWeek,
+        bookedSlotsThisWeek,
+        completedAppointments,
+        totalPatients,
+      ] = await Promise.all([
+        prismaClient.appointment.count({ where: { doctorId: doctor.id } }),
+        prismaClient.appointment.count({
+          where: {
+            doctorId: doctor.id,
+            slot: { startTime: { gte: todayStart, lt: todayEnd } },
+            status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+          },
+        }),
+        prismaClient.appointment.count({
+          where: {
+            doctorId: doctor.id,
+            slot: { startTime: { gte: weekStart } },
+            status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+          },
+        }),
+        prismaClient.schedule.count({
+          where: { doctorId: doctor.id, startTime: { gte: weekStart } },
+        }),
+        prismaClient.schedule.count({
+          where: {
+            doctorId: doctor.id,
+            startTime: { gte: weekStart },
+            status: SlotStatus.BOOKED,
+          },
+        }),
+        prismaClient.appointment.findMany({
+          where: {
+            doctorId: doctor.id,
+            status: AppointmentStatus.COMPLETED,
+          },
+          include: {
+            doctor: { include: { doctorProfile: { select: { fee: true } } } },
+          },
+        }),
+        prismaClient.appointment.count({
+          where: { doctorId: doctor.id },
+          distinct: ['patientId'],
+        }),
+      ]);
+
+      const slotUtilization =
+        totalSlotsThisWeek > 0 ? Math.round((bookedSlotsThisWeek / totalSlotsThisWeek) * 100) : 0;
+
+      const totalRevenue = completedAppointments.reduce((sum, appt) => {
+        const fee = appt.doctor?.doctorProfile?.fee || 0;
+        return sum + Number(fee);
+      }, 0);
+
+      return {
+        ...doctor,
+        fee:
+          typeof doctor.fee === 'object' && doctor.fee !== null
+            ? Number(doctor.fee)
+            : Number(doctor.fee),
+        stats: {
+          totalAppointments,
+          todayAppointments,
+          weeklyAppointments,
+          slotUtilization,
+          totalRevenue,
+          totalPatients,
+        },
+      } as DoctorProfileWithStats;
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 }
 

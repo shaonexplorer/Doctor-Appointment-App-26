@@ -9,6 +9,11 @@ import { requireRole } from '../../../shared/middleware/auth';
 import { UserType } from '@doctor-appointment-app/shared';
 import { buildSuccessResponse, buildPaginatedResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
+import type {
+  PrescriptionCreateInput,
+  PrescriptionUpdateInput,
+  PaginationParams,
+} from '../validators';
 
 export class PrescriptionController {
   constructor(private prescriptionService: PrescriptionService) {}
@@ -20,7 +25,7 @@ export class PrescriptionController {
   createPrescription = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as PrescriptionCreateInput;
 
       const prescription = await this.prescriptionService.createPrescription(
         req.user!.id,
@@ -56,7 +61,7 @@ export class PrescriptionController {
   updatePrescription = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as PrescriptionUpdateInput;
 
       const prescription = await this.prescriptionService.updatePrescription(
         req.params.id,
@@ -89,7 +94,7 @@ export class PrescriptionController {
   listPrescriptions = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedQuery = req.validatedQuery;
+      const validatedQuery = req.validatedQuery as PaginationParams;
 
       const { doctorId, patientId, appointmentId } = req.query;
       const filters: { doctorId?: string; patientId?: string; appointmentId?: string } = {};

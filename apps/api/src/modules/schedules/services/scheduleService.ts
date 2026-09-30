@@ -4,7 +4,7 @@
  */
 
 import type { ScheduleRepository } from '../../../repositories';
-import type { PrismaClient, Schedule } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { SlotStatus } from '@prisma/client';
 import { AppError } from '../../../shared/middleware/errorHandler';
 import type {

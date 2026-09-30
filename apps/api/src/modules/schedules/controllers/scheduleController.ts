@@ -5,10 +5,11 @@
 
 import type { Response, NextFunction } from 'express';
 import type { ScheduleService } from '../services/scheduleService';
-import { requireAuth, requireRole } from '../../../shared/middleware/auth';
+import { requireRole } from '../../../shared/middleware/auth';
 import { UserType } from '@doctor-appointment-app/shared';
 import { buildSuccessResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
+import type { SlotCreateInput, BulkSlotCreateInput, SlotUpdateInput } from '../validators';
 
 export class ScheduleController {
   constructor(private scheduleService: ScheduleService) {}
@@ -20,7 +21,7 @@ export class ScheduleController {
   createSlot = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as SlotCreateInput;
 
       const slot = await this.scheduleService.createSlot(req.user!.id, validatedData);
       res.status(201).json(buildSuccessResponse(slot));
@@ -36,7 +37,7 @@ export class ScheduleController {
   createBulkSlots = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as BulkSlotCreateInput;
 
       const result = await this.scheduleService.createBulkSlots(req.user!.id, validatedData);
       res.status(201).json(buildSuccessResponse(result));
@@ -150,7 +151,7 @@ export class ScheduleController {
   updateSlot = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as SlotUpdateInput;
 
       const slot = await this.scheduleService.updateSlot(
         req.params.id,

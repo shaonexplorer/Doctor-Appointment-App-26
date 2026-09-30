@@ -138,6 +138,60 @@ export interface CompletedAppointmentDetail {
   }>;
 }
 
+/**
+ * Doctor's patient list item (for Doctor Portal)
+ */
+export interface DoctorPatientListItem {
+  id: string; // patient user ID
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  dob: Date | null;
+  gender: string | null;
+  address: string | null;
+  emergencyContact: string | null;
+  lastVisit: Date | null;
+  nextAppointment: Date | null;
+  totalAppointments: number;
+  completedAppointments: number;
+  conditions: string[]; // Medical conditions from prescriptions
+  avatarUrl?: string | null;
+}
+
+/**
+ * Doctor's patient list response
+ */
+export interface DoctorPatientListResponse {
+  data: DoctorPatientListItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+/**
+ * Doctor's patient detail (for Patient Drawer)
+ */
+export interface DoctorPatientDetail extends DoctorPatientListItem {
+  appointments: Array<{
+    id: string;
+    date: Date;
+    status: AppointmentStatus;
+    specialty: string;
+    diagnosis: string | null;
+    prescriptionCount: number;
+  }>;
+  prescriptions: Array<{
+    id: string;
+    date: Date;
+    diagnosis: string;
+    medications: Medication[];
+  }>;
+}
+
 export { AppointmentStatus, ConsultationType };
 
 // Re-export query types from validators

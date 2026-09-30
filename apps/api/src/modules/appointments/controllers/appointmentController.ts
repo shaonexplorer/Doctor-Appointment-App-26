@@ -13,6 +13,7 @@ import type {
   AppointmentUpdateInput,
   TimelineQuery,
 } from '../validators';
+import type { DoctorAppointmentFilters } from '../types';
 
 export class AppointmentController {
   constructor(private appointmentService: AppointmentService) {}
@@ -245,6 +246,67 @@ export class AppointmentController {
       };
       const timeline = await this.appointmentService.getMedicalTimeline(req.user!.id, query);
       res.json(buildSuccessResponse(timeline));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // ==================== DOCTOR PORTAL ENDPOINTS ====================
+
+  /**
+   * Get doctor appointments with filters (Doctor Portal)
+   * GET /api/appointments/doctor
+   */
+  getDoctorAppointments = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const validatedQuery = req.validatedQuery as DoctorAppointmentFilters;
+      const { page, limit, ...filters } = validatedQuery;
+
+      const result = await this.appointmentService.getDoctorAppointments(req.user!.id, {
+        page: page || 1,
+        limit: limit || 20,
+        ...filters,
+      });
+      res.json(
+        buildSuccessResponse(buildPaginatedResponse(result.data, validatedQuery, result.meta.total))
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get single appointment detail for doctor
+   * GET /api/appointments/doctor/:id
+   */
+  getDoctorAppointmentDetail = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const appointment = await this.appointmentService.getDoctorAppointmentDetail(
+        req.params.id,
+        req.user!.id
+      );
+      res.json(buildSuccessResponse(appointment));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get doctor dashboard statistics (Doctor Portal)
+   * GET /api/appointments/stats/doctor-dashboard
+   */
+  getDoctorDashboardStats = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const stats = await this.appointmentService.getDoctorDashboardStats(req.user!.id);
+      res.json(buildSuccessResponse(stats));
     } catch (error) {
       next(error);
     }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { CalendarDays, MapPin, Star, Stethoscope } from "lucide-react";
+import { CalendarDays, MapPin, Star, Stethoscope } from 'lucide-react';
 
 export interface DoctorCardProps {
   id: string;
@@ -24,7 +24,7 @@ function toDate(value: string | Date | undefined): Date | undefined {
 }
 
 export function DoctorCard({
-  id,
+  _id,
   name,
   designation,
   specialty,
@@ -39,9 +39,9 @@ export function DoctorCard({
   className,
 }: DoctorCardProps) {
   const formatFee = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -49,47 +49,54 @@ export function DoctorCard({
 
   const formatNextSlot = (dateValue: string | Date) => {
     const date = toDate(dateValue);
-    if (!date) return "Check availability";
+    if (!date) return 'Check availability';
     const now = new Date();
     const diffMs = date.getTime() - now.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffHours < 1) return "Available now";
+    if (diffHours < 1) return 'Available now';
     if (diffHours < 24) return `Available in ${diffHours}h`;
     if (diffDays < 7) return `Available in ${diffDays}d`;
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const initials = name
-    .split(" ")
+    .split(' ')
     .map((n) => n[0])
-    .join("")
+    .join('')
     .toUpperCase()
     .slice(0, 2);
 
   return (
     <article
-      className={`group relative rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md ${className || ""}`}
+      className={`group border-border bg-card hover:border-primary/40 relative rounded-2xl border p-5 shadow-sm transition-all hover:shadow-md ${className || ''}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && onClick?.()}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="relative shrink-0">
-          <div className="size-20 sm:size-24 rounded-xl bg-primary/10 overflow-hidden flex items-center justify-center">
+          <div className="bg-primary/10 flex size-20 items-center justify-center overflow-hidden rounded-xl sm:size-24">
             {photo ? (
               <img src={photo} alt={name} className="size-full object-cover" />
             ) : (
-              <span className="text-xl sm:text-2xl font-black text-primary">
-                {initials}
-              </span>
+              <span className="text-primary text-xl font-black sm:text-2xl">{initials}</span>
             )}
           </div>
           {isVerified && (
-            <span className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-secondary text-primary shadow-sm" aria-label="Verified doctor">
-              <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <span
+              className="bg-secondary text-primary absolute -right-1 -bottom-1 flex size-6 items-center justify-center rounded-full shadow-sm"
+              aria-label="Verified doctor"
+            >
+              <svg
+                className="size-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+              >
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
@@ -97,55 +104,73 @@ export function DoctorCard({
           )}
         </div>
 
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-lg font-black truncate">{name}</h3>
+                <h3 className="truncate text-lg font-black">{name}</h3>
                 {isVerified && (
-                  <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary" aria-label="Verified">
-                    <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <span
+                    className="bg-primary/10 text-primary flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    aria-label="Verified"
+                  >
+                    <svg
+                      className="size-3"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    >
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                       <polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-sm font-semibold text-primary">{specialty}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{designation}</p>
+              <p className="text-primary mt-1 text-sm font-semibold">{specialty}</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">{designation}</p>
             </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <div className={`rounded-xl px-3 py-2 text-right ${fee > 0 ? "bg-primary/5 border border-primary/20" : "bg-muted"}`}>
-                <p className="text-lg font-black text-primary">{fee > 0 ? formatFee(fee) : "Free"}</p>
-                <p className="text-[10px] text-muted-foreground">per visit</p>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <div
+                className={`rounded-xl px-3 py-2 text-right ${fee > 0 ? 'bg-primary/5 border-primary/20 border' : 'bg-muted'}`}
+              >
+                <p className="text-primary text-lg font-black">
+                  {fee > 0 ? formatFee(fee) : 'Free'}
+                </p>
+                <p className="text-muted-foreground text-[10px]">per visit</p>
               </div>
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5" aria-label={`${rating} out of 5 stars, ${reviewCount} reviews`}>
+          <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-3 text-xs">
+            <div
+              className="flex items-center gap-1.5"
+              aria-label={`${rating} out of 5 stars, ${reviewCount} reviews`}
+            >
               <Star className="size-3.5 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold text-foreground">{rating.toFixed(1)}</span>
+              <span className="text-foreground font-semibold">{rating.toFixed(1)}</span>
               <span className="text-muted-foreground">({reviewCount})</span>
             </div>
             {clinic && (
               <div className="flex items-center gap-1.5">
                 <MapPin className="size-3.5" />
-                <span className="truncate max-w-[200px]">{clinic}</span>
+                <span className="max-w-[200px] truncate">{clinic}</span>
               </div>
             )}
           </div>
 
           {nextAvailableSlot && (
-            <div className="mt-3 flex items-center gap-2 rounded-xl bg-secondary p-3">
-              <div className="shrink-0 grid size-9 place-items-center rounded-lg bg-card text-primary">
+            <div className="bg-secondary mt-3 flex items-center gap-2 rounded-xl p-3">
+              <div className="bg-card text-primary grid size-9 shrink-0 place-items-center rounded-lg">
                 <CalendarDays className="size-4" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Next available</p>
+                <p className="text-muted-foreground text-[10px] font-bold tracking-wide uppercase">
+                  Next available
+                </p>
                 <p className="mt-0.5 text-sm font-semibold">{formatNextSlot(nextAvailableSlot)}</p>
               </div>
-              <Stethoscope className="ml-auto size-4 text-muted-foreground" />
+              <Stethoscope className="text-muted-foreground ml-auto size-4" />
             </div>
           )}
         </div>

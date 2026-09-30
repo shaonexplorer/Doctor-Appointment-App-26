@@ -80,6 +80,19 @@ export class DoctorController {
   };
 
   /**
+   * Get own doctor profile with stats (Doctor Portal)
+   * GET /api/users/me/doctor-profile
+   */
+  getMyProfileWithStats = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const profile = await this.doctorService.getMyProfileWithStats(req.user!.id);
+      res.json(buildSuccessResponse(profile));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * Update own doctor profile (Doctor only)
    * PATCH /api/doctors/profile/me
    */

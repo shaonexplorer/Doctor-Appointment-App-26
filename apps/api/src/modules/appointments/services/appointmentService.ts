@@ -22,6 +22,7 @@ import type {
   DoctorStats,
   PatientStats,
   TimelineEntry,
+  DoctorDashboardStats,
 } from '../types';
 
 export class AppointmentService {
@@ -271,16 +272,6 @@ export class AppointmentService {
       }
     }
 
-    // Get slot info for notification
-    const slot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
-    const doctor = appointment.doctor
-      ? {
-          id: appointment.doctor.id,
-          firstName: appointment.doctor.firstName,
-          lastName: appointment.doctor.lastName,
-        }
-      : null;
-
     // Release the slot
     await this.scheduleRepository.releaseSlot(appointment.slotId);
 
@@ -290,23 +281,82 @@ export class AppointmentService {
     });
 
     // Send cancellation notification
-    if (doctor && slot) {
-      const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
-      await this.notificationService.sendBookingCancellation({
-        appointmentId: appointment.id,
-        patientId: appointment.patientId,
-        doctorId: doctor.id,
-        slotId: appointment.slotId,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        doctorName,
-        specialty: slot.doctor?.specialty || 'Unknown',
-        clinic: slot.doctor?.clinic || 'Clinic',
-        consultationType: appointment.consultationType,
-      });
-    }
+    await this.sendCancellationNotification(
+      appointment.id,
+      appointment.patientId,
+      appointment.doctorId,
+      appointment.slotId,
+      appointment.consultationType
+    );
 
     return cancelledAppointment;
+  }
+
+  /**
+   * Get cancellation notification data
+   */
+  private async getCancellationNotificationData(
+    appointmentId: string,
+    slotId: string,
+    doctorId: string
+  ): Promise<{
+    doctorName: string;
+    specialty: string;
+    clinic: string;
+    startTime: Date;
+    endTime: Date;
+  } | null> {
+    const slot = await this.scheduleRepository.findByIdWithDoctor(slotId);
+    if (!slot || !slot.doctor) return null;
+
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: doctorId },
+      select: { bio: true },
+    });
+
+    const doctor = await this.prisma.user.findUnique({
+      where: { id: doctorId },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (!doctor) return null;
+
+    return {
+      doctorName: `Dr. ${doctor.firstName} ${doctor.lastName}`,
+      specialty: slot.doctor.specialty || 'Unknown',
+      clinic: doctorProfile?.bio || 'Clinic',
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+    };
+  }
+
+  // Send cancellation notification
+  async sendCancellationNotification(
+    appointmentId: string,
+    patientId: string,
+    doctorId: string,
+    slotId: string,
+    consultationType: ConsultationType
+  ): Promise<void> {
+    const notificationData = await this.getCancellationNotificationData(
+      appointmentId,
+      slotId,
+      doctorId
+    );
+    if (notificationData) {
+      await this.notificationService.sendBookingCancellation({
+        appointmentId,
+        patientId,
+        doctorId,
+        slotId,
+        startTime: notificationData.startTime,
+        endTime: notificationData.endTime,
+        doctorName: notificationData.doctorName,
+        specialty: notificationData.specialty,
+        clinic: notificationData.clinic,
+        consultationType,
+      });
+    }
   }
 
   /**
@@ -327,7 +377,24 @@ export class AppointmentService {
     userId: string,
     userType: UserType,
     limit: number = 5
-  ): Promise<Appointment[]> {
+  ): Promise<
+    Array<{
+      id: string;
+      patientId: string;
+      doctorId: string;
+      slotId: string;
+      status: AppointmentStatus;
+      symptoms: string | null;
+      notes: string | null;
+      paymentStatus: PaymentStatus;
+      consultationType: ConsultationType;
+      createdAt: Date;
+      updatedAt: Date;
+      patient: { id: string; firstName: string; lastName: string };
+      doctor: { id: string; firstName: string; lastName: string };
+      slot: { id: string; startTime: Date; endTime: Date };
+    }>
+  > {
     return this.appointmentRepository.getUpcoming(userId, userType, limit);
   }
 
@@ -353,7 +420,23 @@ export class AppointmentService {
     totalAppointments: number;
     totalExpenses: number;
     prescriptionCompliance: number;
-    nextAppointment: Appointment | null;
+    nextAppointment: {
+      id: string;
+      status: AppointmentStatus;
+      symptoms: string | null;
+      notes: string | null;
+      consultationType: ConsultationType;
+      paymentStatus: PaymentStatus;
+      createdAt: Date;
+      slot: { id: string; startTime: Date; endTime: Date };
+      doctor: { id: string; firstName: string; lastName: string; email: string };
+      doctorProfile: {
+        specialty: string;
+        clinic?: string;
+        designation: string;
+        fee: number;
+      } | null;
+    } | null;
     appointmentsByStatus: Record<AppointmentStatus, number>;
     appointmentsBySpecialty: Array<{ specialty: string; count: number }>;
     monthlyExpenses: Array<{ month: string; amount: number }>;
@@ -424,9 +507,15 @@ export class AppointmentService {
     const whereClause: Record<string, unknown> = { patientId };
 
     if (dateFrom || dateTo) {
-      whereClause.createdAt = {};
-      if (dateFrom) whereClause.createdAt.gte = new Date(dateFrom);
-      if (dateTo) whereClause.createdAt.lte = new Date(dateTo);
+      (whereClause as Record<string, { gte?: Date; lte?: Date }>).createdAt = {};
+      if (dateFrom)
+        (whereClause as Record<string, { gte?: Date; lte?: Date }>).createdAt.gte = new Date(
+          dateFrom
+        );
+      if (dateTo)
+        (whereClause as Record<string, { gte?: Date; lte?: Date }>).createdAt.lte = new Date(
+          dateTo
+        );
     }
 
     const [appointments, prescriptions] = await Promise.all([
@@ -493,9 +582,12 @@ export class AppointmentService {
         clinic: 'Clinic',
         prescriptionId: rx.id,
         diagnosis: rx.diagnosis,
-        medications: rx.medications,
-        tests: rx.tests,
-        notes: rx.notes,
+        medications:
+          typeof rx.medications === 'string' ? rx.medications : JSON.stringify(rx.medications),
+        tests:
+          typeof rx.tests === 'string' ? rx.tests : rx.tests ? JSON.stringify(rx.tests) : undefined,
+        notes:
+          typeof rx.notes === 'string' ? rx.notes : rx.notes ? JSON.stringify(rx.notes) : undefined,
       });
     }
 
@@ -607,6 +699,253 @@ export class AppointmentService {
     });
 
     return Math.round((prescriptions / completedAppointments.length) * 100);
+  }
+
+  /**
+   * Get doctor appointments with filters (Doctor Portal)
+   */
+  async getDoctorAppointments(
+    doctorId: string,
+    filters: {
+      page: number;
+      limit: number;
+      status?: string | string[];
+      search?: string;
+      patientSearch?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    }
+  ): Promise<{ data: Appointment[]; meta: { total: number; totalPages: number } }> {
+    const { page, limit, status, patientSearch, dateFrom, dateTo, sortBy, sortOrder } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = { doctorId };
+
+    if (status && status.length > 0) {
+      where.status = { in: Array.isArray(status) ? status : [status] };
+    }
+
+    if (patientSearch) {
+      where.patient = {
+        OR: [
+          { firstName: { contains: patientSearch, mode: 'insensitive' } },
+          { lastName: { contains: patientSearch, mode: 'insensitive' } },
+          { email: { contains: patientSearch, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    if (dateFrom || dateTo) {
+      (where as Record<string, { gte?: Date; lte?: Date }>).createdAt = {};
+      if (dateFrom)
+        (where as Record<string, { gte?: Date; lte?: Date }>).createdAt.gte = new Date(dateFrom);
+      if (dateTo)
+        (where as Record<string, { gte?: Date; lte?: Date }>).createdAt.lte = new Date(dateTo);
+    }
+
+    const [appointments, total] = await Promise.all([
+      this.prisma.appointment.findMany({
+        skip,
+        take: limit,
+        where,
+        include: {
+          patient: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              userType: true,
+            },
+          },
+          doctor: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              userType: true,
+            },
+          },
+          slot: {
+            select: {
+              id: true,
+              startTime: true,
+              endTime: true,
+              status: true,
+            },
+          },
+          prescriptions: {
+            select: {
+              id: true,
+              diagnosis: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+        orderBy: sortBy ? { [sortBy]: sortOrder || 'asc' } : { createdAt: 'desc' },
+      }),
+      this.prisma.appointment.count({ where }),
+    ]);
+
+    return {
+      data: appointments,
+      meta: {
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get single appointment detail for doctor
+   */
+  async getDoctorAppointmentDetail(appointmentId: string, doctorId: string): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - doctor must own this appointment or be admin/staff
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to view this appointment', 403);
+    }
+
+    return appointment;
+  }
+
+  /**
+   * Get doctor dashboard statistics
+   */
+  async getDoctorDashboardStats(doctorId: string): Promise<DoctorDashboardStats> {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+
+    // Get today's appointments
+    const todayAppointments = await this.prisma.appointment.count({
+      where: {
+        doctorId,
+        slot: {
+          startTime: { gte: todayStart, lt: todayEnd },
+        },
+        status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+      },
+    });
+
+    // Get this week's appointments
+    const weeklyAppointments = await this.prisma.appointment.count({
+      where: {
+        doctorId,
+        slot: {
+          startTime: { gte: weekStart },
+        },
+        status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+      },
+    });
+
+    // Get slot utilization (available vs booked slots this week)
+    const [totalSlotsThisWeek, bookedSlotsThisWeek] = await Promise.all([
+      this.prisma.schedule.count({
+        where: {
+          doctorId,
+          startTime: { gte: weekStart },
+        },
+      }),
+      this.prisma.schedule.count({
+        where: {
+          doctorId,
+          startTime: { gte: weekStart },
+          status: { in: [SlotStatus.BOOKED] },
+        },
+      }),
+    ]);
+
+    const slotUtilization =
+      totalSlotsThisWeek > 0 ? Math.round((bookedSlotsThisWeek / totalSlotsThisWeek) * 100) : 0;
+
+    // Get total revenue (completed appointments)
+    const completedAppointments = await this.prisma.appointment.findMany({
+      where: {
+        doctorId,
+        status: AppointmentStatus.COMPLETED,
+      },
+      include: {
+        doctor: {
+          include: {
+            doctorProfile: { select: { fee: true } },
+          },
+        },
+      },
+    });
+
+    const totalRevenue = completedAppointments.reduce((sum, appt) => {
+      const fee = appt.doctor?.doctorProfile?.fee || 0;
+      return sum + Number(fee);
+    }, 0);
+
+    // Revenue by consultation type
+    const revenueByType = await this.prisma.appointment.groupBy({
+      by: ['consultationType'],
+      where: {
+        doctorId,
+        status: AppointmentStatus.COMPLETED,
+      },
+      _count: { id: true },
+    });
+
+    // Get doctor fee for calculation
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: doctorId },
+      select: { fee: true },
+    });
+    const fee = doctorProfile?.fee ? Number(doctorProfile.fee) : 0;
+
+    const revenueByConsultationType = revenueByType.map((r) => ({
+      type: r.consultationType,
+      amount: r._count.id * fee,
+    }));
+
+    // Daily volume for the last 7 days
+    const dailyVolume = await Promise.all(
+      Array.from({ length: 7 }, async (_, i) => {
+        const date = new Date(todayStart);
+        date.setDate(date.getDate() - (6 - i));
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+
+        const count = await this.prisma.appointment.count({
+          where: {
+            doctorId,
+            slot: {
+              startTime: { gte: date, lt: nextDate },
+            },
+            status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+          },
+        });
+
+        return {
+          date: date.toISOString().split('T')[0],
+          count,
+        };
+      })
+    );
+
+    return {
+      todayAppointments,
+      weeklyAppointments,
+      slotUtilization,
+      totalRevenue,
+      revenueByConsultationType,
+      dailyVolume,
+    };
   }
 }
 

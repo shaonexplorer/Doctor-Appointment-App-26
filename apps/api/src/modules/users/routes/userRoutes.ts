@@ -29,6 +29,15 @@ export function createUserRoutes(userController: UserController): Router {
     asyncHandler(userController.updateProfile)
   );
 
+  // Doctor profile with stats (Doctor only)
+  const doctorMiddleware = userController.getRequireDoctorMiddleware();
+  router.get(
+    '/me/doctor-profile',
+    doctorMiddleware,
+    auditUserProfileAccess,
+    asyncHandler(userController.getDoctorProfile)
+  );
+
   // Admin/Staff only routes
   const adminStaffMiddleware = userController.getRequireRoleMiddleware();
   router.get('/', adminStaffMiddleware, validatePagination, asyncHandler(userController.listUsers));

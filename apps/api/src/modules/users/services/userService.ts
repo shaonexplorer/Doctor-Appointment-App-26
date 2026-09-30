@@ -25,8 +25,11 @@ export class UserService {
   /**
    * Extract profile updates from UpdateProfileInput based on user type
    */
-  private extractProfileUpdates(userType: UserType, data: UpdateProfileInput): Record<string, any> {
-    const profileUpdates: Record<string, any> = {};
+  private extractProfileUpdates(
+    userType: UserType,
+    data: UpdateProfileInput
+  ): Record<string, unknown> {
+    const profileUpdates: Record<string, unknown> = {};
 
     if (userType === UserType.DOCTOR) {
       if (data.specialty !== undefined) profileUpdates.specialty = data.specialty;
@@ -164,6 +167,121 @@ export class UserService {
         [UserType.STAFF]: totalStaff,
         [UserType.DOCTOR]: totalDoctors,
         [UserType.PATIENT]: totalPatients,
+      },
+    };
+  }
+
+  /**
+   * Get current user's doctor profile with stats (Doctor only)
+   */
+  async getDoctorProfile(userId: string): Promise<Record<string, unknown>> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new AppError('NOT_FOUND', 'User not found', 404);
+    }
+
+    if (user.userType !== UserType.DOCTOR) {
+      throw new AppError('FORBIDDEN', 'User is not a doctor', 403);
+    }
+
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      include: {
+        schedules: {
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!doctorProfile) {
+      throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
+    }
+
+    // Get stats
+    const { AppointmentStatus, SlotStatus } = await import('@prisma/client');
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+    const [
+      totalAppointments,
+      todayAppointments,
+      weeklyAppointments,
+      totalSlotsThisWeek,
+      bookedSlotsThisWeek,
+      completedAppointments,
+      totalPatients,
+    ] = await Promise.all([
+      this.prisma.appointment.count({ where: { doctorId: userId } }),
+      this.prisma.appointment.count({
+        where: {
+          doctorId: userId,
+          slot: { startTime: { gte: todayStart, lt: todayEnd } },
+          status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+        },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          doctorId: userId,
+          slot: { startTime: { gte: weekStart } },
+          status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+        },
+      }),
+      this.prisma.schedule.count({
+        where: { doctorId: doctorProfile.id, startTime: { gte: weekStart } },
+      }),
+      this.prisma.schedule.count({
+        where: {
+          doctorId: doctorProfile.id,
+          startTime: { gte: weekStart },
+          status: SlotStatus.BOOKED,
+        },
+      }),
+      this.prisma.appointment.findMany({
+        where: {
+          doctorId: userId,
+          status: AppointmentStatus.COMPLETED,
+        },
+        include: {
+          doctor: { include: { doctorProfile: { select: { fee: true } } } },
+        },
+      }),
+      this.prisma.appointment.count({
+        where: { doctorId: userId },
+        distinct: ['patientId'],
+      }),
+    ]);
+
+    const slotUtilization =
+      totalSlotsThisWeek > 0 ? Math.round((bookedSlotsThisWeek / totalSlotsThisWeek) * 100) : 0;
+
+    const totalRevenue = completedAppointments.reduce((sum, appt) => {
+      const fee = appt.doctor?.doctorProfile?.fee || 0;
+      return sum + Number(fee);
+    }, 0);
+
+    return {
+      ...doctorProfile,
+      fee:
+        typeof doctorProfile.fee === 'object' && doctorProfile.fee !== null
+          ? Number(doctorProfile.fee)
+          : Number(doctorProfile.fee),
+      stats: {
+        totalAppointments,
+        todayAppointments,
+        weeklyAppointments,
+        slotUtilization,
+        totalRevenue,
+        totalPatients,
       },
     };
   }

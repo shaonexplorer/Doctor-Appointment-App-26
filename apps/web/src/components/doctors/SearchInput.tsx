@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, X, Filter, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, X, Filter, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface SearchInputProps {
   value: string;
@@ -23,15 +23,14 @@ export function SearchInput({
   onChange,
   onSearch,
   onFilterClick,
-  placeholder = "Search doctors, specialties, symptoms...",
+  placeholder = 'Search doctors, specialties, symptoms...',
   debounceMs = 300,
   showFilterButton = true,
-  filterButtonLabel = "Filters",
+  filterButtonLabel = 'Filters',
   className,
   disabled = false,
   loading = false,
 }: SearchInputProps) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
   const [showClear, setShowClear] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,7 +42,6 @@ export function SearchInput({
     }
 
     timeoutRef.current = setTimeout(() => {
-      setDebouncedValue(value);
       onSearch?.(value);
     }, debounceMs);
 
@@ -67,18 +65,18 @@ export function SearchInput({
   );
 
   const handleClear = useCallback(() => {
-    onChange("");
-    onSearch?.("");
+    onChange('');
+    onSearch?.('');
     inputRef.current?.focus();
   }, [onChange, onSearch]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         onSearch?.(value);
       }
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         handleClear();
       }
     },
@@ -86,15 +84,15 @@ export function SearchInput({
   );
 
   return (
-    <div className={cn("relative flex items-center gap-2", className)}>
+    <div className={cn('relative flex items-center gap-2', className)}>
       <label htmlFor="doctor-search" className="sr-only">
         Search doctors
       </label>
       <div className="relative flex-1">
         <Search
           className={cn(
-            "absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none transition-colors",
-            loading && "animate-spin"
+            'text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 transition-colors',
+            loading && 'animate-spin'
           )}
           aria-hidden="true"
         />
@@ -108,10 +106,10 @@ export function SearchInput({
           placeholder={placeholder}
           disabled={disabled}
           className={cn(
-            "h-11 w-full rounded-xl border border-border bg-background pl-10 pr-10 text-sm outline-none transition-colors",
-            "focus:border-primary focus:ring-2 focus:ring-primary/15",
-            "placeholder:text-muted-foreground/60",
-            disabled && "cursor-not-allowed bg-secondary text-muted-foreground"
+            'border-border bg-background h-11 w-full rounded-xl border pr-10 pl-10 text-sm transition-colors outline-none',
+            'focus:border-primary focus:ring-primary/15 focus:ring-2',
+            'placeholder:text-muted-foreground/60',
+            disabled && 'bg-secondary text-muted-foreground cursor-not-allowed'
           )}
           autoComplete="off"
           aria-label="Search doctors, specialties, or symptoms"
@@ -122,14 +120,17 @@ export function SearchInput({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:bg-secondary hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 rounded-lg p-1 transition-colors"
             aria-label="Clear search"
           >
             <X className="size-4" />
           </button>
         )}
         {loading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-primary animate-spin" aria-hidden="true" />
+          <Loader2
+            className="text-primary absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin"
+            aria-hidden="true"
+          />
         )}
       </div>
 
@@ -138,9 +139,9 @@ export function SearchInput({
           type="button"
           onClick={onFilterClick}
           className={cn(
-            "flex h-11 items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-muted-foreground transition-colors",
-            "hover:bg-secondary hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20",
-            disabled && "cursor-not-allowed opacity-50"
+            'border-border bg-background text-muted-foreground flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors',
+            'hover:bg-secondary hover:text-foreground focus:ring-primary/20 focus:ring-2 focus:outline-none',
+            disabled && 'cursor-not-allowed opacity-50'
           )}
           disabled={disabled}
           aria-label={filterButtonLabel}
@@ -159,17 +160,13 @@ export interface SearchSuggestionsProps {
   className?: string;
 }
 
-export function SearchSuggestions({
-  suggestions,
-  onSelect,
-  className,
-}: SearchSuggestionsProps) {
+export function SearchSuggestions({ suggestions, onSelect, className }: SearchSuggestionsProps) {
   if (suggestions.length === 0) return null;
 
   return (
     <div
       className={cn(
-        "absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-border bg-card shadow-lg overflow-hidden",
+        'border-border bg-card absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-xl border shadow-lg',
         className
       )}
       role="listbox"
@@ -180,13 +177,13 @@ export function SearchSuggestions({
           type="button"
           onClick={() => onSelect(suggestion)}
           className={cn(
-            "w-full px-4 py-3 text-left text-sm transition-colors",
-            "hover:bg-secondary focus:outline-none focus:bg-secondary",
-            index === suggestions.length - 1 ? "" : "border-b border-border"
+            'w-full px-4 py-3 text-left text-sm transition-colors',
+            'hover:bg-secondary focus:bg-secondary focus:outline-none',
+            index === suggestions.length - 1 ? '' : 'border-border border-b'
           )}
           role="option"
         >
-          <Search className="mr-2 inline size-4 text-muted-foreground" aria-hidden="true" />
+          <Search className="text-muted-foreground mr-2 inline size-4" aria-hidden="true" />
           {suggestion}
         </button>
       ))}
