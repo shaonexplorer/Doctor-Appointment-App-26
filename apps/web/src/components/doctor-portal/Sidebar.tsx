@@ -10,7 +10,6 @@ import {
   FileText,
   Pill,
   Stethoscope,
-  Settings,
   Bell,
   UserRound,
   PanelLeftClose,
@@ -31,7 +30,7 @@ const navigation = [
 const secondary = [
   { label: 'Profile', icon: UserRound, href: '/doctor/profile' },
   { label: 'Notifications', icon: Bell, href: '/doctor/notifications' },
-  { label: 'Settings', icon: Settings, href: '/doctor/settings' },
+  // { label: 'Settings', icon: Settings, href: '/doctor/settings' },
 ] as const;
 
 export interface DoctorSidebarProps {
