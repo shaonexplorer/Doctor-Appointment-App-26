@@ -78,7 +78,7 @@ export function PatientDrawer({
           <Info label="Total visits" value={`${patient.totalVisits}`} />
           <Info label="Next appointment" value={patient.nextAppointment} />
         </div>
-        <div className="border-border mt-6 flex gap-2 overflow-x-auto border-b pb-2 text-xs font-bold">
+        <div className="border-border mt-6 flex flex-wrap gap-2 border-b pb-2 text-xs font-bold">
           {[
             'Profile',
             'Medical history',
