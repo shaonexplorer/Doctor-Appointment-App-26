@@ -1,17 +1,26 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Calendar, Users, FileText } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  FileText,
+  Pill,
+  Stethoscope,
+  Bell,
+  Settings,
+} from 'lucide-react';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard },
   { label: 'Schedule', icon: Calendar },
   { label: 'Patients', icon: Users },
   { label: 'Appointments', icon: FileText },
-  // { label: 'Prescriptions', icon: Pill },
-  // { label: 'Consultation', icon: Stethoscope },
-  // { label: 'Notifications', icon: Bell },
-  // { label: 'Settings', icon: Settings },
+  { label: 'Prescriptions', icon: Pill },
+  { label: 'Consultation', icon: Stethoscope },
+  { label: 'Notifications', icon: Bell },
+  { label: 'Settings', icon: Settings },
 ] as const;
 
 export interface DoctorMobileNavProps {

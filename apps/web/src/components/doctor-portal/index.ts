@@ -5,6 +5,6 @@ export { DoctorMobileSidebar } from './MobileSidebar';
 export { DoctorMobileNav } from './MobileNav';
 export type { DoctorPortalShellProps } from './DoctorPortalShell';
 export type { DoctorSidebarProps } from './Sidebar';
-export type { DoctorHeaderProps } from './Header';
+export type { HeaderProps as DoctorHeaderProps } from './Header';
 export type { DoctorMobileSidebarProps } from './MobileSidebar';
 export type { DoctorMobileNavProps } from './MobileNav';
