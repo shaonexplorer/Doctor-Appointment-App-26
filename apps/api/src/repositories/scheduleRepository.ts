@@ -228,4 +228,34 @@ export class ScheduleRepository {
 
     return this.prisma.schedule.count({ where });
   }
+
+  /**
+   * Update multiple slots in bulk
+   */
+  async updateMany(ids: string[], data: Partial<Prisma.ScheduleUpdateInput>): Promise<number> {
+    const result = await this.prisma.schedule.updateMany({
+      where: { id: { in: ids } },
+      data,
+    });
+    return result.count;
+  }
+
+  /**
+   * Find weekly schedule for a doctor (for Doctor Portal schedule view)
+   */
+  async findWeeklySchedule(doctorId: string, weekStart: Date): Promise<Schedule[]> {
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    return this.prisma.schedule.findMany({
+      where: {
+        doctorId,
+        startTime: {
+          gte: weekStart,
+          lt: weekEnd,
+        },
+      },
+      orderBy: { startTime: 'asc' },
+    });
+  }
 }

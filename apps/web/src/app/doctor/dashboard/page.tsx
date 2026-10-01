@@ -25,85 +25,14 @@ import {
   QuickActions,
 } from '@/components/doctor-dashboard';
 import { DoctorPortalShell } from '@/components/doctor-portal';
-
-const volumeData = [
-  { day: 'Mon', patients: 18 },
-  { day: 'Tue', patients: 24 },
-  { day: 'Wed', patients: 21 },
-  { day: 'Thu', patients: 29 },
-  { day: 'Fri', patients: 25 },
-  { day: 'Sat', patients: 14 },
-  { day: 'Sun', patients: 10 },
-];
-
-const utilizationData = [
-  { name: 'Booked', value: 68, color: '#1E40AF' },
-  { name: 'Available', value: 22, color: '#059669' },
-  { name: 'Cancelled', value: 10, color: '#DC2626' },
-];
-
-const revenueData = [
-  { day: 'Mon', follow: 420, new: 260, video: 180 },
-  { day: 'Tue', follow: 560, new: 320, video: 220 },
-  { day: 'Wed', follow: 480, new: 390, video: 150 },
-  { day: 'Thu', follow: 620, new: 420, video: 260 },
-  { day: 'Fri', follow: 520, new: 350, video: 200 },
-];
-
-const appointments = [
-  {
-    time: '09:00 AM',
-    patient: 'Sarah Johnson',
-    type: 'Follow-up',
-    status: 'Confirmed' as const,
-    payment: 'Paid' as const,
-  },
-  {
-    time: '09:30 AM',
-    patient: 'Robert Chen',
-    type: 'New consultation',
-    status: 'Waiting' as const,
-    payment: 'Paid' as const,
-  },
-  {
-    time: '10:30 AM',
-    patient: 'Emily Davis',
-    type: 'Video consultation',
-    status: 'Confirmed' as const,
-    payment: 'Pending' as const,
-  },
-  {
-    time: '11:15 AM',
-    patient: 'James Wilson',
-    type: 'Follow-up',
-    status: 'Confirmed' as const,
-    payment: 'Paid' as const,
-  },
-];
-
-const recentPatients = [
-  {
-    patient: 'Sarah Johnson',
-    visit: 'Sep 14, 2026',
-    diagnosis: 'Hypertension',
-    appointment: 'Follow-up',
-    initials: 'SJ',
-  },
-  {
-    patient: 'Robert Chen',
-    visit: 'Sep 11, 2026',
-    diagnosis: 'Arrhythmia',
-    appointment: 'Consultation',
-    initials: 'RC',
-  },
-  {
-    patient: 'Emily Davis',
-    visit: 'Sep 08, 2026',
-    diagnosis: 'Palpitations',
-    appointment: 'Video visit',
-    initials: 'ED',
-  },
-];
+import {
+  useDoctorDashboardStats,
+  useDoctorAppointments,
+  useVolumeData,
+  useUtilizationData,
+  useRevenueData,
+  useRecentPatients,
+} from '@/hooks/useDoctorDashboard';
 
 const quickActions = [
   { icon: CalendarDays, label: 'View Schedule' },
@@ -116,14 +45,128 @@ export default function DoctorDashboardPage() {
   const [notice, setNotice] = useState('');
   const [range, setRange] = useState('Week');
 
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
+  } = useDoctorDashboardStats();
+
+  const { data: appointmentsData, isLoading: appointmentsLoading } = useDoctorAppointments({
+    status: 'SCHEDULED',
+  });
+
+  const { data: volumeData, isLoading: volumeLoading } = useVolumeData(7);
+
+  const { data: utilizationData, isLoading: utilizationLoading } = useUtilizationData();
+
+  const { data: revenueData, isLoading: revenueLoading } = useRevenueData();
+
+  const { data: recentPatients, isLoading: patientsLoading } = useRecentPatients();
+
+  const isLoading =
+    statsLoading ||
+    appointmentsLoading ||
+    volumeLoading ||
+    utilizationLoading ||
+    revenueLoading ||
+    patientsLoading;
+
   const action = (label: string, patient?: string) => {
     setNotice(`${label}${patient ? ` for ${patient}` : ''} is ready.`);
   };
 
   const reload = () => {
     setNotice('Refreshing...');
+    void refetchStats();
     setTimeout(() => setNotice('Data refreshed.'), 650);
   };
+
+  // Transform appointments for components
+  const transformedAppointments =
+    appointmentsData?.data.map((appt) => ({
+      time: new Date(appt.slot.startTime).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }),
+      patient: `${appt.patient.firstName} ${appt.patient.lastName}`,
+      type: appt.consultationType === 'VIDEO' ? 'Video consultation' : 'Follow-up',
+      status:
+        appt.status === 'SCHEDULED'
+          ? ('Confirmed' as const)
+          : appt.status === 'COMPLETED'
+            ? ('Confirmed' as const)
+            : ('Waiting' as const),
+      payment: appt.paymentStatus === 'PAID' ? ('Paid' as const) : ('Pending' as const),
+    })) || [];
+
+  if (isLoading) {
+    return (
+      <ProtectedRoute allowedRoles={[UserType.DOCTOR]}>
+        <DoctorPortalShell active="Dashboard">
+          <div className="flex animate-pulse flex-col gap-5">
+            {/* KPI Metrics Skeleton */}
+            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="border-border bg-card rounded-2xl border p-5 shadow-sm">
+                  <div className="bg-muted mb-2 h-4 w-3/4 rounded" />
+                  <div className="bg-muted h-8 w-1/2 rounded" />
+                  <div className="bg-muted mt-1 h-3 w-2/3 rounded" />
+                </div>
+              ))}
+            </section>
+
+            {/* Charts Skeleton */}
+            <div className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
+              <div className="border-border bg-card h-64 rounded-2xl border p-5 shadow-sm" />
+              <div className="border-border bg-card h-64 rounded-2xl border p-5 shadow-sm" />
+            </div>
+            <div className="grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
+              <div className="border-border bg-card h-64 rounded-2xl border p-5 shadow-sm" />
+              <div className="border-border bg-card h-64 rounded-2xl border p-5 shadow-sm" />
+            </div>
+
+            {/* Upcoming Appointments Skeleton */}
+            <div className="border-border bg-card rounded-2xl border p-5 shadow-sm">
+              <div className="bg-muted mb-4 h-4 w-1/4 rounded" />
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-muted mb-2 h-12 rounded" />
+              ))}
+            </div>
+
+            {/* Recent Patients Skeleton */}
+            <div className="border-border bg-card rounded-2xl border p-5 shadow-sm">
+              <div className="bg-muted mb-4 h-4 w-1/4 rounded" />
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-muted mb-2 h-16 rounded" />
+              ))}
+            </div>
+          </div>
+        </DoctorPortalShell>
+      </ProtectedRoute>
+    );
+  }
+
+  if (statsError) {
+    return (
+      <ProtectedRoute allowedRoles={[UserType.DOCTOR]}>
+        <DoctorPortalShell active="Dashboard">
+          <div className="flex flex-col gap-5">
+            <div className="border-border bg-card rounded-2xl border p-5 shadow-sm">
+              <p className="text-destructive">Failed to load dashboard data</p>
+              <button
+                onClick={() => refetchStats()}
+                className="bg-primary text-primary-foreground mt-2 rounded-xl px-4 py-2 text-sm font-semibold"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </DoctorPortalShell>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute allowedRoles={[UserType.DOCTOR]}>
@@ -146,29 +189,29 @@ export default function DoctorDashboardPage() {
             <DoctorMetric
               icon={CalendarDays}
               label="Today's appointments"
-              value="12"
-              detail="3 more than average"
+              value={stats?.todayAppointments?.toString() || '0'}
+              detail={`${stats?.weeklyAppointments || 0} this week`}
               tone="bg-[#edf3ff] text-primary"
             />
             <DoctorMetric
               icon={CheckCircle2}
               label="Completed consultations"
-              value="8"
-              detail="67% of today's visits"
+              value={String(stats?.totalAppointments || 0)}
+              detail={`${stats?.totalPatients || 0} unique patients`}
               tone="bg-[#e9f8f3] text-[#2b9d7e]"
             />
             <DoctorMetric
               icon={Clock3}
-              label="Waiting patients"
-              value="3"
-              detail="Average wait 12 min"
+              label="Slot utilization"
+              value={`${stats?.slotUtilization || 0}%`}
+              detail="This week's capacity"
               tone="bg-[#fff3e7] text-[#d68b42]"
             />
             <DoctorMetric
               icon={CircleDollarSign}
-              label="Today's revenue"
-              value="$1,240"
-              detail="18% above last Monday"
+              label="Total revenue"
+              value={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
+              detail="All-time earnings"
               tone="bg-[#f2edff] text-[#8767d8]"
             />
           </section>
@@ -194,31 +237,31 @@ export default function DoctorDashboardPage() {
                 </div>
               }
             >
-              <VolumeChart data={volumeData} />
+              <VolumeChart data={volumeData || []} />
             </ChartCard>
-            <ChartCard title="Slot utilization" subtitle="Today's appointment capacity">
-              <UtilizationDonutChart data={utilizationData} />
+            <ChartCard title="Slot utilization" subtitle="This week's appointment capacity">
+              <UtilizationDonutChart data={utilizationData || []} />
             </ChartCard>
           </div>
 
           {/* Charts Row 2 */}
           <div className="grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
             <ChartCard title="Revenue breakdown" subtitle="Consultation revenue by type">
-              <RevenueStackedBarChart data={revenueData} />
+              <RevenueStackedBarChart data={revenueData || []} />
             </ChartCard>
-            <ScheduleTimeline appointments={appointments} />
+            <ScheduleTimeline appointments={transformedAppointments} />
           </div>
 
           {/* Upcoming Appointments */}
           <UpcomingAppointments
-            appointments={appointments}
+            appointments={transformedAppointments}
             onAction={action}
             onViewFullSchedule={() => action('View full schedule')}
           />
 
           {/* Recent Patients */}
           <RecentPatients
-            patients={recentPatients}
+            patients={recentPatients || []}
             onAction={action}
             onViewAll={() => action('Patient directory')}
           />

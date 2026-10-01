@@ -32,7 +32,7 @@ export const DateSchema = z
 // Pagination
 export const PaginationParamsSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+  limit: z.coerce.number().int().positive().max(1000).default(20),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
@@ -235,7 +235,7 @@ export const DoctorSearchFiltersSchema = z.object({
   availableTo: z.string().datetime({ offset: true }).optional(),
   consultationType: z.nativeEnum(ConsultationType).optional(),
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+  limit: z.coerce.number().int().positive().max(1000).default(20),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
@@ -348,7 +348,7 @@ export const AppointmentFiltersSchema = z.object({
   doctorId: z.string().cuid().optional(),
   patientId: z.string().cuid().optional(),
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+  limit: z.coerce.number().int().positive().max(1000).default(20),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });

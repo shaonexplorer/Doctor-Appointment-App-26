@@ -13,6 +13,8 @@ import type {
   SlotUpdateInput,
   ScheduleSlot,
   BulkSlotResult,
+  BulkSlotUpdateInput,
+  BulkSlotUpdateResult,
 } from '../types';
 
 export class ScheduleService {
@@ -295,7 +297,116 @@ export class ScheduleService {
    * Get slot by ID with doctor info
    */
   async getSlotById(slotId: string): Promise<ScheduleSlot | null> {
-    return this.scheduleRepository.findByIdWithDoctor(slotId);
+    const slot = await this.scheduleRepository.findByIdWithDoctor(slotId);
+    if (!slot) return null;
+    // Map SlotWithDoctor to ScheduleSlot
+    return {
+      id: slot.id,
+      doctorId: slot.doctorId,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      status: slot.status,
+      createdAt: slot.createdAt,
+      updatedAt: slot.updatedAt,
+      doctor: slot.doctor
+        ? {
+            id: slot.doctor.id,
+            specialty: slot.doctor.specialty,
+            designation: slot.doctor.designation,
+            fee: slot.doctor.fee ? Number(slot.doctor.fee) : null,
+            user: {
+              id: slot.doctor.user.id,
+              firstName: slot.doctor.user.firstName,
+              lastName: slot.doctor.user.lastName,
+              email: slot.doctor.user.email,
+            },
+          }
+        : undefined,
+    };
+  }
+
+  /**
+   * Bulk update slots (Doctor only)
+   */
+  async bulkUpdateSlots(
+    doctorId: string,
+    data: BulkSlotUpdateInput
+  ): Promise<BulkSlotUpdateResult> {
+    // Verify all slots belong to this doctor
+    const slots = await this.prisma.schedule.findMany({
+      where: { id: { in: data.slotIds } },
+      select: { id: true, doctorId: true, status: true, startTime: true, endTime: true },
+    });
+
+    if (slots.length !== data.slotIds.length) {
+      throw new AppError('NOT_FOUND', 'One or more slots not found', 404);
+    }
+
+    for (const slot of slots) {
+      if (slot.doctorId !== doctorId) {
+        throw new AppError('FORBIDDEN', 'Cannot update slots for another doctor', 403);
+      }
+    }
+
+    // Cannot update booked slots
+    const bookedSlots = slots.filter((s) => s.status === SlotStatus.BOOKED);
+    if (bookedSlots.length > 0 && data.status && data.status !== SlotStatus.BOOKED) {
+      throw new AppError(
+        'CONFLICT',
+        'Cannot update booked slots. Cancel the appointments first.',
+        409
+      );
+    }
+
+    // Prepare update data
+    const updateData: Partial<{ status: SlotStatus; startTime: Date; endTime: Date }> = {};
+    if (data.status) updateData.status = data.status;
+    if (data.startTime) updateData.startTime = new Date(data.startTime);
+    if (data.endTime) updateData.endTime = new Date(data.endTime);
+
+    // If updating time, check for overlaps
+    if (updateData.startTime || updateData.endTime) {
+      for (const slot of slots) {
+        const newStart = updateData.startTime || slot.startTime;
+        const newEnd = updateData.endTime || slot.endTime;
+
+        if (newStart >= newEnd) {
+          throw new AppError('VALIDATION_ERROR', 'Start time must be before end time', 400);
+        }
+
+        const overlapping = await this.prisma.schedule.findFirst({
+          where: {
+            doctorId,
+            id: { notIn: data.slotIds },
+            status: { not: SlotStatus.CANCELLED },
+            OR: [
+              {
+                startTime: { lt: newEnd },
+                endTime: { gt: newStart },
+              },
+            ],
+          },
+        });
+
+        if (overlapping) {
+          throw new AppError(
+            'CONFLICT',
+            `Updated slot overlaps with existing schedule at ${newStart.toISOString()}`,
+            409
+          );
+        }
+      }
+    }
+
+    const updated = await this.scheduleRepository.updateMany(data.slotIds, updateData);
+    return { updated, total: data.slotIds.length };
+  }
+
+  /**
+   * Get weekly schedule for a doctor (Doctor Portal)
+   */
+  async getWeeklySchedule(doctorId: string, weekStart: Date): Promise<ScheduleSlot[]> {
+    return this.scheduleRepository.findWeeklySchedule(doctorId, weekStart);
   }
 }
 

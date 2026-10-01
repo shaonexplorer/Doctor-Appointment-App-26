@@ -5,19 +5,28 @@
 
 import type { ZodTypeAny } from 'zod';
 import type { Response, NextFunction } from 'express';
-import { UpdateProfileSchema, PaginationParamsSchema } from '@doctor-appointment-app/shared';
-import type { UpdateProfileInput, PaginationParams } from '@doctor-appointment-app/shared';
+import {
+  UpdateProfileSchema,
+  PaginationParamsSchema,
+  DoctorProfileUpdateSchema,
+} from '@doctor-appointment-app/shared';
+import type {
+  UpdateProfileInput,
+  PaginationParams,
+  DoctorProfileUpdateInput,
+} from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
 
 // Re-export shared schemas
-export { UpdateProfileSchema, PaginationParamsSchema };
+export { UpdateProfileSchema, PaginationParamsSchema, DoctorProfileUpdateSchema };
 
-export type { UpdateProfileInput, PaginationParams };
+export type { UpdateProfileInput, PaginationParams, DoctorProfileUpdateInput };
 
 // Module-specific validation helpers
 export const userValidators = {
   updateProfile: UpdateProfileSchema,
   pagination: PaginationParamsSchema,
+  doctorProfileUpdate: DoctorProfileUpdateSchema,
 } as const;
 
 // Validation middleware factory
@@ -65,3 +74,4 @@ export function createQueryValidationMiddleware<T extends ZodTypeAny>(schema: T)
 // Typed validation middlewares
 export const validateUpdateProfile = createValidationMiddleware(UpdateProfileSchema);
 export const validatePagination = createQueryValidationMiddleware(PaginationParamsSchema);
+export const validateDoctorProfileUpdate = createValidationMiddleware(DoctorProfileUpdateSchema);

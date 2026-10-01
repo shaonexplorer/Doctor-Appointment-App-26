@@ -36,3 +36,16 @@ export function createSchedulesModule(
     routes,
   };
 }
+
+// Explicitly re-export types to avoid duplicate export warning
+export type {
+  ScheduleSlot,
+  BulkSlotResult,
+  BulkSlotUpdateInput,
+  BulkSlotUpdateResult,
+  WeeklyScheduleParams,
+  SlotCreateInput,
+  BulkSlotCreateInput,
+  SlotUpdateInput,
+  SlotStatus,
+} from './types';

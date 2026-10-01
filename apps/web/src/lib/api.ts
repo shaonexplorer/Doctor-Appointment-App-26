@@ -143,6 +143,68 @@ export interface DoctorProfile {
     createdAt: string;
     updatedAt: string;
   }>;
+  stats?: {
+    totalAppointments: number;
+    todayAppointments: number;
+    weeklyAppointments: number;
+    slotUtilization: number;
+    totalRevenue: number;
+    totalPatients: number;
+  };
+}
+
+// Schedule/Slot types
+export interface ScheduleSlot {
+  id: string;
+  doctorId: string;
+  startTime: string;
+  endTime: string;
+  status: 'AVAILABLE' | 'BOOKED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+  doctor?: {
+    id: string;
+    specialty: string;
+    designation: string | null;
+    fee: number | null;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+  };
+}
+
+export interface BulkSlotCreateInput {
+  doctorId: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  slotDuration: number; // minutes
+  daysOfWeek: number[]; // 0 = Sunday, 6 = Saturday
+}
+
+export interface BulkSlotCreateResult {
+  created: number;
+  total: number;
+}
+
+export interface BulkSlotUpdateInput {
+  slotIds: string[];
+  status?: 'AVAILABLE' | 'BOOKED' | 'CANCELLED';
+  startTime?: string; // ISO datetime
+  endTime?: string; // ISO datetime
+}
+
+export interface BulkSlotUpdateResult {
+  updated: number;
+  total: number;
+}
+
+export interface WeeklyScheduleParams {
+  weekStart: string; // ISO date string
 }
 
 // Doctor API functions
@@ -207,6 +269,66 @@ export const doctorApi = {
   },
 };
 
+// Schedule API functions
+export const scheduleApi = {
+  /**
+   * Get weekly schedule for authenticated doctor
+   * GET /api/schedules/doctor?weekStart=
+   */
+  getWeeklySchedule: async (weekStart: string): Promise<ScheduleSlot[]> => {
+    return apiRequest<ScheduleSlot[]>(
+      `/api/schedules/doctor?weekStart=${encodeURIComponent(weekStart)}`
+    );
+  },
+
+  /**
+   * Get doctor slots for booking
+   * GET /api/schedules/doctor/:doctorId?startDate=&endDate=
+   */
+  getDoctorSlots: async (
+    doctorId: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<ScheduleSlot[]> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate.toISOString());
+    if (endDate) params.append('endDate', endDate.toISOString());
+    return apiRequest<ScheduleSlot[]>(`/api/schedules/doctor/${doctorId}?${params.toString()}`);
+  },
+
+  /**
+   * Create bulk slots (Doctor only)
+   * POST /api/schedules/doctor/bulk
+   */
+  createBulkSlots: async (data: BulkSlotCreateInput): Promise<BulkSlotCreateResult> => {
+    return apiRequest<BulkSlotCreateResult>('/api/schedules/doctor/bulk', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Bulk update slots (Doctor only)
+   * PATCH /api/schedules/doctor/bulk
+   */
+  bulkUpdateSlots: async (data: BulkSlotUpdateInput): Promise<BulkSlotUpdateResult> => {
+    return apiRequest<BulkSlotUpdateResult>('/api/schedules/doctor/bulk', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete a single slot (Doctor only)
+   * DELETE /api/schedules/:id
+   */
+  deleteSlot: async (slotId: string): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>(`/api/schedules/${slotId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // User Profile API types
 export interface UserProfile {
   id: string;
@@ -226,6 +348,14 @@ export interface UserProfile {
     bio: string | null;
     fee: number;
     isVerified: boolean;
+    stats?: {
+      totalAppointments: number;
+      todayAppointments: number;
+      weeklyAppointments: number;
+      slotUtilization: number;
+      totalRevenue: number;
+      totalPatients: number;
+    };
   } | null;
   patientProfile?: {
     id: string;
@@ -269,6 +399,25 @@ export const userApi = {
    */
   updateProfile: async (data: UpdateProfileInput): Promise<UserProfile> => {
     return apiRequest<UserProfile>('/api/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Get current user's doctor profile with stats (Doctor only)
+   * GET /api/users/me/doctor-profile
+   */
+  getDoctorProfile: async (): Promise<UserProfile> => {
+    return apiRequest<UserProfile>('/api/users/me/doctor-profile');
+  },
+
+  /**
+   * Update current user's doctor profile (Doctor only)
+   * PATCH /api/users/me/doctor-profile
+   */
+  updateDoctorProfile: async (data: UpdateProfileInput): Promise<UserProfile> => {
+    return apiRequest<UserProfile>('/api/users/me/doctor-profile', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });

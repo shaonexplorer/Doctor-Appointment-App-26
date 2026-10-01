@@ -9,7 +9,7 @@ import { requireRole } from '../../../shared/middleware/auth';
 import { UserType } from '@doctor-appointment-app/shared';
 import { buildSuccessResponse, buildPaginatedResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
-import type { UpdateProfileInput, PaginationParams } from '../validators';
+import type { UpdateProfileInput, PaginationParams, DoctorProfileUpdateInput } from '../validators';
 
 export class UserController {
   constructor(private userService: UserService) {}
@@ -54,6 +54,22 @@ export class UserController {
   getDoctorProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const profile = await this.userService.getDoctorProfile(req.user!.id);
+      res.json(buildSuccessResponse(profile));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Update current user's doctor profile (Doctor only)
+   * PATCH /api/users/me/doctor-profile
+   */
+  updateDoctorProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      // Validation is handled by middleware
+      const validatedData = req.validatedData as DoctorProfileUpdateInput;
+
+      const profile = await this.userService.updateDoctorProfile(req.user!.id, validatedData);
       res.json(buildSuccessResponse(profile));
     } catch (error) {
       next(error);

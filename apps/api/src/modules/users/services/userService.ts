@@ -255,10 +255,14 @@ export class UserService {
           doctor: { include: { doctorProfile: { select: { fee: true } } } },
         },
       }),
-      this.prisma.appointment.count({
-        where: { doctorId: userId },
-        distinct: ['patientId'],
-      }),
+      // Count distinct patients using findMany with distinct
+      this.prisma.appointment
+        .findMany({
+          where: { doctorId: userId },
+          distinct: ['patientId'],
+          select: { patientId: true },
+        })
+        .then((appointments) => appointments.length),
     ]);
 
     const slotUtilization =
@@ -284,6 +288,60 @@ export class UserService {
         totalPatients,
       },
     };
+  }
+
+  /**
+   * Update current user's doctor profile (Doctor only)
+   * PATCH /api/users/me/doctor-profile
+   */
+  async updateDoctorProfile(
+    userId: string,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new AppError('NOT_FOUND', 'User not found', 404);
+    }
+
+    if (user.userType !== UserType.DOCTOR) {
+      throw new AppError('FORBIDDEN', 'User is not a doctor', 403);
+    }
+
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!doctorProfile) {
+      throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
+    }
+
+    // Check license number uniqueness if being updated
+    if (data.licenseNo && data.licenseNo !== doctorProfile.licenseNo) {
+      const licenseExists = await this.prisma.doctorProfile.findUnique({
+        where: { licenseNo: data.licenseNo as string },
+      });
+      if (licenseExists) {
+        throw new AppError('CONFLICT', 'License number already registered', 409);
+      }
+    }
+
+    // Prepare update data for doctor profile
+    const profileUpdates: Record<string, unknown> = {};
+    if (data.specialty !== undefined) profileUpdates.specialty = data.specialty;
+    if (data.designation !== undefined) profileUpdates.designation = data.designation;
+    if (data.licenseNo !== undefined) profileUpdates.licenseNo = data.licenseNo;
+    if (data.bio !== undefined) profileUpdates.bio = data.bio;
+    if (data.fee !== undefined) profileUpdates.fee = data.fee;
+
+    if (Object.keys(profileUpdates).length > 0) {
+      await this.prisma.doctorProfile.update({
+        where: { userId },
+        data: profileUpdates,
+      });
+    }
+
+    // Return updated profile with stats
+    return this.getDoctorProfile(userId);
   }
 }
 
