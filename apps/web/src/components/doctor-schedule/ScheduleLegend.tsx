@@ -15,9 +15,13 @@ export function ScheduleLegend() {
         <i className="size-2.5 rounded-full bg-[#e49b8e]" />
         Cancelled
       </span>
+      <span className="flex items-center gap-2">
+        <i className="size-2.5 rounded-full bg-[#b62e16]" />
+        Deleted
+      </span>
       <span className="ml-auto flex items-center gap-2">
         <Clock3 className="size-3.5" />
-        Timezone: Asia/Kolkata
+        Timezone: Asia/Dhaka
       </span>
     </div>
   );

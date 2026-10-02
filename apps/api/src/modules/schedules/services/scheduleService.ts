@@ -205,8 +205,17 @@ export class ScheduleService {
       throw new AppError('NOT_FOUND', 'Slot not found', 404);
     }
 
-    // Verify ownership
-    if (slot.doctorId !== doctorId) {
+    // Verify ownership - doctorId is the User ID, need to get DoctorProfile ID
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: doctorId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
+    }
+
+    if (slot.doctorId !== doctorProfile.id) {
       throw new AppError('FORBIDDEN', "Cannot update another doctor's slot", 403);
     }
 
@@ -257,8 +266,17 @@ export class ScheduleService {
       throw new AppError('NOT_FOUND', 'Slot not found', 404);
     }
 
-    // Verify ownership
-    if (slot.doctorId !== doctorId) {
+    // Verify ownership - doctorId is the User ID, need to get DoctorProfile ID
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: doctorId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
+    }
+
+    if (slot.doctorId !== doctorProfile.id) {
       throw new AppError('FORBIDDEN', "Cannot delete another doctor's slot", 403);
     }
 
@@ -404,9 +422,22 @@ export class ScheduleService {
 
   /**
    * Get weekly schedule for a doctor (Doctor Portal)
+   * doctorId is the authenticated user's ID (User ID)
+   * We need to look up the DoctorProfile ID to query the Schedule table
    */
-  async getWeeklySchedule(doctorId: string, weekStart: Date): Promise<ScheduleSlot[]> {
-    return this.scheduleRepository.findWeeklySchedule(doctorId, weekStart);
+  async getWeeklySchedule(userId: string, weekStart: Date): Promise<ScheduleSlot[]> {
+    // Look up the doctor profile for this user
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
+    }
+
+    // Use the DoctorProfile ID to query schedules
+    return this.scheduleRepository.findWeeklySchedule(doctorProfile.id, weekStart);
   }
 }
 

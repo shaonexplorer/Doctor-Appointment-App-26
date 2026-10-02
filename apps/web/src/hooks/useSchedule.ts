@@ -116,14 +116,27 @@ export interface ScheduleSlotWithDate extends ScheduleSlot {
 }
 
 /**
+ * Grid slot with ID for proper selection and deletion
+ */
+export interface GridSlot {
+  id: string;
+  time: string;
+  patient: string;
+  state: 'AVAILABLE' | 'BOOKED' | 'CANCELLED';
+}
+
+/**
  * Transform flat schedule array to grouped by day for ScheduleGrid
+ * Returns a 2D grid: grid[timeIndex][dayIndex] = GridSlot
+ * Preserves slot IDs for proper selection and deletion
  */
 export function transformScheduleForGrid(slots: ScheduleSlot[]): {
-  slots: Array<{ time: string; patient: string; state: 'AVAILABLE' | 'BOOKED' | 'CANCELLED' }>;
+  grid: GridSlot[][]; // grid[timeIndex][dayIndex]
   days: string[];
+  times: string[];
 } {
   if (slots.length === 0) {
-    return { slots: [], days: [] };
+    return { grid: [], days: [], times: [] };
   }
 
   // Group slots by date
@@ -139,7 +152,7 @@ export function transformScheduleForGrid(slots: ScheduleSlot[]): {
     slotsByDate.get(dateKey)!.push(slot);
   }
 
-  // Sort dates
+  // Sort dates (should be 7 days for a week)
   const sortedDates = Array.from(slotsByDate.keys()).sort();
 
   // Get unique time slots across all days
@@ -165,33 +178,40 @@ export function transformScheduleForGrid(slots: ScheduleSlot[]): {
     return `${date.toLocaleDateString('en-US', { weekday: 'short' })} ${date.toLocaleDateString('en-US', { day: 'numeric' })}`;
   });
 
-  // Build slots array for grid
-  const gridSlots = sortedTimes.map((time) => {
-    // For each time slot, check status across days
-    // For simplicity, we'll return the first day's status or 'AVAILABLE'
-    const firstDayKey = sortedDates[0];
-    const firstDaySlots = slotsByDate.get(firstDayKey) || [];
-    const slotAtTime = firstDaySlots.find((s) => {
-      const slotTime = new Date(s.startTime).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
+  // Build 2D grid: grid[timeIndex][dayIndex]
+  const grid: GridSlot[][] = sortedTimes.map((time) => {
+    return sortedDates.map((dateKey) => {
+      const daySlots = slotsByDate.get(dateKey) || [];
+      // day is intentionally not used, kept for reference/debugging
+      // const day = `${new Date(dateKey).toLocaleDateString('en-US', { weekday: 'short' })} ${new Date(dateKey).toLocaleDateString('en-US', { day: 'numeric' })}`;
+
+      const slotAtTime = daySlots.find((s) => {
+        const slotTime = new Date(s.startTime).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        });
+        return slotTime === time;
       });
-      return slotTime === time;
-    });
 
-    let state: 'AVAILABLE' | 'BOOKED' | 'CANCELLED' = 'AVAILABLE';
-    let patient = '';
-
-    if (slotAtTime) {
-      state = slotAtTime.status as 'AVAILABLE' | 'BOOKED' | 'CANCELLED';
-      if (slotAtTime.status === 'BOOKED') {
-        patient = 'Patient Name'; // Would come from appointment data
+      if (slotAtTime) {
+        return {
+          id: slotAtTime.id,
+          time,
+          patient: slotAtTime.status === 'BOOKED' ? 'Patient Name' : '',
+          state: slotAtTime.status as 'AVAILABLE' | 'BOOKED' | 'CANCELLED',
+        };
       }
-    }
 
-    return { time, patient, state };
+      // No slot exists for this day/time - return empty available slot
+      return {
+        id: '',
+        time,
+        patient: '',
+        state: 'AVAILABLE' as const,
+      };
+    });
   });
 
-  return { slots: gridSlots, days };
+  return { grid, days, times: sortedTimes };
 }

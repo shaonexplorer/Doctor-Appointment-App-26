@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, Plus, ShieldAlert } from 'lucide-react';
+import { Check, Plus, ShieldAlert } from 'lucide-react';
+import { useCreateBulkSlots, useDeleteSlot } from '@/hooks/useSchedule';
+import type { BulkSlotCreateInput } from '@/lib/api';
 
 import { SlotCell } from './SlotCell';
 import { ScheduleLegend } from './ScheduleLegend';
@@ -9,40 +11,91 @@ import { BulkActions } from './BulkActions';
 import { GenerateSlotsDialog } from './GenerateSlotsDialog';
 
 interface ScheduleGridProps {
-  slots: Array<{
-    time: string;
-    patient: string;
-    state: 'AVAILABLE' | 'BOOKED' | 'CANCELLED';
-  }>;
+  grid: Array<
+    Array<{
+      id: string;
+      time: string;
+      patient: string;
+      state: 'AVAILABLE' | 'BOOKED' | 'CANCELLED';
+    }>
+  >;
   days: string[];
+  times: string[];
+  doctorId: string;
+  onSlotsGenerated?: () => void;
+  view: 'Day' | 'Week' | 'Month';
+  onViewChange?: (view: 'Day' | 'Week' | 'Month') => void;
+  weekStart: string;
+  onWeekChange?: (direction: 'prev' | 'next') => void;
 }
 
-export function ScheduleGrid({ slots, days }: ScheduleGridProps) {
-  const [view, setView] = useState('Week');
+export function ScheduleGrid({
+  grid,
+  days,
+  times,
+  doctorId,
+  onSlotsGenerated,
+  view,
+  onViewChange,
+  weekStart,
+  onWeekChange,
+}: ScheduleGridProps) {
   const [dialog, setDialog] = useState(false);
   const [notice, setNotice] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [blocked, setBlocked] = useState(false);
 
-  const toggle = (time: string) =>
+  const createBulkSlotsMutation = useCreateBulkSlots();
+  const deleteSlotMutation = useDeleteSlot();
+
+  const toggle = (slotId: string) =>
     setSelected((current) =>
-      current.includes(time) ? current.filter((item) => item !== time) : [...current, time]
+      current.includes(slotId) ? current.filter((item) => item !== slotId) : [...current, slotId]
     );
 
-  const handleDeleteSlots = () => {
-    setNotice(`${selected.length} slots deleted.`);
-    setSelected([]);
+  const handleDeleteSlots = async () => {
+    const slotsWithIds = selected.filter((id) => id !== '');
+    if (slotsWithIds.length === 0) {
+      setNotice('No valid slots selected for deletion.');
+      return;
+    }
+
+    try {
+      for (const slotId of slotsWithIds) {
+        await deleteSlotMutation.mutateAsync(slotId);
+      }
+      setNotice(`${slotsWithIds.length} slot(s) deleted successfully.`);
+      setSelected([]);
+      onSlotsGenerated?.();
+    } catch (error) {
+      console.error('Failed to delete slots:', error);
+      setNotice('Failed to delete some slots.');
+    }
   };
 
-  const handleGenerateSlots = () => {
-    setDialog(false);
-    setNotice('12 slots generated successfully. Preview is ready for review.');
+  const handleGenerateSlots = async (data: BulkSlotCreateInput) => {
+    try {
+      const result = await createBulkSlotsMutation.mutateAsync({
+        ...data,
+        doctorId,
+      });
+      setDialog(false);
+      setNotice(`${result.created} slots generated successfully.`);
+      onSlotsGenerated?.();
+    } catch (error) {
+      // Error is handled by the dialog's error state
+      console.error('Failed to generate slots:', error);
+      throw error;
+    }
   };
 
   const handleToggleBlocked = () => {
     setBlocked(!blocked);
     setNotice(blocked ? 'Blocked time removed.' : 'Time blocked for selected period.');
   };
+
+  const startDate = new Date(weekStart);
+  const endDate = new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000);
 
   return (
     <div className="mt-8 space-y-5">
@@ -59,33 +112,70 @@ export function ScheduleGrid({ slots, days }: ScheduleGridProps) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <button className="hover:bg-secondary rounded-lg p-2" aria-label="Previous period">
-                <ChevronLeft className="size-4" />
+              <button
+                onClick={() => onWeekChange?.('prev')}
+                className="hover:bg-secondary rounded-lg p-2"
+                aria-label="Previous week"
+              >
+                <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
               </button>
-              <h2 className="text-lg font-black">September 21 – 27, 2026</h2>
-              <button className="hover:bg-secondary rounded-lg p-2" aria-label="Next period">
-                <ChevronRight className="size-4" />
+              <h2 className="text-lg font-black">
+                {startDate.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}{' '}
+                –{' '}
+                {endDate.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </h2>
+              <button
+                onClick={() => onWeekChange?.('next')}
+                className="hover:bg-secondary rounded-lg p-2"
+                aria-label="Next week"
+              >
+                <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
               </button>
             </div>
             <p className="text-muted-foreground mt-1 pl-10 text-xs">
               Manage availability, bookings, and blocked time
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2">
             <div className="bg-secondary flex rounded-xl p-1">
-              {['Day', 'Week', 'Month'].map((item) => (
+              {(['Day', 'Week', 'Month'] as const).map((item) => (
                 <button
                   key={item}
-                  onClick={() => setView(item)}
+                  onClick={() => onViewChange?.(item)}
                   className={`rounded-lg px-3 py-2 text-xs font-bold ${view === item ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}
                 >
                   {item}
                 </button>
               ))}
             </div>
+          </div>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setDialog(true)}
               className="bg-primary text-primary-foreground flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm hover:opacity-90"
+              disabled={createBulkSlotsMutation.isPending}
             >
               <Plus className="size-4" />
               Generate slots
@@ -112,21 +202,22 @@ export function ScheduleGrid({ slots, days }: ScheduleGridProps) {
           ))}
         </div>
         <div className="min-w-[900px]">
-          {slots.map((slot) => (
+          {grid.map((timeRow, timeIndex) => (
             <div
-              key={slot.time}
+              key={times[timeIndex]}
               className="border-border/70 grid grid-cols-[76px_repeat(7,1fr)] border-b last:border-0"
             >
               <div className="text-muted-foreground flex items-start justify-center pt-4 text-[10px] font-bold">
-                {slot.time}
+                {times[timeIndex]}
               </div>
-              {days.map((day, index) => (
+              {timeRow.map((slot, dayIndex) => (
                 <SlotCell
-                  day={day}
+                  key={slot.id || `${dayIndex}-${timeIndex}`}
+                  day={days[dayIndex]}
                   slot={slot}
                   selected={selected}
                   onToggle={toggle}
-                  index={index}
+                  index={dayIndex}
                 />
               ))}
             </div>

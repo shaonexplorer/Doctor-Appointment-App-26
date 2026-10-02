@@ -3,7 +3,7 @@
 **Duration:** Weeks 9–12 (4 weeks)  
 **Start Date:** 2026-10-01  
 **End Date:** 2026-10-29  
-**Status:** 🟡 Planned
+**Status:** 🟢 Week 9 Complete — Week 10 In Progress
 
 ---
 
@@ -20,18 +20,18 @@ Empower doctors to manage schedules, conduct consultations, and access analytics
 **Goal:** Core schedule management with bulk operations and portal navigation
 
 #### Backend Deliverables
-- [ ] **Schedules Module Enhancement** (`apps/api/src/modules/schedules/`)
+- [x] **Schedules Module Enhancement** (`apps/api/src/modules/schedules/`)
   - `POST /api/schedules/doctor/bulk` — Bulk create slots (generation wizard)
   - `PATCH /api/schedules/doctor/bulk` — Bulk update slots (block, delete, change status)
   - `GET /api/schedules/doctor` — Doctor's full schedule with slots (weekly view)
   - Repository: `createManySlots()`, `updateManySlots()`, `findWeeklySchedule()`
 
-- [ ] **Doctor Profile Module** (`apps/api/src/modules/doctors/`)
+- [x] **Doctor Profile Module** (`apps/api/src/modules/doctors/`)
   - `GET /api/users/me/doctor-profile` — Doctor's own profile with stats, clinic info
   - `PATCH /api/users/me/doctor-profile` — Update doctor profile (bio, specialties, fees)
 
 #### Frontend Deliverables
-- [ ] **Doctor Portal Shell** (`apps/web/src/components/doctor-portal/`)
+- [x] **Doctor Portal Shell** (`apps/web/src/components/doctor-portal/`)
   - `DoctorPortalShell.tsx` — Main layout with routeMap, auto-active detection
   - `DoctorSidebar.tsx` — Collapsible desktop navigation (9 items)
   - `DoctorHeader.tsx` — Header with global search (⌘K), notifications, profile menu
@@ -39,7 +39,7 @@ Empower doctors to manage schedules, conduct consultations, and access analytics
   - `DoctorMobileNav.tsx` — Bottom mobile navigation (4-column grid)
   - Route protection with `ProtectedRoute` (DOCTOR role)
 
-- [ ] **Schedule Grid Component** (`apps/web/src/components/doctor-schedule/`)
+- [x] **Schedule Grid Component** (`apps/web/src/components/doctor-schedule/`)
   - `ScheduleGrid.tsx` — Weekly calendar grid with time slots
   - `SlotCell.tsx` — Individual slot with status (Available/Booked/Blocked)
   - `BulkActions.tsx` — Toolbar for bulk operations
@@ -47,8 +47,8 @@ Empower doctors to manage schedules, conduct consultations, and access analytics
   - `ScheduleLegend.tsx` — Status color legend
 
 #### Integration
-- [ ] TanStack Query hooks for schedule management
-- [ ] Real-time slot status updates via polling/WebSocket
+- [x] TanStack Query hooks for schedule management
+- [x] Real-time slot status updates via polling/WebSocket
 
 ---
 

@@ -65,7 +65,7 @@ export function useDoctorDashboardStats() {
       // In the future, we can add a dedicated stats endpoint
       const profile = await userApi.getDoctorProfile();
       return (
-        (profile.doctorProfile?.stats as DoctorDashboardStats) || {
+        (profile.stats as DoctorDashboardStats) || {
           totalAppointments: 0,
           todayAppointments: 0,
           weeklyAppointments: 0,
@@ -181,7 +181,7 @@ export function useUtilizationData() {
     queryFn: async () => {
       // Get doctor profile stats
       const profile = await userApi.getDoctorProfile();
-      const utilization = profile.doctorProfile?.stats?.slotUtilization || 0;
+      const utilization = profile.stats?.slotUtilization || 0;
 
       return [
         { name: 'Booked', value: utilization, color: '#1E40AF' },

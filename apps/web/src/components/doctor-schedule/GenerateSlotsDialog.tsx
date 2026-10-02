@@ -1,20 +1,131 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X, ShieldAlert } from 'lucide-react';
 
 interface GenerateSlotsDialogProps {
   onClose: () => void;
-  onGenerate: () => void;
+  onGenerate: (data: BulkSlotCreateInput) => void;
 }
+
+interface BulkSlotCreateInput {
+  doctorId: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  slotDuration: number; // minutes
+  daysOfWeek: number[]; // 0 = Sunday, 6 = Saturday
+}
+
+const DAY_MAP: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
 
 export function GenerateSlotsDialog({ onClose, onGenerate }: GenerateSlotsDialogProps) {
   const [preview, setPreview] = useState(false);
-  const [days, setDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+  const [days, setDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
+  const startTimeRef = useRef<HTMLInputElement>(null);
+  const endTimeRef = useRef<HTMLInputElement>(null);
+  const slotDurationRef = useRef<HTMLInputElement>(null);
+  const breakDurationRef = useRef<HTMLInputElement>(null);
+  const slotIntervalRef = useRef<HTMLInputElement>(null);
+
   const toggleDay = (day: string) =>
     setDays((current) =>
       current.includes(day) ? current.filter((item) => item !== day) : [...current, day]
     );
+
+  const collectFormData = (): BulkSlotCreateInput | null => {
+    const startDate = startDateRef.current?.value;
+    const endDate = endDateRef.current?.value;
+    const startTime = startTimeRef.current?.value;
+    const endTime = endTimeRef.current?.value;
+    const slotDuration = parseInt(slotDurationRef.current?.value || '20', 10);
+    // breakDuration is read but not used; slotInterval encompasses both appointment + break
+    parseInt(breakDurationRef.current?.value || '5', 10);
+    const slotInterval = parseInt(slotIntervalRef.current?.value || '20', 10);
+
+    if (!startDate || !endDate || !startTime || !endTime) {
+      setError('Please fill in all required fields');
+      return null;
+    }
+
+    // Validate start time is before end time
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+
+    if (startMinutes >= endMinutes) {
+      setError('End time must be after start time');
+      return null;
+    }
+
+    if (days.length === 0) {
+      setError('Please select at least one day of the week');
+      return null;
+    }
+
+    if (slotDuration <= 0 || slotInterval <= 0) {
+      setError('Duration and interval must be positive numbers');
+      return null;
+    }
+
+    if (slotInterval < slotDuration) {
+      setError('Slot interval must be at least the appointment duration');
+      return null;
+    }
+
+    // Use slotInterval as the actual slot duration (appointment duration + break)
+    const effectiveSlotDuration = slotInterval;
+
+    return {
+      doctorId: '', // Will be filled by parent component
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      slotDuration: effectiveSlotDuration,
+      daysOfWeek: days.map((day) => DAY_MAP[day]).filter((d) => d !== undefined),
+    };
+  };
+
+  const handlePreview = () => {
+    setError(null);
+    const data = collectFormData();
+    if (data) {
+      setPreview(true);
+    }
+  };
+
+  const handleGenerate = async () => {
+    setError(null);
+    const data = collectFormData();
+    if (!data) return;
+
+    setIsGenerating(true);
+    try {
+      await onGenerate(data);
+      setPreview(false);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate slots');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="bg-foreground/30 fixed inset-0 z-50 grid place-items-center p-4">
@@ -40,6 +151,7 @@ export function GenerateSlotsDialog({ onClose, onGenerate }: GenerateSlotsDialog
             onClick={onClose}
             aria-label="Close dialog"
             className="text-muted-foreground hover:bg-secondary rounded-lg p-2"
+            disabled={isGenerating}
           >
             <X className="size-5" />
           </button>
@@ -48,6 +160,7 @@ export function GenerateSlotsDialog({ onClose, onGenerate }: GenerateSlotsDialog
           <label className="grid gap-1.5">
             <span className="text-xs font-bold">Start date</span>
             <input
+              ref={startDateRef}
               type="date"
               defaultValue="2026-09-20"
               className="border-border bg-background focus:border-primary focus:ring-primary/15 h-10 rounded-xl border px-3 text-xs font-semibold outline-none focus:ring-2"
@@ -56,6 +169,7 @@ export function GenerateSlotsDialog({ onClose, onGenerate }: GenerateSlotsDialog
           <label className="grid gap-1.5">
             <span className="text-xs font-bold">End date</span>
             <input
+              ref={endDateRef}
               type="date"
               defaultValue="2026-10-20"
               className="border-border bg-background focus:border-primary focus:ring-primary/15 h-10 rounded-xl border px-3 text-xs font-semibold outline-none focus:ring-2"
@@ -64,6 +178,7 @@ export function GenerateSlotsDialog({ onClose, onGenerate }: GenerateSlotsDialog
           <label className="grid gap-1.5">
             <span className="text-xs font-bold">Start time</span>
             <input
+              ref={startTimeRef}
               type="time"
               defaultValue="19:00"
               className="border-border bg-background focus:border-primary focus:ring-primary/15 h-10 rounded-xl border px-3 text-xs font-semibold outline-none focus:ring-2"
@@ -72,6 +187,7 @@ export function GenerateSlotsDialog({ onClose, onGenerate }: GenerateSlotsDialog
           <label className="grid gap-1.5">
             <span className="text-xs font-bold">End time</span>
             <input
+              ref={endTimeRef}
               type="time"
               defaultValue="21:00"
               className="border-border bg-background focus:border-primary focus:ring-primary/15 h-10 rounded-xl border px-3 text-xs font-semibold outline-none focus:ring-2"
@@ -80,24 +196,33 @@ export function GenerateSlotsDialog({ onClose, onGenerate }: GenerateSlotsDialog
           <label className="grid gap-1.5">
             <span className="text-xs font-bold">Appointment duration</span>
             <input
-              type="text"
-              placeholder="20 minutes"
+              ref={slotDurationRef}
+              type="number"
+              min="5"
+              max="120"
+              defaultValue={20}
               className="border-border bg-background focus:border-primary focus:ring-primary/15 h-10 rounded-xl border px-3 text-xs font-semibold outline-none focus:ring-2"
             />
           </label>
           <label className="grid gap-1.5">
             <span className="text-xs font-bold">Break duration</span>
             <input
-              type="text"
-              placeholder="5 minutes"
+              ref={breakDurationRef}
+              type="number"
+              min="0"
+              max="60"
+              defaultValue={5}
               className="border-border bg-background focus:border-primary focus:ring-primary/15 h-10 rounded-xl border px-3 text-xs font-semibold outline-none focus:ring-2"
             />
           </label>
           <label className="grid gap-1.5">
             <span className="text-xs font-bold">Slot interval</span>
             <input
-              type="text"
-              placeholder="20 minutes"
+              ref={slotIntervalRef}
+              type="number"
+              min="5"
+              max="120"
+              defaultValue={20}
               className="border-border bg-background focus:border-primary focus:ring-primary/15 h-10 rounded-xl border px-3 text-xs font-semibold outline-none focus:ring-2"
             />
           </label>
@@ -123,10 +248,15 @@ export function GenerateSlotsDialog({ onClose, onGenerate }: GenerateSlotsDialog
             appointments. They will remain booked and cannot be overwritten.
           </span>
         </div>
+        {error && (
+          <div className="border-destructive bg-destructive/10 text-destructive mt-4 rounded-xl border p-3 text-xs">
+            {error}
+          </div>
+        )}
         {preview && (
           <div className="border-primary/20 bg-primary/5 mt-5 rounded-xl border p-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-bold">Preview · 12 generated slots</p>
+              <p className="text-sm font-bold">Preview · Generated slots</p>
               <button onClick={() => setPreview(false)} className="text-primary text-xs font-bold">
                 Edit
               </button>
@@ -146,20 +276,23 @@ export function GenerateSlotsDialog({ onClose, onGenerate }: GenerateSlotsDialog
           <button
             onClick={onClose}
             className="border-border hover:bg-secondary rounded-xl border px-4 py-2.5 text-xs font-bold"
+            disabled={isGenerating}
           >
             Cancel
           </button>
           {preview ? (
             <button
-              onClick={onGenerate}
+              onClick={handleGenerate}
               className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold"
+              disabled={isGenerating}
             >
-              Confirm & generate
+              {isGenerating ? 'Generating...' : 'Confirm & generate'}
             </button>
           ) : (
             <button
-              onClick={() => setPreview(true)}
+              onClick={handlePreview}
               className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold"
+              disabled={isGenerating}
             >
               Preview slots
             </button>

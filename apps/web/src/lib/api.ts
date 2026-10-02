@@ -340,23 +340,21 @@ export interface UserProfile {
   emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
-  doctorProfile?: {
-    id: string;
-    specialty: string;
-    designation: string;
-    licenseNo: string;
-    bio: string | null;
-    fee: number;
-    isVerified: boolean;
-    stats?: {
-      totalAppointments: number;
-      todayAppointments: number;
-      weeklyAppointments: number;
-      slotUtilization: number;
-      totalRevenue: number;
-      totalPatients: number;
-    };
-  } | null;
+  // Doctor profile fields (returned directly from /api/users/me/doctor-profile)
+  specialty?: string;
+  designation?: string;
+  licenseNo?: string;
+  bio?: string | null;
+  fee?: number;
+  isVerified?: boolean;
+  stats?: {
+    totalAppointments: number;
+    todayAppointments: number;
+    weeklyAppointments: number;
+    slotUtilization: number;
+    totalRevenue: number;
+    totalPatients: number;
+  };
   patientProfile?: {
     id: string;
     dob: string | null;
