@@ -59,7 +59,6 @@ export function PatientFilters({
           onChange={(e) => onStatusChange(e.target.value)}
           className="border-border bg-background h-10 rounded-xl border px-3 text-xs font-semibold"
         >
-          <option>All statuses</option>
           {statuses.map((status) => (
             <option key={status} value={status}>
               {status}

@@ -123,7 +123,15 @@ export function AppointmentTable({
                     </button>
                     <button
                       onClick={() => onStartConsultation(appointment)}
-                      className="bg-primary text-primary-foreground rounded-lg px-2.5 py-1.5 text-[10px] font-bold"
+                      disabled={
+                        appointment.status === 'Completed' || appointment.status === 'Cancelled'
+                      }
+                      className={cn(
+                        'rounded-lg px-2.5 py-1.5 text-[10px] font-bold',
+                        appointment.status === 'Completed' || appointment.status === 'Cancelled'
+                          ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      )}
                     >
                       Start
                     </button>
@@ -183,7 +191,13 @@ export function AppointmentTable({
               </button>
               <button
                 onClick={() => onStartConsultation(appointment)}
-                className="bg-primary text-primary-foreground flex-1 rounded-lg py-2 text-xs font-bold"
+                disabled={appointment.status === 'Completed' || appointment.status === 'Cancelled'}
+                className={cn(
+                  'flex-1 rounded-lg py-2 text-xs font-bold',
+                  appointment.status === 'Completed' || appointment.status === 'Cancelled'
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : 'bg-primary text-primary-foreground'
+                )}
               >
                 Start consultation
               </button>

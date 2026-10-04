@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import {
   CalendarDays,
   Check,
+  Loader2,
   MapPin,
   ShieldCheck,
   Stethoscope,
@@ -21,14 +22,6 @@ function formatDate(dateStr: string) {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
-  });
-}
-
-function formatTime(timeStr: string) {
-  return new Date(`2000-01-01T${timeStr}`).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
   });
 }
 
@@ -125,6 +118,8 @@ export function AppointmentDrawer({
   onStartConsultation,
   onReschedule,
   onCancel,
+  isLoading,
+  isCancelling,
   className,
 }: AppointmentDrawerProps) {
   if (!isOpen || !appointment) return null;
@@ -178,7 +173,7 @@ export function AppointmentDrawer({
           <InfoCard
             icon={CalendarDays}
             label="Date & time"
-            value={`${formatDate(appointment.date)} - ${formatTime(appointment.time)}`}
+            value={`${formatDate(appointment.date)} - ${appointment.time}`}
           />
           <InfoCard icon={MapPin} label="Clinic" value={appointment.clinic} />
           <InfoCard
@@ -262,7 +257,11 @@ export function AppointmentDrawer({
         {/* Payment & Prescription */}
         <Section title="Payment & Prescription">
           <div className="grid gap-3 sm:grid-cols-2">
-            <InfoCard icon={CreditCard} label="Payment status" value="Paid · ₹800" />
+            <InfoCard
+              icon={CreditCard}
+              label="Payment status"
+              value={appointment.payment || 'Not specified'}
+            />
             <InfoCard icon={FileText} label="Prescription" value="Not issued" />
           </div>
         </Section>
@@ -272,9 +271,35 @@ export function AppointmentDrawer({
           <button
             type="button"
             onClick={onStartConsultation || (() => {})}
-            className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold"
+            disabled={
+              isLoading ||
+              appointment.status === 'Completed' ||
+              appointment.status === 'Cancelled' ||
+              appointment.status === 'No-show'
+            }
+            className={cn(
+              'bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold',
+              isLoading && 'cursor-not-allowed opacity-50',
+              (appointment.status === 'Completed' ||
+                appointment.status === 'Cancelled' ||
+                appointment.status === 'No-show') &&
+                'bg-secondary text-muted-foreground cursor-not-allowed opacity-50'
+            )}
           >
-            Mark completed
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 size-3.5 animate-spin" aria-hidden="true" />
+                Loading...
+              </>
+            ) : appointment.status === 'Completed' ? (
+              'Already completed'
+            ) : appointment.status === 'Cancelled' ? (
+              'Cancelled'
+            ) : appointment.status === 'No-show' ? (
+              'No-show'
+            ) : (
+              'Start consultation'
+            )}
           </button>
           {onReschedule && (
             <button
@@ -289,9 +314,23 @@ export function AppointmentDrawer({
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-xl border border-[#f0ccc5] px-4 py-2.5 text-xs font-bold text-[#bd7165]"
+              disabled={isCancelling || appointment.status === 'Cancelled'}
+              className={cn(
+                'rounded-xl border border-[#f0ccc5] px-4 py-2.5 text-xs font-bold text-[#bd7165]',
+                (isCancelling || appointment.status === 'Cancelled') &&
+                  'cursor-not-allowed opacity-50'
+              )}
             >
-              Cancel
+              {isCancelling ? (
+                <>
+                  <Loader2 className="mr-2 size-3.5 animate-spin" aria-hidden="true" />
+                  Cancelling...
+                </>
+              ) : appointment.status === 'Cancelled' ? (
+                'Already cancelled'
+              ) : (
+                'Cancel'
+              )}
             </button>
           )}
           <button

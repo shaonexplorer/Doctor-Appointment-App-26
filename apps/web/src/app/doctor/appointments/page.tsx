@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { UserType } from '@doctor-appointment-app/shared';
 import { CalendarDays, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import {
   AppointmentTabs,
   AppointmentTable,
@@ -16,217 +17,190 @@ import {
 } from '@/components/doctor-appointments';
 import type { DoctorAppointment } from '@/components/doctor-appointments';
 import { DoctorPortalShell } from '@/components/doctor-portal';
+import {
+  useDoctorAppointments,
+  useCancelAppointmentAsDoctor,
+  useRescheduleAppointmentAsDoctor,
+  transformDoctorAppointmentsToUI,
+  getAppointmentTabByDate,
+  type DoctorAppointmentUI,
+} from '@/hooks/useDoctorAppointments';
+import { useAvailableSlotsForReschedule } from '@/hooks/useSchedule';
 
 type AppointmentTab = 'Today' | 'Upcoming' | 'Completed' | 'Cancelled' | 'No-show';
 
-const mockAppointments: Record<AppointmentTab, DoctorAppointment[]> = {
-  Today: [
-    {
-      id: 'APT-001',
-      patient: 'Sarah Johnson',
-      initials: 'SJ',
-      time: '07:20 PM',
-      symptoms: 'Chest discomfort and shortness of breath.',
-      status: 'Confirmed' as const,
-      payment: 'Paid' as const,
-      date: 'Sep 18, 2026',
-      consultationType: 'IN_PERSON' as const,
-      specialty: 'Cardiology',
-      clinic: 'Cardiology clinic',
-    },
-    {
-      id: 'APT-002',
-      patient: 'Robert Chen',
-      initials: 'RC',
-      time: '08:00 PM',
-      symptoms: 'Follow-up for hypertension.',
-      status: 'Confirmed' as const,
-      payment: 'Pending' as const,
-      date: 'Sep 18, 2026',
-      consultationType: 'IN_PERSON' as const,
-      specialty: 'Cardiology',
-      clinic: 'Cardiology clinic',
-    },
-    {
-      id: 'APT-003',
-      patient: 'Emily Davis',
-      initials: 'ED',
-      time: '08:40 PM',
-      symptoms: 'Recurring migraine episodes.',
-      status: 'Checked in' as const,
-      payment: 'Paid' as const,
-      date: 'Sep 18, 2026',
-      consultationType: 'VIDEO' as const,
-      specialty: 'Neurology',
-      clinic: 'Neurology center',
-    },
-  ],
-  Upcoming: [
-    {
-      id: 'APT-004',
-      patient: 'Michael Brown',
-      initials: 'MB',
-      time: '09:00 AM',
-      symptoms: 'Annual checkup.',
-      status: 'Confirmed' as const,
-      payment: 'Paid' as const,
-      date: 'Sep 19, 2026',
-      consultationType: 'IN_PERSON' as const,
-      specialty: 'Internal Medicine',
-      clinic: 'General clinic',
-    },
-    {
-      id: 'APT-005',
-      patient: 'Lisa Wilson',
-      initials: 'LW',
-      time: '10:30 AM',
-      symptoms: 'Skin rash evaluation.',
-      status: 'Confirmed' as const,
-      payment: 'Pending' as const,
-      date: 'Sep 20, 2026',
-      consultationType: 'VIDEO' as const,
-      specialty: 'Dermatology',
-      clinic: 'Dermatology clinic',
-    },
-    {
-      id: 'APT-006',
-      patient: 'David Lee',
-      initials: 'DL',
-      time: '02:00 PM',
-      symptoms: 'Knee pain follow-up.',
-      status: 'Confirmed' as const,
-      payment: 'Paid' as const,
-      date: 'Sep 21, 2026',
-      consultationType: 'IN_PERSON' as const,
-      specialty: 'Orthopedics',
-      clinic: 'Orthopedics center',
-    },
-  ],
-  Completed: [
-    {
-      id: 'APT-007',
-      patient: 'Jennifer Adams',
-      initials: 'JA',
-      time: '09:30 AM',
-      symptoms: 'Diabetes management.',
-      status: 'Completed' as const,
-      payment: 'Paid' as const,
-      date: 'Sep 15, 2026',
-      consultationType: 'IN_PERSON' as const,
-      specialty: 'Endocrinology',
-      clinic: 'Endocrinology clinic',
-    },
-    {
-      id: 'APT-008',
-      patient: 'Christopher Taylor',
-      initials: 'CT',
-      time: '11:00 AM',
-      symptoms: 'Blood pressure check.',
-      status: 'Completed' as const,
-      payment: 'Paid' as const,
-      date: 'Sep 14, 2026',
-      consultationType: 'VIDEO' as const,
-      specialty: 'Cardiology',
-      clinic: 'Cardiology clinic',
-    },
-  ],
-  Cancelled: [
-    {
-      id: 'APT-009',
-      patient: 'Amanda White',
-      initials: 'AW',
-      time: '03:00 PM',
-      symptoms: 'Migraine consultation.',
-      status: 'Cancelled' as const,
-      payment: 'Refunded' as const,
-      date: 'Sep 10, 2026',
-      consultationType: 'VIDEO' as const,
-      specialty: 'Neurology',
-      clinic: 'Neurology center',
-    },
-  ],
-  'No-show': [
-    {
-      id: 'APT-010',
-      patient: 'James Martin',
-      initials: 'JM',
-      time: '04:00 PM',
-      symptoms: 'Follow-up appointment.',
-      status: 'No-show' as const,
-      payment: 'Pending' as const,
-      date: 'Sep 12, 2026',
-      consultationType: 'IN_PERSON' as const,
-      specialty: 'Internal Medicine',
-      clinic: 'General clinic',
-    },
-  ],
-};
-
-const tabCounts = {
-  Today: mockAppointments.Today.length,
-  Upcoming: mockAppointments.Upcoming.length,
-  Completed: mockAppointments.Completed.length,
-  Cancelled: mockAppointments.Cancelled.length,
-  'No-show': mockAppointments['No-show'].length,
-};
-
-const availableSlots = [
-  { id: 'slot-1', time: '08:00 PM' },
-  { id: 'slot-2', time: '08:40 PM' },
-  { id: 'slot-3', time: '09:20 PM' },
-];
-
 export default function DoctorAppointmentsPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<AppointmentTab>('Today');
   const [drawer, setDrawer] = useState(false);
   const [dialog, setDialog] = useState<'cancel' | 'reschedule' | null>(null);
   const [notice, setNotice] = useState('');
   const [searchValue, setSearchValue] = useState('');
-  const [selectedAppointment, setSelectedAppointment] = useState<DoctorAppointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<DoctorAppointmentUI | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
 
-  const appointments = mockAppointments[tab] || [];
+  // Fetch available slots for rescheduling when dialog opens
+  // Use the selected date (or appointment's date as default) as startDate
+  const effectiveStartDate =
+    rescheduleDate || (selectedAppointment ? new Date(selectedAppointment.startTime) : undefined);
+  const effectiveEndDate = effectiveStartDate
+    ? new Date(effectiveStartDate.getTime() + 24 * 60 * 60 * 1000)
+    : undefined;
+
+  const { data: availableSlotsData, isLoading: isLoadingSlots } = useAvailableSlotsForReschedule(
+    dialog === 'reschedule' && selectedAppointment ? selectedAppointment.doctorId : undefined,
+    effectiveStartDate,
+    effectiveEndDate
+  );
+  // console.log('Available slots for reschedule:', availableSlotsData, 'Loading:', isLoadingSlots);
+
+  // Format available slots for the dropdown
+  const availableSlots = availableSlotsData || [];
+
+  // Handle date change in reschedule dialog
+  const handleRescheduleDateChange = (date: Date) => {
+    setRescheduleDate(date);
+  };
+
+  // Fetch ALL appointments once (without status filter) for stable tab counts
+  // We only pass search and pagination filters, not status
+  const {
+    data: allAppointmentsData,
+    isLoading,
+    error,
+    refetch,
+  } = useDoctorAppointments({
+    patientSearch: searchValue || undefined,
+    page: 1,
+    limit: 100, // Fetch more to cover all tabs
+  });
+
+  // Update search filter
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+    // Note: search triggers refetch via the query key change in useDoctorAppointments
+  };
+
+  const handleTabChange = (newTab: AppointmentTab) => {
+    setTab(newTab);
+    // No need to update filters - we filter client-side
+  };
+
+  // Mutations
+  const cancelMutation = useCancelAppointmentAsDoctor();
+  const rescheduleMutation = useRescheduleAppointmentAsDoctor();
+
+  // Transform and filter appointments by tab
+  const allAppointments = allAppointmentsData
+    ? transformDoctorAppointmentsToUI(allAppointmentsData.data)
+    : [];
+
+  // Filter appointments by tab based on date and status
+  const appointmentsByTab = allAppointments.reduce(
+    (acc, apt) => {
+      const appointmentTab = getAppointmentTabByDate(apt);
+      if (!acc[appointmentTab]) acc[appointmentTab] = [];
+      acc[appointmentTab].push(apt);
+      return acc;
+    },
+    {} as Record<AppointmentTab, DoctorAppointmentUI[]>
+  );
+
+  // Ensure all tabs exist
+  const tabKeys: AppointmentTab[] = ['Today', 'Upcoming', 'Completed', 'Cancelled', 'No-show'];
+  tabKeys.forEach((key) => {
+    if (!appointmentsByTab[key]) appointmentsByTab[key] = [];
+  });
+
+  const appointments = appointmentsByTab[tab] || [];
+
   const filteredAppointments = appointments.filter(
     (apt) =>
       apt.patient.toLowerCase().includes(searchValue.toLowerCase()) ||
       apt.symptoms.toLowerCase().includes(searchValue.toLowerCase())
   );
 
+  const tabCounts = {
+    Today: appointmentsByTab.Today.length,
+    Upcoming: appointmentsByTab.Upcoming.length,
+    Completed: appointmentsByTab.Completed.length,
+    Cancelled: appointmentsByTab.Cancelled.length,
+    'No-show': appointmentsByTab['No-show'].length,
+  };
+
   const handleView = (appointment: DoctorAppointment) => {
-    setSelectedAppointment(appointment);
+    // Find the full appointment with additional fields from allAppointments
+    const fullAppointment =
+      allAppointments.find((a) => a.id === appointment.id) || (appointment as DoctorAppointmentUI);
+    setSelectedAppointment(fullAppointment);
     setDrawer(true);
   };
 
   const handleStartConsultation = (appointment: DoctorAppointment) => {
-    setNotice(`Consultation started for ${appointment.patient}.`);
+    // Find the full appointment with additional fields from allAppointments
+    const fullAppointment =
+      allAppointments.find((a) => a.id === appointment.id) || (appointment as DoctorAppointmentUI);
+
+    // Navigate to consultation page with appointment ID
     setDrawer(false);
+    router.push(`/doctor/consultation/${fullAppointment.id}`);
   };
 
   const handleReschedule = (appointment: DoctorAppointment) => {
-    setSelectedAppointment(appointment);
+    const fullAppointment =
+      allAppointments.find((a) => a.id === appointment.id) || (appointment as DoctorAppointmentUI);
+    setSelectedAppointment(fullAppointment);
+    setRescheduleDate(fullAppointment.startTime ? new Date(fullAppointment.startTime) : null);
     setDrawer(false);
     setDialog('reschedule');
   };
 
   const handleCancel = (appointment: DoctorAppointment) => {
-    setSelectedAppointment(appointment);
+    const fullAppointment =
+      allAppointments.find((a) => a.id === appointment.id) || (appointment as DoctorAppointmentUI);
+    setSelectedAppointment(fullAppointment);
     setDrawer(false);
     setDialog('cancel');
   };
 
-  const handleCancelConfirm = () => {
-    setDialog(null);
-    setNotice('Appointment cancelled. Patient will receive a notification.');
+  const handleCancelConfirm = async () => {
+    if (!selectedAppointment) return;
+
+    try {
+      await cancelMutation.mutateAsync({
+        id: selectedAppointment.id,
+        reason: 'Cancelled by doctor',
+        triggerRefund: true,
+      });
+      setDialog(null);
+      setNotice('Appointment cancelled. Patient will receive a notification.');
+      void refetch();
+    } catch (_error) {
+      setNotice('Failed to cancel appointment. Please try again.');
+    }
   };
 
-  const handleRescheduleConfirm = () => {
-    setDialog(null);
-    setNotice('Appointment rescheduled. Patient will receive a notification.');
+  const handleRescheduleConfirm = async (slotId: string, slotTime: string) => {
+    if (!selectedAppointment || !slotId) return;
+
+    try {
+      await rescheduleMutation.mutateAsync({
+        id: selectedAppointment.id,
+        newSlotId: slotId,
+      });
+      setDialog(null);
+      setNotice(`Appointment rescheduled to ${slotTime}. Patient will receive a notification.`);
+      void refetch();
+    } catch (_error) {
+      setNotice('Failed to reschedule appointment. Please try again.');
+    }
   };
 
   const dismissNotice = () => setNotice('');
 
   const reload = () => {
     setNotice('Refreshing...');
+    void refetch();
     setTimeout(() => setNotice('Data refreshed.'), 650);
   };
 
@@ -250,10 +224,10 @@ export default function DoctorAppointmentsPage() {
               </button>
             </div>
 
-            <AppointmentTabs activeTab={tab} onChange={setTab} counts={tabCounts} />
+            <AppointmentTabs activeTab={tab} onChange={handleTabChange} counts={tabCounts} />
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <SearchFilter value={searchValue} onChange={setSearchValue} />
+              <SearchFilter value={searchValue} onChange={handleSearchChange} />
               <p className="text-muted-foreground text-xs">
                 <span className="text-primary font-bold">{filteredAppointments.length}</span>{' '}
                 appointments
@@ -261,7 +235,18 @@ export default function DoctorAppointmentsPage() {
             </div>
           </section>
 
-          {filteredAppointments.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2" />
+            </div>
+          ) : error ? (
+            <div className="text-destructive py-12 text-center">
+              Failed to load appointments.{' '}
+              <button onClick={() => refetch()} className="underline">
+                Retry
+              </button>
+            </div>
+          ) : filteredAppointments.length > 0 ? (
             <AppointmentTable
               appointments={filteredAppointments}
               onView={handleView}
@@ -269,7 +254,12 @@ export default function DoctorAppointmentsPage() {
               onReschedule={handleReschedule}
             />
           ) : (
-            <EmptyState tab={tab} onClearFilters={() => setSearchValue('')} />
+            <EmptyState
+              tab={tab}
+              onClearFilters={() => {
+                setSearchValue('');
+              }}
+            />
           )}
 
           <AppointmentDrawer
@@ -302,10 +292,15 @@ export default function DoctorAppointmentsPage() {
 
           <RescheduleDialog
             isOpen={dialog === 'reschedule'}
-            onClose={() => setDialog(null)}
+            onClose={() => {
+              setDialog(null);
+              setRescheduleDate(null); // Reset date when closing
+            }}
             onConfirm={handleRescheduleConfirm}
+            onDateChange={handleRescheduleDateChange}
             appointment={selectedAppointment}
             availableSlots={availableSlots}
+            isLoading={isLoadingSlots}
           />
 
           <div className="flex justify-end">

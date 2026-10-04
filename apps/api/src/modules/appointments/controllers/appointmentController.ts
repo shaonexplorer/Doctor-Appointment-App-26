@@ -12,8 +12,11 @@ import type {
   AppointmentCreateInput,
   AppointmentUpdateInput,
   TimelineQuery,
+  DoctorCancelAppointmentInput,
+  DoctorRescheduleAppointmentInput,
+  DoctorCheckInInput,
 } from '../validators';
-import type { DoctorAppointmentFilters } from '../types';
+import type { DoctorAppointmentFilters, DoctorCompleteAppointmentInput } from '../types';
 
 export class AppointmentController {
   constructor(private appointmentService: AppointmentService) {}
@@ -307,6 +310,90 @@ export class AppointmentController {
     try {
       const stats = await this.appointmentService.getDoctorDashboardStats(req.user!.id);
       res.json(buildSuccessResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Cancel appointment as doctor (with refund)
+   * PATCH /api/appointments/doctor/:id/cancel
+   */
+  cancelAppointmentAsDoctor = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const validatedData = req.validatedData as DoctorCancelAppointmentInput;
+      const appointment = await this.appointmentService.cancelAppointmentAsDoctor(
+        req.params.id,
+        req.user!.id,
+        validatedData
+      );
+      res.json(buildSuccessResponse(appointment));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Reschedule appointment as doctor
+   * PATCH /api/appointments/doctor/:id/reschedule
+   */
+  rescheduleAppointmentAsDoctor = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const validatedData = req.validatedData as DoctorRescheduleAppointmentInput;
+      const appointment = await this.appointmentService.rescheduleAppointmentAsDoctor(
+        req.params.id,
+        req.user!.id,
+        validatedData.newSlotId
+      );
+      res.json(buildSuccessResponse(appointment));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Check in patient (doctor/staff)
+   * PATCH /api/appointments/doctor/:id/check-in
+   */
+  checkInPatient = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const validatedData = req.validatedData as DoctorCheckInInput;
+      const appointment = await this.appointmentService.checkInPatient(
+        req.params.id,
+        req.user!.id,
+        validatedData.notes
+      );
+      res.json(buildSuccessResponse(appointment));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Complete appointment as doctor
+   * PATCH /api/appointments/doctor/:id/complete
+   */
+  completeAppointmentAsDoctor = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const validatedData = req.validatedData as DoctorCompleteAppointmentInput;
+      const appointment = await this.appointmentService.completeAppointmentAsDoctor(
+        req.params.id,
+        req.user!.id,
+        validatedData
+      );
+      res.json(buildSuccessResponse(appointment));
     } catch (error) {
       next(error);
     }

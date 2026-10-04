@@ -3,7 +3,7 @@
 **Duration:** Weeks 9–12 (4 weeks)  
 **Start Date:** 2026-10-01  
 **End Date:** 2026-10-29  
-**Status:** 🟢 Week 9 Complete — Week 10 In Progress
+**Status:** 🟢 Week 9 Complete — Week 10 Complete — Week 11 In Progress
 
 ---
 
@@ -57,17 +57,17 @@ Empower doctors to manage schedules, conduct consultations, and access analytics
 **Goal:** Complete appointment lifecycle and patient directory for doctors
 
 #### Backend Deliverables
-- [ ] **Appointments Module Enhancement** (`apps/api/src/modules/appointments/`)
-  - `GET /api/appointments/stats/doctor` — Doctor dashboard KPIs
-  - `GET /api/appointments/doctor` — Doctor's appointments with filters (date, status, type)
-  - `GET /api/appointments/doctor/:id` — Single appointment detail (with patient, prescription)
-  - `PATCH /api/appointments/doctor/:id/cancel` — Cancel with refund trigger
-  - `PATCH /api/appointments/doctor/:id/reschedule` — Reschedule to new slot
-  - `PATCH /api/appointments/doctor/:id/check-in` — Patient check-in (staff-assisted)
+- [x] **Appointments Module Enhancement** (`apps/api/src/modules/appointments/`)
+  - [x] `GET /api/appointments/stats/doctor` — Doctor dashboard KPIs
+  - [x] `GET /api/appointments/doctor` — Doctor's appointments with filters (date, status, type)
+  - [x] `GET /api/appointments/doctor/:id` — Single appointment detail (with patient, prescription)
+  - [x] `PATCH /api/appointments/doctor/:id/cancel` — Cancel with refund trigger
+  - [x] `PATCH /api/appointments/doctor/:id/reschedule` — Reschedule to new slot
+  - [x] `PATCH /api/appointments/doctor/:id/check-in` — Patient check-in (staff-assisted)
 
-- [ ] **Patients Module Enhancement** (`apps/api/src/modules/patients/`)
-  - `GET /api/patients/doctor` — Doctor's patient list with search, condition, status filters
-  - `GET /api/patients/doctor/:id` — Patient detail (medical history, prescriptions, appointments)
+- [x] **Patients Module Enhancement** (`apps/api/src/modules/patients/`)
+  - [x] `GET /api/patients/doctor` — Doctor's patient list with search, condition, status filters
+  - [x] `GET /api/patients/doctor/:id` — Patient detail (medical history, prescriptions, appointments)
 
 #### Frontend Deliverables
 - [ ] **Appointments Components** (`apps/web/src/components/doctor-appointments/`)

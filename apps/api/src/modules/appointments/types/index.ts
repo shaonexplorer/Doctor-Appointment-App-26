@@ -85,6 +85,12 @@ export interface DoctorAppointmentFilters extends Omit<AppointmentFilters, 'doct
   doctorId?: string; // Optional for admin/staff to filter by specific doctor
 }
 
+// Complete appointment input
+export interface DoctorCompleteAppointmentInput {
+  notes?: string | null;
+  diagnosis?: string | null;
+}
+
 // Doctor dashboard stats (for Doctor Portal)
 export interface DoctorDashboardStats {
   todayAppointments: number;

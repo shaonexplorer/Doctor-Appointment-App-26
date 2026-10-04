@@ -4,7 +4,7 @@
  */
 
 import type { AppointmentRepository, ScheduleRepository } from '../../../repositories';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Schedule } from '@prisma/client';
 import {
   AppointmentStatus,
   PaymentStatus,
@@ -23,6 +23,7 @@ import type {
   PatientStats,
   TimelineEntry,
   DoctorDashboardStats,
+  DoctorCompleteAppointmentInput,
 } from '../types';
 
 export class AppointmentService {
@@ -946,6 +947,370 @@ export class AppointmentService {
       revenueByConsultationType,
       dailyVolume,
     };
+  }
+
+  /**
+   * Cancel appointment as doctor (with refund trigger)
+   * POST /api/appointments/doctor/:id/cancel
+   */
+  async cancelAppointmentAsDoctor(
+    appointmentId: string,
+    doctorId: string,
+    _data: { reason: string; triggerRefund: boolean }
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - must be the doctor or admin/staff
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to cancel this appointment', 403);
+    }
+
+    if (appointment.status === AppointmentStatus.CANCELLED) {
+      throw new AppError('CONFLICT', 'Appointment is already cancelled', 409);
+    }
+
+    if (appointment.status === AppointmentStatus.COMPLETED) {
+      throw new AppError('CONFLICT', 'Cannot cancel a completed appointment', 409);
+    }
+
+    // Release the slot
+    await this.scheduleRepository.releaseSlot(appointment.slotId);
+
+    // Update appointment status
+    const cancelledAppointment = await this.appointmentRepository.update(appointmentId, {
+      status: AppointmentStatus.CANCELLED,
+    });
+
+    // Send cancellation notification
+    await this.sendCancellationNotification(
+      appointment.id,
+      appointment.patientId,
+      appointment.doctorId,
+      appointment.slotId,
+      appointment.consultationType
+    );
+
+    // TODO: If triggerRefund is true, integrate with payment provider (Stripe) to process refund
+    // This would be implemented when payment integration is added
+
+    return cancelledAppointment;
+  }
+
+  /**
+   * Reschedule appointment as doctor
+   * POST /api/appointments/doctor/:id/reschedule
+   */
+  async rescheduleAppointmentAsDoctor(
+    appointmentId: string,
+    doctorId: string,
+    newSlotId: string
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - must be the doctor or admin/staff
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to reschedule this appointment', 403);
+    }
+
+    if (appointment.status === AppointmentStatus.CANCELLED) {
+      throw new AppError('CONFLICT', 'Cannot reschedule a cancelled appointment', 409);
+    }
+
+    if (appointment.status === AppointmentStatus.COMPLETED) {
+      throw new AppError('CONFLICT', 'Cannot reschedule a completed appointment', 409);
+    }
+
+    // Check if new slot exists and is available
+    const newSlot = await this.scheduleRepository.findByIdWithAppointment(newSlotId);
+    if (!newSlot) {
+      throw new AppError('NOT_FOUND', 'New slot not found', 404);
+    }
+
+    if (newSlot.status !== SlotStatus.AVAILABLE) {
+      throw new AppError('CONFLICT', 'New slot is not available', 409);
+    }
+
+    if (newSlot.appointment) {
+      throw new AppError('CONFLICT', 'New slot is already booked', 409);
+    }
+
+    // Verify new slot belongs to the same doctor
+    // appointment.doctorId is User ID, newSlot.doctorId is DoctorProfile ID
+    // Need to look up DoctorProfile for the appointment's doctor
+    const appointmentDoctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: appointment.doctorId },
+      select: { id: true },
+    });
+
+    if (!appointmentDoctorProfile || newSlot.doctorId !== appointmentDoctorProfile.id) {
+      throw new AppError('FORBIDDEN', 'New slot must belong to the same doctor', 403);
+    }
+
+    // Get old slot with doctor for notification
+    const oldSlot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
+
+    // Perform reschedule in transaction
+    const rescheduledAppointment = await this.prisma.$transaction(async (tx) => {
+      // Release old slot
+      await tx.schedule.update({
+        where: { id: appointment.slotId },
+        data: { status: SlotStatus.AVAILABLE },
+      });
+
+      // Lock new slot
+      await tx.schedule.update({
+        where: { id: newSlotId },
+        data: { status: SlotStatus.BOOKED },
+      });
+
+      // Update appointment with new slot
+      const updatedAppointment = await tx.appointment.update({
+        where: { id: appointmentId },
+        data: {
+          slotId: newSlotId,
+          status: AppointmentStatus.SCHEDULED,
+        },
+        include: {
+          patient: {
+            select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+          },
+          doctor: {
+            select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+          },
+          slot: {
+            select: { id: true, startTime: true, endTime: true, status: true },
+          },
+        },
+      });
+
+      return updatedAppointment;
+    });
+
+    // Send reschedule notification
+    await this.sendRescheduleNotification(
+      appointment.id,
+      appointment.patientId,
+      appointment.doctorId,
+      oldSlot!,
+      newSlot,
+      appointment.consultationType
+    );
+
+    return rescheduledAppointment;
+  }
+
+  /**
+   * Patient check-in by doctor/staff
+   * PATCH /api/appointments/doctor/:id/check-in
+   */
+  async checkInPatient(
+    appointmentId: string,
+    doctorId: string,
+    notes?: string | null
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - must be the doctor or admin/staff
+    // Note: In a real system, staff might also check in patients
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to check in this patient', 403);
+    }
+
+    if (appointment.status !== AppointmentStatus.SCHEDULED) {
+      throw new AppError(
+        'CONFLICT',
+        `Cannot check in appointment with status: ${appointment.status}`,
+        409
+      );
+    }
+
+    // Update appointment status and add check-in notes
+    const updatedAppointment = await this.appointmentRepository.update(appointmentId, {
+      status: AppointmentStatus.SCHEDULED, // Status stays SCHEDULED, but we could add a check-in timestamp
+      notes: notes ? `${appointment.notes || ''}\n[Check-in]: ${notes}`.trim() : appointment.notes,
+    });
+
+    // Send check-in notification to patient
+    await this.sendCheckInNotification(appointment, doctorId);
+
+    return updatedAppointment;
+  }
+
+  /**
+   * Complete appointment as doctor
+   * PATCH /api/appointments/doctor/:id/complete
+   */
+  async completeAppointmentAsDoctor(
+    appointmentId: string,
+    doctorId: string,
+    data: DoctorCompleteAppointmentInput
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - must be the doctor or admin/staff
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to complete this appointment', 403);
+    }
+
+    if (appointment.status === AppointmentStatus.CANCELLED) {
+      throw new AppError('CONFLICT', 'Cannot complete a cancelled appointment', 409);
+    }
+
+    if (appointment.status === AppointmentStatus.COMPLETED) {
+      throw new AppError('CONFLICT', 'Appointment is already completed', 409);
+    }
+
+    if (appointment.status === AppointmentStatus.NO_SHOW) {
+      throw new AppError('CONFLICT', 'Cannot complete a no-show appointment', 409);
+    }
+
+    // Build notes with completion details
+    const completionNotes = [];
+    if (appointment.notes) completionNotes.push(appointment.notes);
+    if (data.notes) completionNotes.push(`[Completion Notes]: ${data.notes}`);
+    if (data.diagnosis) completionNotes.push(`[Diagnosis]: ${data.diagnosis}`);
+
+    // Update appointment status to COMPLETED
+    const completedAppointment = await this.appointmentRepository.update(appointmentId, {
+      status: AppointmentStatus.COMPLETED,
+      notes: completionNotes.join('\n'),
+    });
+
+    // Send completion notification to patient
+    await this.sendCompletionNotification(appointment, doctorId, data);
+
+    return completedAppointment;
+  }
+
+  /**
+   * Send completion notification
+   */
+  private async sendCompletionNotification(
+    appointment: Appointment,
+    doctorId: string,
+    data: DoctorCompleteAppointmentInput
+  ): Promise<void> {
+    const doctor = await this.prisma.user.findUnique({
+      where: { id: doctorId },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (!doctor) return;
+
+    const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+
+    // Fetch slot with doctor profile for notification
+    const slot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: appointment.doctorId },
+      select: { specialty: true, bio: true },
+    });
+
+    await this.notificationService.sendAppointmentCompletion({
+      appointmentId: appointment.id,
+      patientId: appointment.patientId,
+      doctorId: appointment.doctorId,
+      slotId: appointment.slotId,
+      startTime: slot?.startTime || new Date(),
+      endTime: slot?.endTime || new Date(),
+      doctorName,
+      specialty: doctorProfile?.specialty || slot?.doctor?.specialty || 'Unknown',
+      clinic: doctorProfile?.bio || 'Clinic',
+      consultationType: appointment.consultationType,
+      diagnosis: data.diagnosis,
+      notes: data.notes,
+    });
+  }
+
+  /**
+   * Send reschedule notification
+   */
+  private async sendRescheduleNotification(
+    appointmentId: string,
+    patientId: string,
+    doctorId: string,
+    oldSlot: Schedule & { doctor?: { specialty: string } | null },
+    newSlot: Schedule,
+    consultationType: ConsultationType
+  ): Promise<void> {
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: doctorId },
+      select: { bio: true },
+    });
+
+    const doctor = await this.prisma.user.findUnique({
+      where: { id: doctorId },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (!doctor) return;
+
+    const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+
+    await this.notificationService.sendBookingReschedule({
+      appointmentId,
+      patientId,
+      doctorId,
+      slotId: newSlot.id, // Use new slot as the current slot
+      startTime: newSlot.startTime,
+      endTime: newSlot.endTime,
+      oldSlotId: oldSlot.id,
+      newSlotId: newSlot.id,
+      oldStartTime: oldSlot.startTime,
+      oldEndTime: oldSlot.endTime,
+      newStartTime: newSlot.startTime,
+      newEndTime: newSlot.endTime,
+      doctorName,
+      specialty: oldSlot.doctor?.specialty || 'Unknown',
+      clinic: doctorProfile?.bio || 'Clinic',
+      consultationType,
+    });
+  }
+
+  /**
+   * Send check-in notification
+   */
+  private async sendCheckInNotification(appointment: Appointment, doctorId: string): Promise<void> {
+    const doctor = await this.prisma.user.findUnique({
+      where: { id: doctorId },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (!doctor) return;
+
+    const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+
+    // Fetch slot with doctor profile for notification
+    const slot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: appointment.doctorId },
+      select: { specialty: true, bio: true },
+    });
+
+    await this.notificationService.sendCheckInConfirmation({
+      appointmentId: appointment.id,
+      patientId: appointment.patientId,
+      doctorId: appointment.doctorId,
+      slotId: appointment.slotId,
+      startTime: slot?.startTime || new Date(),
+      endTime: slot?.endTime || new Date(),
+      doctorName,
+      specialty: doctorProfile?.specialty || slot?.doctor?.specialty || 'Unknown',
+      clinic: doctorProfile?.bio || 'Clinic',
+      consultationType: appointment.consultationType,
+    });
   }
 }
 

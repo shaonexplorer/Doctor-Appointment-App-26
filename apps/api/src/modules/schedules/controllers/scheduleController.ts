@@ -132,13 +132,16 @@ export class ScheduleController {
   /**
    * Get all slots for a doctor (Doctor only)
    * GET /api/schedules/doctor/:doctorId
+   * Note: doctorId is expected to be a User ID (from appointment response)
    */
   getDoctorSlots = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { startDate, endDate } = req.query;
+      const userId = req.params.doctorId;
 
-      const slots = await this.scheduleService.getDoctorSlots(
-        req.params.doctorId,
+      // Use service method that looks up DoctorProfile ID from User ID
+      const slots = await this.scheduleService.getDoctorSlotsByUserId(
+        userId,
         startDate ? new Date(startDate as string) : undefined,
         endDate ? new Date(endDate as string) : undefined
       );

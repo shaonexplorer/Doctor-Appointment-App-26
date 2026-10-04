@@ -306,7 +306,6 @@ export class PatientService {
       sortBy = 'lastVisit',
       sortOrder = 'desc',
     } = query;
-    const skip = (page - 1) * limit;
 
     // Get all patients who have had appointments with this doctor
     const patientsWithAppointments = await this.prisma.appointment.findMany({
@@ -339,15 +338,14 @@ export class PatientService {
       ];
     }
 
-    // Get patients with their profiles
+    // Get patients with their profiles (no ordering by computed fields)
     const patients = await this.prisma.user.findMany({
       where: patientWhere,
       include: {
         patientProfile: true,
       },
-      skip,
-      take: limit,
-      orderBy: { [sortBy === 'name' ? 'firstName' : sortBy]: sortOrder },
+      // Only order by database fields (name/firstName), not computed fields
+      orderBy: sortBy === 'name' ? { firstName: sortOrder } : undefined,
     });
 
     // For each patient, get appointment stats and conditions
@@ -411,6 +409,27 @@ export class PatientService {
       });
     }
 
+    // Sort by computed fields in memory
+    const sortFields: Record<string, (p: DoctorPatientListItem) => number | string> = {
+      lastVisit: (p) => (p.lastVisit ? new Date(p.lastVisit).getTime() : 0),
+      nextAppointment: (p) => (p.nextAppointment ? new Date(p.nextAppointment).getTime() : 0),
+      totalAppointments: (p) => p.totalAppointments,
+      name: (p) => `${p.firstName} ${p.lastName}`.toLowerCase(),
+    };
+
+    const sortField = sortFields[sortBy] || sortFields.lastVisit;
+    patientListItems.sort((a, b) => {
+      const aVal = sortField(a);
+      const bVal = sortField(b);
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return 0;
+    });
+
     // Apply status filter
     let filtered = patientListItems;
     if (status === 'active') {
@@ -426,13 +445,12 @@ export class PatientService {
       );
     }
 
-    // Get total count for pagination (without pagination)
-    const totalPatients = await this.prisma.user.count({
-      where: patientWhere,
-    });
+    // Apply pagination after filtering and sorting
+    const totalPatients = filtered.length;
+    const paginatedData = filtered.slice((page - 1) * limit, page * limit);
 
     return {
-      data: filtered,
+      data: paginatedData,
       meta: {
         total: totalPatients,
         page,

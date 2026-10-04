@@ -556,6 +556,74 @@ export interface MedicalTimelineResponse {
   };
 }
 
+// Doctor Appointment Filters (for Doctor Portal)
+export interface DoctorAppointmentFilters {
+  status?: string | string[];
+  patientSearch?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  dateRange?: 'today' | 'week' | 'month' | 'custom';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface DoctorAppointmentResponse {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  slotId: string;
+  status: string;
+  symptoms: string | null;
+  notes: string | null;
+  paymentStatus: string;
+  consultationType: string;
+  createdAt: string;
+  updatedAt: string;
+  patient: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+  };
+  doctor: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+  };
+  slot: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+  };
+  doctorProfile?: {
+    specialty: string;
+    clinic?: string;
+    designation: string;
+    fee: number;
+  } | null;
+  prescriptions?: Array<{
+    id: string;
+    diagnosis: string;
+    createdAt: string;
+  }>;
+}
+
+export interface PaginatedDoctorAppointmentsResponse {
+  data: DoctorAppointmentResponse[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 // Appointment API functions
 export const appointmentApi = {
   /**
@@ -655,6 +723,174 @@ export const appointmentApi = {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  },
+
+  // ==================== DOCTOR PORTAL ENDPOINTS ====================
+
+  /**
+   * Get doctor appointments with filters (Doctor Portal)
+   * GET /api/appointments/doctor
+   */
+  getDoctorAppointments: async (
+    filters: DoctorAppointmentFilters = {}
+  ): Promise<PaginatedDoctorAppointmentsResponse> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        if (Array.isArray(value)) {
+          value.forEach((v) => params.append(key, String(v)));
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+    return apiRequest<PaginatedDoctorAppointmentsResponse>(
+      `/api/appointments/doctor?${params.toString()}`
+    );
+  },
+
+  /**
+   * Get single doctor appointment detail (Doctor Portal)
+   * GET /api/appointments/doctor/:id
+   */
+  getDoctorAppointmentDetail: async (id: string): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}`);
+  },
+
+  /**
+   * Cancel appointment as doctor (with refund option)
+   * PATCH /api/appointments/doctor/:id/cancel
+   */
+  cancelAppointmentAsDoctor: async (
+    id: string,
+    data: { reason: string; triggerRefund: boolean }
+  ): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}/cancel`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Reschedule appointment as doctor
+   * PATCH /api/appointments/doctor/:id/reschedule
+   */
+  rescheduleAppointmentAsDoctor: async (
+    id: string,
+    data: { newSlotId: string }
+  ): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}/reschedule`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Check in patient (doctor/staff)
+   * PATCH /api/appointments/doctor/:id/check-in
+   */
+  checkInPatient: async (id: string, notes?: string): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}/check-in`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes }),
+    });
+  },
+
+  /**
+   * Complete appointment as doctor
+   * PATCH /api/appointments/doctor/:id/complete
+   */
+  completeAppointmentAsDoctor: async (
+    id: string,
+    data: { notes?: string | null; diagnosis?: string | null }
+  ): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}/complete`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// Patient API types (Doctor Portal)
+export interface DoctorPatientListItem {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  dob: string | null;
+  gender: string | null;
+  address: string | null;
+  emergencyContact: string | null;
+  lastVisit: string | null;
+  nextAppointment: string | null;
+  totalAppointments: number;
+  completedAppointments: number;
+  conditions: string[];
+  avatarUrl: string | null;
+}
+
+export interface DoctorPatientListResponse {
+  data: DoctorPatientListItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface DoctorPatientFilters {
+  search?: string;
+  condition?: string;
+  status?: 'all' | 'active' | 'inactive';
+  sortBy?: 'lastVisit' | 'nextAppointment' | 'name' | 'totalAppointments';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface DoctorPatientDetail extends DoctorPatientListItem {
+  appointments: Array<{
+    id: string;
+    date: string;
+    status: string;
+    specialty: string;
+    diagnosis: string | null;
+    prescriptionCount: number;
+  }>;
+  prescriptions: Array<{
+    id: string;
+    date: string;
+    diagnosis: string;
+    medications: string | object;
+  }>;
+}
+
+// Patient API functions
+export const patientApi = {
+  /**
+   * Get doctor's patient list (Doctor Portal)
+   * GET /api/patients/doctor
+   */
+  getDoctorPatientList: async (
+    filters: DoctorPatientFilters
+  ): Promise<DoctorPatientListResponse> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    return apiRequest<DoctorPatientListResponse>(`/api/patients/doctor?${params.toString()}`);
+  },
+
+  /**
+   * Get doctor's patient detail (for Patient Drawer)
+   * GET /api/patients/doctor/:id
+   */
+  getDoctorPatientDetail: async (patientId: string): Promise<DoctorPatientDetail> => {
+    return apiRequest<DoctorPatientDetail>(`/api/patients/doctor/${patientId}`);
   },
 };
 

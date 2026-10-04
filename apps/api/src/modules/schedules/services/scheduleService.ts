@@ -187,6 +187,7 @@ export class ScheduleService {
 
   /**
    * Get all slots for a doctor (including booked/cancelled)
+   * doctorId is the DoctorProfile ID
    */
   async getDoctorSlots(
     doctorId: string,
@@ -194,6 +195,27 @@ export class ScheduleService {
     endDate?: Date
   ): Promise<ScheduleSlot[]> {
     return this.scheduleRepository.getDoctorSlots(doctorId, startDate, endDate);
+  }
+
+  /**
+   * Get all slots for a doctor by User ID
+   * Looks up DoctorProfile ID from User ID first
+   */
+  async getDoctorSlotsByUserId(
+    userId: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<ScheduleSlot[]> {
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      return [];
+    }
+
+    return this.scheduleRepository.getDoctorSlots(doctorProfile.id, startDate, endDate);
   }
 
   /**

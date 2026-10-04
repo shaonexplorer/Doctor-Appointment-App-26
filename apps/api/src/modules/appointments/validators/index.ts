@@ -49,7 +49,28 @@ export const DashboardStatsQuerySchema = z.object({
 // Type exports
 export type TimelineQuery = z.infer<typeof TimelineQuerySchema>;
 export type DashboardStatsQuery = z.infer<typeof DashboardStatsQuerySchema>;
-// DoctorAppointmentFilters is exported from types/index.ts
+export type DoctorCancelAppointmentInput = z.infer<typeof DoctorCancelAppointmentSchema>;
+export type DoctorRescheduleAppointmentInput = z.infer<typeof DoctorRescheduleAppointmentSchema>;
+export type DoctorCheckInInput = z.infer<typeof DoctorCheckInSchema>;
+
+// Module-specific validation helpers
+export const DoctorCancelAppointmentSchema = z.object({
+  reason: z.string().min(1, { message: 'Cancellation reason is required' }).max(500),
+  triggerRefund: z.boolean().default(true),
+});
+
+export const DoctorRescheduleAppointmentSchema = z.object({
+  newSlotId: z.string().cuid({ message: 'Invalid new slot ID' }),
+});
+
+export const DoctorCheckInSchema = z.object({
+  notes: z.string().max(500).optional().nullable(),
+});
+
+export const DoctorCompleteAppointmentSchema = z.object({
+  notes: z.string().max(2000).optional().nullable(),
+  diagnosis: z.string().max(1000).optional().nullable(),
+});
 
 // Module-specific validation helpers
 export const appointmentValidators = {
@@ -59,6 +80,9 @@ export const appointmentValidators = {
   doctorFilters: DoctorAppointmentFiltersSchema,
   timelineQuery: TimelineQuerySchema,
   dashboardStatsQuery: DashboardStatsQuerySchema,
+  doctorCancel: DoctorCancelAppointmentSchema,
+  doctorReschedule: DoctorRescheduleAppointmentSchema,
+  doctorCheckIn: DoctorCheckInSchema,
 } as const;
 
 // Validation middleware factory
@@ -113,3 +137,13 @@ export const validateDoctorAppointmentFilters = createQueryValidationMiddleware(
 export const validateTimelineQuery = createQueryValidationMiddleware(TimelineQuerySchema);
 export const validateDashboardStatsQuery =
   createQueryValidationMiddleware(DashboardStatsQuerySchema);
+export const validateDoctorCancelAppointment = createValidationMiddleware(
+  DoctorCancelAppointmentSchema
+);
+export const validateDoctorRescheduleAppointment = createValidationMiddleware(
+  DoctorRescheduleAppointmentSchema
+);
+export const validateDoctorCheckIn = createValidationMiddleware(DoctorCheckInSchema);
+export const validateDoctorCompleteAppointment = createValidationMiddleware(
+  DoctorCompleteAppointmentSchema
+);

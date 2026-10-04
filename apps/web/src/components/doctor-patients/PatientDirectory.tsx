@@ -1,104 +1,80 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { Patient, PatientFilters } from './types';
-import { PatientFilters as PatientFiltersComponent } from './PatientFilters';
+import { Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { Patient } from './types';
 import { PatientTable } from './PatientTable';
 import { PatientCard } from './PatientCard';
 import { PatientDrawer } from './PatientDrawer';
 import { EmptyState } from './EmptyState';
-
-const mockPatients: Patient[] = [
-  {
-    id: 'MB-10482',
-    name: 'Sarah Johnson',
-    initials: 'SJ',
-    age: 38,
-    lastVisit: 'Sep 18, 2026',
-    diagnosis: 'Hypertension',
-    nextAppointment: 'Sep 28 · 09:30 AM',
-    totalVisits: 12,
-    condition: 'Hypertension',
-    status: 'Confirmed',
-  },
-  {
-    id: 'MB-10217',
-    name: 'Robert Chen',
-    initials: 'RC',
-    age: 52,
-    lastVisit: 'Sep 15, 2026',
-    diagnosis: 'Type 2 diabetes',
-    nextAppointment: 'Oct 02 · 10:00 AM',
-    totalVisits: 8,
-    condition: 'Diabetes',
-    status: 'Pending',
-  },
-  {
-    id: 'MB-10931',
-    name: 'Emily Davis',
-    initials: 'ED',
-    age: 29,
-    lastVisit: 'Sep 12, 2026',
-    diagnosis: 'Chronic migraine',
-    nextAppointment: '—',
-    totalVisits: 5,
-    condition: 'Migraine',
-    status: 'Completed',
-  },
-  {
-    id: 'MB-09844',
-    name: 'Michael Brown',
-    initials: 'MB',
-    age: 64,
-    lastVisit: 'Aug 29, 2026',
-    diagnosis: 'Coronary artery disease',
-    nextAppointment: 'Sep 25 · 02:00 PM',
-    totalVisits: 21,
-    condition: 'Cardiac',
-    status: 'Confirmed',
-  },
-];
-
-const allConditions = ['Hypertension', 'Diabetes', 'Migraine', 'Cardiac'];
-const allStatuses = ['Confirmed', 'Pending', 'Completed'];
+import {
+  useDoctorPatients,
+  useDoctorPatientDetail,
+  transformPatientsToUI,
+} from '@/hooks/useDoctorPatients';
 
 export function PatientDirectory() {
-  const [filters, setFilters] = useState<PatientFilters>({
-    search: '',
-    condition: 'All conditions',
-    status: 'All statuses',
-  });
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [search, setSearch] = useState('');
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
+  // Fetch doctor's patients from API
+  const {
+    data: patientResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useDoctorPatients({
+    page: 1,
+    limit: 50,
+  });
+
+  // Transform API data to UI format
+  const patients = useMemo(() => {
+    if (!patientResponse?.data) return [];
+    return transformPatientsToUI(patientResponse.data);
+  }, [patientResponse?.data]);
+
+  // Client-side search filtering
   const filteredPatients = useMemo(
     () =>
-      mockPatients.filter(
-        (p) =>
-          `${p.name} ${p.id} ${p.condition}`.toLowerCase().includes(filters.search.toLowerCase()) &&
-          (filters.condition === 'All conditions' || p.condition === filters.condition) &&
-          (filters.status === 'All statuses' || p.status === filters.status)
+      patients.filter((p) =>
+        `${p.name} ${p.id} ${p.condition}`.toLowerCase().includes(search.toLowerCase())
       ),
-    [filters]
+    [patients, search]
   );
 
-  const handleSearchChange = (search: string) => {
-    setFilters((prev) => ({ ...prev, search }));
-  };
+  // Fetch detailed patient data when one is selected
+  const { data: patientDetail } = useDoctorPatientDetail(selectedPatientId || undefined);
 
-  const handleConditionChange = (condition: string) => {
-    setFilters((prev) => ({ ...prev, condition }));
-  };
+  // Get the basic patient data for the selected patient
+  const selectedPatientBasic = useMemo(() => {
+    return patients.find((p) => p.id === selectedPatientId) || null;
+  }, [patients, selectedPatientId]);
 
-  const handleStatusChange = (status: string) => {
-    setFilters((prev) => ({ ...prev, status }));
+  // Combine basic and detailed data for the drawer
+  const selectedPatient = useMemo(() => {
+    if (!selectedPatientBasic) return null;
+
+    if (patientDetail) {
+      return {
+        ...selectedPatientBasic,
+      };
+    }
+
+    return selectedPatientBasic;
+  }, [selectedPatientBasic, patientDetail]);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
   };
 
   const handleViewPatient = (patient: Patient) => {
-    setSelectedPatient(patient);
+    setSelectedPatientId(patient.id);
   };
 
   const handleCloseDrawer = () => {
-    setSelectedPatient(null);
+    setSelectedPatientId(null);
   };
 
   const handleScheduleAppointment = (patient: Patient) => {
@@ -111,17 +87,66 @@ export function PatientDirectory() {
     handleCloseDrawer();
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="mt-8 space-y-5">
+        <div className="animate-pulse space-y-4">
+          <div className="bg-muted h-12 w-1/3 rounded-lg" />
+          <div className="bg-muted h-64 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="mt-8 space-y-5">
+        <div className="border-border bg-destructive/10 text-destructive rounded-2xl border p-4">
+          <p className="font-medium">Failed to load patients</p>
+          <p className="mt-1 text-sm">
+            {(error as Error).message || 'An error occurred while fetching patient data'}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 mt-3 rounded-lg px-4 py-2 text-sm font-medium"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-8 space-y-5">
-      <PatientFiltersComponent
-        filters={filters}
-        onSearchChange={handleSearchChange}
-        onConditionChange={handleConditionChange}
-        onStatusChange={handleStatusChange}
-        conditions={allConditions}
-        statuses={allStatuses}
-        resultCount={filteredPatients.length}
-      />
+      {/* Search bar */}
+      <div className="border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <label className="relative max-w-[450px] min-w-[240px] flex-1">
+            <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+            <input
+              aria-label="Search patients"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Patient name, ID, or condition"
+              className={cn(
+                'border-border bg-background focus:border-primary h-10 w-full rounded-xl border pr-3 pl-9 text-xs outline-none',
+                'transition-colors'
+              )}
+            />
+          </label>
+          <button className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold">
+            Add patient
+          </button>
+        </div>
+        <p className="text-muted-foreground mt-4 text-xs">
+          <span className="text-primary font-bold">{filteredPatients.length}</span> patients in your
+          care panel
+        </p>
+      </div>
+
       <section className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm">
         {filteredPatients.length ? (
           <>

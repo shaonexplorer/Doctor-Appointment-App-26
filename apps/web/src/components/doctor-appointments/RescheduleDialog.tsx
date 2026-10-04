@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import type { RescheduleDialogProps } from './types';
@@ -22,16 +23,35 @@ function formatTime(timeStr: string) {
   });
 }
 
+// Convert appointment date to YYYY-MM-DD format for date input
+function toDateInputValue(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toISOString().split('T')[0];
+}
+
 export function RescheduleDialog({
   isOpen,
   onClose,
   onConfirm,
+  onDateChange,
   appointment,
   availableSlots,
   isLoading = false,
   className,
 }: RescheduleDialogProps) {
   if (!isOpen || !appointment) return null;
+
+  const [selectedSlotId, setSelectedSlotId] = useState(availableSlots[0]?.id || '');
+  const [selectedSlotTime, setSelectedSlotTime] = useState(availableSlots[0]?.time || '');
+
+  // Handle date change
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = new Date(e.target.value);
+    onDateChange?.(date);
+  };
+
+  // Update selected slot when availableSlots change
+  const selectedSlot = availableSlots.find((s) => s.id === selectedSlotId);
 
   return (
     <div
@@ -64,13 +84,24 @@ export function RescheduleDialog({
             Select date
             <input
               type="date"
-              defaultValue={formatDate(appointment.date).split(' ').pop() || ''}
+              defaultValue={toDateInputValue(appointment.date)}
               className="border-border bg-background h-10 rounded-xl border px-3"
+              onChange={handleDateChange}
             />
           </label>
           <label className="grid gap-1.5 text-xs font-bold">
             Available slot
-            <select className="border-border bg-background h-10 rounded-xl border px-3">
+            <select
+              className="border-border bg-background h-10 rounded-xl border px-3"
+              value={selectedSlotId}
+              onChange={(e) => {
+                const slotId = e.target.value;
+                setSelectedSlotId(slotId);
+                const slot = availableSlots.find((s) => s.id === slotId);
+                if (slot) setSelectedSlotTime(slot.time);
+              }}
+              disabled={availableSlots.length === 0 || isLoading}
+            >
               {availableSlots.map((slot) => (
                 <option key={slot.id} value={slot.id}>
                   {slot.time}
@@ -87,7 +118,7 @@ export function RescheduleDialog({
           </p>
           <p className="mt-3 font-bold">New appointment</p>
           <p className="text-primary mt-1">
-            {formatDate(appointment.date)} &middot; {availableSlots[0]?.time || 'TBD'}
+            {formatDate(appointment.date)} &middot; {selectedSlot?.time || 'TBD'}
           </p>
         </div>
 
@@ -105,11 +136,12 @@ export function RescheduleDialog({
           </button>
           <button
             type="button"
-            onClick={() => onConfirm(availableSlots[0]?.id || '', availableSlots[0]?.time || '')}
-            disabled={isLoading}
+            onClick={() => onConfirm(selectedSlotId, selectedSlotTime)}
+            disabled={isLoading || availableSlots.length === 0}
             className={cn(
               'bg-primary text-primary-foreground rounded-xl px-4 py-2 text-xs font-bold',
-              isLoading && 'cursor-wait opacity-70'
+              isLoading && 'cursor-wait opacity-70',
+              availableSlots.length === 0 && 'cursor-not-allowed opacity-50'
             )}
           >
             {isLoading ? 'Rescheduling...' : 'Confirm change'}

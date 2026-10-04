@@ -10,6 +10,14 @@ export interface DoctorAppointment {
   consultationType: 'IN_PERSON' | 'VIDEO' | 'PHONE';
   specialty: string;
   clinic: string;
+  // Additional fields for API integration
+  slotId?: string;
+  doctorId?: string;
+  patientId?: string;
+  notes?: string | null;
+  startTime?: string;
+  endTime?: string;
+  createdAt?: string;
 }
 
 export type AppointmentTab = 'Today' | 'Upcoming' | 'Completed' | 'Cancelled' | 'No-show';
@@ -44,6 +52,8 @@ export interface AppointmentDrawerProps {
   onStartConsultation?: () => void;
   onReschedule?: () => void;
   onCancel?: () => void;
+  isLoading?: boolean;
+  isCancelling?: boolean;
   className?: string;
 }
 
@@ -59,7 +69,8 @@ export interface CancelDialogProps {
 export interface RescheduleDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (newDate: string, newTime: string) => void;
+  onConfirm: (slotId: string, slotTime: string) => void;
+  onDateChange?: (date: Date) => void;
   appointment: DoctorAppointment | null;
   availableSlots: Array<{ id: string; time: string }>;
   isLoading?: boolean;

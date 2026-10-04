@@ -21,6 +21,25 @@ export interface ReminderPayload extends NotificationPayload {
   hoursBefore: number;
 }
 
+export interface ReschedulePayload extends NotificationPayload {
+  oldSlotId: string;
+  newSlotId: string;
+  oldStartTime: Date;
+  oldEndTime: Date;
+  newStartTime: Date;
+  newEndTime: Date;
+}
+
+export interface CheckInPayload extends NotificationPayload {
+  // Future: add check-in specific fields (e.g., checkInTime, location)
+  checkInTime?: Date;
+}
+
+export interface CompletionPayload extends NotificationPayload {
+  diagnosis?: string | null;
+  notes?: string | null;
+}
+
 export class NotificationService {
   /**
    * Send booking confirmation notification
@@ -98,7 +117,61 @@ export class NotificationService {
 
     // Schedule reminders
     // In production: use BullMQ delayed jobs or a scheduler
-    console.log('[NotificationService] Reminders scheduled for appointment:', payload.appointmentId);
+    console.log(
+      '[NotificationService] Reminders scheduled for appointment:',
+      payload.appointmentId
+    );
+  }
+
+  /**
+   * Send booking reschedule notification
+   * In production: queue to BullMQ for email/SMS/push delivery
+   */
+  async sendBookingReschedule(payload: ReschedulePayload): Promise<void> {
+    console.log('[NotificationService] Booking reschedule queued:', {
+      appointmentId: payload.appointmentId,
+      patientId: payload.patientId,
+      type: 'booking_reschedule',
+      channels: ['email', 'sms', 'push'],
+      oldSlotId: payload.oldSlotId,
+      newSlotId: payload.newSlotId,
+      oldStartTime: payload.oldStartTime,
+      newStartTime: payload.newStartTime,
+    });
+
+    // TODO: Implement actual notification delivery
+  }
+
+  /**
+   * Send check-in confirmation notification
+   * In production: queue to BullMQ for email/SMS/push delivery
+   */
+  async sendCheckInConfirmation(payload: CheckInPayload): Promise<void> {
+    console.log('[NotificationService] Check-in confirmation queued:', {
+      appointmentId: payload.appointmentId,
+      patientId: payload.patientId,
+      type: 'check_in_confirmation',
+      channels: ['email', 'sms', 'push'],
+    });
+
+    // TODO: Implement actual notification delivery
+  }
+
+  /**
+   * Send appointment completion notification
+   * In production: queue to BullMQ for email/SMS/push delivery
+   */
+  async sendAppointmentCompletion(payload: CompletionPayload): Promise<void> {
+    console.log('[NotificationService] Appointment completion queued:', {
+      appointmentId: payload.appointmentId,
+      patientId: payload.patientId,
+      type: 'appointment_completion',
+      channels: ['email', 'sms', 'push'],
+      diagnosis: payload.diagnosis,
+      notes: payload.notes,
+    });
+
+    // TODO: Implement actual notification delivery
   }
 }
 

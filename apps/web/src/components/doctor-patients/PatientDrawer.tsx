@@ -1,15 +1,26 @@
 'use client';
 
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, CalendarDays, FileText, HeartPulse, X, Clock } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarDays,
+  FileText,
+  HeartPulse,
+  X,
+  Clock,
+  Pill,
+  Stethoscope,
+} from 'lucide-react';
 import type { PatientDrawerProps } from './types';
 
 const timelineIcons = {
   Appointment: CalendarDays,
   Symptoms: HeartPulse,
   Diagnosis: FileText,
-  Prescription: HeartPulse,
+  Prescription: Pill,
   FollowUp: Clock,
+  Consultation: Stethoscope,
 } as const;
 
 export function PatientDrawer({
@@ -20,17 +31,50 @@ export function PatientDrawer({
 }: PatientDrawerProps) {
   if (!patient) return null;
 
-  const timelineItems = [
-    {
-      icon: 'Appointment',
-      title: 'Appointment',
-      text: `${patient.lastVisit} · Follow-up consultation`,
-    },
-    { icon: 'Symptoms', title: 'Symptoms', text: 'Chest discomfort and shortness of breath' },
-    { icon: 'Diagnosis', title: 'Diagnosis', text: `${patient.diagnosis} — stable with treatment` },
-    { icon: 'Prescription', title: 'Prescription', text: 'Amlodipine 5mg · once daily' },
-    { icon: 'FollowUp', title: 'Follow-up', text: 'Review blood pressure in 2 weeks' },
-  ] as const;
+  // Build timeline items from patient data
+  const timelineItems = useMemo(() => {
+    if (!patient) return [];
+
+    const items = [];
+
+    // Last visit
+    if (patient.lastVisit && patient.lastVisit !== '—') {
+      items.push({
+        icon: 'Appointment' as const,
+        title: 'Last Visit',
+        text: `${patient.lastVisit} · ${patient.diagnosis || 'Consultation'}`,
+      });
+    }
+
+    // Add diagnosis
+    if (patient.diagnosis) {
+      items.push({
+        icon: 'Diagnosis' as const,
+        title: 'Primary Diagnosis',
+        text: patient.diagnosis,
+      });
+    }
+
+    // Next appointment
+    if (patient.nextAppointment && patient.nextAppointment !== '—') {
+      items.push({
+        icon: 'FollowUp' as const,
+        title: 'Next Appointment',
+        text: patient.nextAppointment,
+      });
+    }
+
+    // Total visits
+    if (patient.totalVisits > 0) {
+      items.push({
+        icon: 'Consultation' as const,
+        title: 'Visit History',
+        text: `${patient.totalVisits} total visits (${patient.totalVisits - (patient.nextAppointment && patient.nextAppointment !== '—' ? 1 : 0)} completed)`,
+      });
+    }
+
+    return items;
+  }, [patient]);
 
   return (
     <div className="bg-foreground/25 fixed inset-0 z-50" onClick={onClose}>
@@ -115,6 +159,17 @@ export function PatientDrawer({
                 </div>
               );
             })}
+            {timelineItems.length === 0 && (
+              <div className="relative">
+                <span className="bg-muted text-muted-foreground absolute -left-[31px] grid size-5 place-items-center rounded-full">
+                  <Clock className="size-3" />
+                </span>
+                <p className="text-primary text-xs font-bold">No timeline data</p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  No medical timeline available for this patient yet.
+                </p>
+              </div>
+            )}
           </div>
         </section>
         <div className="mt-7 grid gap-3 sm:grid-cols-2">

@@ -21,6 +21,10 @@ import {
   validateDoctorAppointmentFilters,
   validateTimelineQuery,
   validateDashboardStatsQuery,
+  validateDoctorCancelAppointment,
+  validateDoctorRescheduleAppointment,
+  validateDoctorCheckIn,
+  validateDoctorCompleteAppointment,
 } from '../validators';
 
 export function createAppointmentRoutes(appointmentController: AppointmentController): Router {
@@ -101,6 +105,36 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
     '/:id/cancel',
     auditAppointmentDelete,
     asyncHandler(appointmentController.cancelAppointmentAlt)
+  );
+
+  // Doctor-specific appointment actions
+  router.patch(
+    '/doctor/:id/cancel',
+    doctorMiddleware,
+    auditAppointmentDelete,
+    validateDoctorCancelAppointment,
+    asyncHandler(appointmentController.cancelAppointmentAsDoctor)
+  );
+  router.patch(
+    '/doctor/:id/reschedule',
+    doctorMiddleware,
+    auditAppointmentUpdate,
+    validateDoctorRescheduleAppointment,
+    asyncHandler(appointmentController.rescheduleAppointmentAsDoctor)
+  );
+  router.patch(
+    '/doctor/:id/check-in',
+    doctorMiddleware,
+    auditAppointmentUpdate,
+    validateDoctorCheckIn,
+    asyncHandler(appointmentController.checkInPatient)
+  );
+  router.patch(
+    '/doctor/:id/complete',
+    doctorMiddleware,
+    auditAppointmentUpdate,
+    validateDoctorCompleteAppointment,
+    asyncHandler(appointmentController.completeAppointmentAsDoctor)
   );
 
   return router;

@@ -109,6 +109,42 @@ export function useDeleteSlot() {
   });
 }
 
+/**
+ * Hook for fetching available slots for a doctor (for rescheduling)
+ * Filters to only return AVAILABLE slots
+ * GET /api/schedules/doctor/:doctorId?startDate=&endDate=
+ */
+export function useAvailableSlotsForReschedule(
+  doctorId: string | undefined,
+  startDate?: Date,
+  endDate?: Date
+) {
+  return useQuery({
+    queryKey: [...scheduleKeys.all, 'available-slots', doctorId, startDate, endDate],
+    queryFn: async () => {
+      const slots = await scheduleApi.getDoctorSlots(doctorId!, startDate, endDate);
+      // Filter to only AVAILABLE slots
+      return slots
+        .filter((slot) => slot.status === 'AVAILABLE')
+        .map((slot) => ({
+          id: slot.id,
+          time: new Date(slot.startTime).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          }),
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+        }));
+    },
+    enabled: !!doctorId,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+}
+
 // Helper types for the UI components
 export interface ScheduleSlotWithDate extends ScheduleSlot {
   dayOfWeek: number; // 0 = Sunday, 6 = Saturday

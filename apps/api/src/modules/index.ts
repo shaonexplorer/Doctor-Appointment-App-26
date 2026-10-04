@@ -134,12 +134,24 @@ export {
   AppointmentUpdateSchema,
   AppointmentFiltersSchema,
   DoctorAppointmentFiltersSchema,
+  DoctorCancelAppointmentSchema,
+  DoctorRescheduleAppointmentSchema,
+  DoctorCheckInSchema,
   createValidationMiddleware as createAppointmentValidationMiddleware,
   createQueryValidationMiddleware as createAppointmentQueryValidationMiddleware,
   validateCreateAppointment,
   validateUpdateAppointment,
   validateAppointmentFilters,
   validateDoctorAppointmentFilters,
+  validateDoctorCancelAppointment,
+  validateDoctorRescheduleAppointment,
+  validateDoctorCheckIn,
+} from './appointments/validators';
+
+export type {
+  DoctorCancelAppointmentInput,
+  DoctorRescheduleAppointmentInput,
+  DoctorCheckInInput,
 } from './appointments/validators';
 
 export {
