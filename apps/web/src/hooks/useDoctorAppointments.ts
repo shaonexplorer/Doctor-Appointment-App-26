@@ -39,6 +39,10 @@ export function useDoctorAppointments(filters: DoctorAppointmentFilters = {}) {
   return useQuery({
     queryKey: doctorAppointmentKeys.list(filters),
     queryFn: () => appointmentApi.getDoctorAppointments({ ...restFilters, page, limit }),
+    select: (data) => ({
+      ...data,
+      data: data.data.map(transformDoctorAppointmentToUI),
+    }),
     placeholderData: keepPreviousData,
     staleTime: 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000, // 5 minutes
@@ -54,6 +58,7 @@ export function useDoctorAppointmentDetail(appointmentId: string | undefined) {
   return useQuery({
     queryKey: doctorAppointmentKeys.detail(appointmentId ?? ''),
     queryFn: () => appointmentApi.getDoctorAppointmentDetail(appointmentId!),
+    select: transformDoctorAppointmentToUI,
     enabled: !!appointmentId,
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,

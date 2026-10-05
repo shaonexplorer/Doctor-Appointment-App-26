@@ -7,8 +7,24 @@ import type { PrismaClient, Prescription, Prisma } from '@prisma/client';
 import type { PaginationParams, PaginatedResponse } from '@doctor-appointment-app/shared';
 // Prisma is already imported as a namespace from '@prisma/client'
 
-export interface PrescriptionWithRelations extends Omit<Prescription, 'appointment'> {
-  appointment: {
+// Medication type (matches shared schema)
+export interface Medication {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string | null;
+}
+
+// Prisma returns medications as JsonValue which can be null
+export type PrismaMedications = Medication[] | null;
+
+export interface PrescriptionWithRelations extends Omit<
+  Prescription,
+  'appointment' | 'medications'
+> {
+  medications: PrismaMedications;
+  appointment?: {
     id: string;
     slot: {
       startTime: Date;
@@ -239,12 +255,12 @@ export class PrescriptionRepository {
    */
   async findManyForTimeline(
     patientId: string,
-    whereClause: any = {}
+    whereClause: Record<string, unknown> = {}
   ): Promise<
     Array<{
       id: string;
       diagnosis: string;
-      medications: any;
+      medications: PrismaMedications;
       tests: string | null;
       notes: string | null;
       createdAt: Date;
@@ -253,7 +269,12 @@ export class PrescriptionRepository {
         slot: { startTime: Date; endTime: Date };
         patient: { id: string; firstName: string; lastName: string };
         doctor: { id: string; firstName: string; lastName: string };
-        doctorProfile: { specialty: string; clinic: string; designation: string; fee: number } | null;
+        doctorProfile: {
+          specialty: string;
+          clinic: string;
+          designation: string;
+          fee: number;
+        } | null;
       };
     }>
   > {
@@ -265,13 +286,31 @@ export class PrescriptionRepository {
             slot: { select: { startTime: true, endTime: true } },
             patient: { select: { id: true, firstName: true, lastName: true } },
             doctor: { select: { id: true, firstName: true, lastName: true } },
-            doctorProfile: { select: { specialty: true, clinic: true, designation: true, fee: true } },
           },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return prescriptions as any;
+    return prescriptions as Array<{
+      id: string;
+      diagnosis: string;
+      medications: PrismaMedications;
+      tests: string | null;
+      notes: string | null;
+      createdAt: Date;
+      appointment: {
+        id: string;
+        slot: { startTime: Date; endTime: Date };
+        patient: { id: string; firstName: string; lastName: string };
+        doctor: { id: string; firstName: string; lastName: string };
+        doctorProfile: {
+          specialty: string;
+          clinic: string;
+          designation: string;
+          fee: number;
+        } | null;
+      };
+    }>;
   }
 }

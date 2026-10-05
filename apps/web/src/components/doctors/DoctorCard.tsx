@@ -24,7 +24,7 @@ function toDate(value: string | Date | undefined): Date | undefined {
 }
 
 export function DoctorCard({
-  _id,
+  id: _id,
   name,
   designation,
   specialty,

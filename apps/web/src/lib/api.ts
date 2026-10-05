@@ -894,4 +894,181 @@ export const patientApi = {
   },
 };
 
+// Prescription API types
+export interface MedicationInput {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions?: string | null;
+}
+
+export interface PrescriptionCreateInput {
+  appointmentId: string;
+  diagnosis: string;
+  medications: MedicationInput[];
+  tests?: string | null;
+  notes?: string | null;
+}
+
+export interface PrescriptionUpdateInput {
+  diagnosis?: string;
+  medications?: MedicationInput[];
+  tests?: string | null;
+  notes?: string | null;
+  pdfUrl?: string | null;
+}
+
+export interface PrescriptionResponse {
+  id: string;
+  appointmentId: string;
+  doctorId: string;
+  patientId: string;
+  diagnosis: string;
+  medications: MedicationInput[];
+  tests: string | null;
+  notes: string | null;
+  pdfUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  appointment?: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    patient: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+    doctor: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+  };
+}
+
+export interface PaginatedPrescriptionsResponse {
+  data: PrescriptionResponse[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface DoctorPrescriptionFilters {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+// Prescription API functions
+export const prescriptionApi = {
+  /**
+   * Create a new prescription (Doctor only)
+   * POST /api/prescriptions
+   */
+  createPrescription: async (input: PrescriptionCreateInput): Promise<PrescriptionResponse> => {
+    return apiRequest<PrescriptionResponse>('/api/prescriptions', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  /**
+   * Get prescription by ID
+   * GET /api/prescriptions/:id
+   */
+  getPrescription: async (id: string): Promise<PrescriptionResponse> => {
+    return apiRequest<PrescriptionResponse>(`/api/prescriptions/${id}`);
+  },
+
+  /**
+   * Update prescription (Doctor only)
+   * PATCH /api/prescriptions/:id
+   */
+  updatePrescription: async (
+    id: string,
+    input: PrescriptionUpdateInput
+  ): Promise<PrescriptionResponse> => {
+    return apiRequest<PrescriptionResponse>(`/api/prescriptions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  },
+
+  /**
+   * Delete prescription (Doctor only)
+   * DELETE /api/prescriptions/:id
+   */
+  deletePrescription: async (id: string): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>(`/api/prescriptions/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * List prescriptions with filters
+   * GET /api/prescriptions
+   */
+  listPrescriptions: async (
+    filters: DoctorPrescriptionFilters = {}
+  ): Promise<PaginatedPrescriptionsResponse> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    return apiRequest<PaginatedPrescriptionsResponse>(`/api/prescriptions?${params.toString()}`);
+  },
+
+  /**
+   * Get recent prescriptions for doctor
+   * GET /api/prescriptions/recent/doctor
+   */
+  getRecentByDoctor: async (limit = 5): Promise<PrescriptionResponse[]> => {
+    return apiRequest<PrescriptionResponse[]>(`/api/prescriptions/recent/doctor?limit=${limit}`);
+  },
+
+  /**
+   * Get recent prescriptions for patient
+   * GET /api/prescriptions/recent/patient
+   */
+  getRecentByPatient: async (limit = 5): Promise<PrescriptionResponse[]> => {
+    return apiRequest<PrescriptionResponse[]>(`/api/prescriptions/recent/patient?limit=${limit}`);
+  },
+
+  /**
+   * Get prescriptions by appointment
+   * GET /api/prescriptions/appointment/:appointmentId
+   */
+  getPrescriptionsByAppointment: async (appointmentId: string): Promise<PrescriptionResponse[]> => {
+    return apiRequest<PrescriptionResponse[]>(`/api/prescriptions/appointment/${appointmentId}`);
+  },
+
+  /**
+   * Download prescription PDF
+   * GET /api/prescriptions/:id/pdf
+   */
+  downloadPrescriptionPDF: async (id: string): Promise<Blob> => {
+    const url = `${API_BASE_URL}/api/prescriptions/${id}/pdf`;
+    const response = await fetch(url, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to download PDF' }));
+      throw new ApiError(
+        error.error?.message || 'Failed to download PDF',
+        error.error?.code || 'DOWNLOAD_ERROR',
+        response.status
+      );
+    }
+    return response.blob();
+  },
+};
+
 export { ApiError };

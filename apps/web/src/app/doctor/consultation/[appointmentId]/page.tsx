@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { UserType } from '@doctor-appointment-app/shared';
-import { ChevronLeft, AlertCircle } from 'lucide-react';
+import { ChevronLeft, AlertCircle, Loader2 } from 'lucide-react';
 import {
   ConsultationSidebar,
   ConsultationNotes,
@@ -19,11 +19,13 @@ import {
 import { DoctorPortalShell } from '@/components/doctor-portal';
 import {
   useDoctorAppointmentDetail,
-  transformDoctorAppointmentToUI,
   type DoctorAppointmentUI,
 } from '@/hooks/useDoctorAppointments';
 import { useDoctorPatientDetail, type DoctorPatientDetail } from '@/hooks/useDoctorPatients';
+import { useCreatePrescription } from '@/hooks/useDoctorPrescriptions';
+import { useCompleteAppointmentAsDoctor } from '@/hooks/useDoctorAppointments';
 import { useRouter, useParams } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 const initialNotes: ConsultationNotesData = {
   chiefComplaint: '',
@@ -36,10 +38,10 @@ const initialNotes: ConsultationNotesData = {
 const initialMedications: Medication[] = [
   {
     name: '',
-    dosage: '',
+    dosage: '1 Tablet',
     frequency: 'Once daily',
     duration: '7 days',
-    instructions: '',
+    instructions: 'After meals',
   },
 ];
 
@@ -81,6 +83,8 @@ export default function DoctorConsultationPage() {
   const params = useParams<{ appointmentId: string }>();
   const router = useRouter();
   const appointmentId = params.appointmentId;
+  const createPrescription = useCreatePrescription();
+  const completeAppointment = useCompleteAppointmentAsDoctor();
 
   const {
     data: appointmentData,
@@ -99,12 +103,13 @@ export default function DoctorConsultationPage() {
   const [completed, setCompleted] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [patientInfo, setPatientInfo] = useState<PatientInfo | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   // Update patient info when both appointment and patient detail are loaded
   useEffect(() => {
     if (appointmentData && patientDetail) {
-      const uiAppointment = transformDoctorAppointmentToUI(appointmentData);
-      setPatientInfo(mapPatientToConsultationInfo(uiAppointment, patientDetail));
+      setPatientInfo(mapPatientToConsultationInfo(appointmentData, patientDetail));
 
       // Pre-fill notes with appointment symptoms if available
       if (appointmentData.symptoms && !notes.symptoms) {
@@ -124,38 +129,111 @@ export default function DoctorConsultationPage() {
     // TODO: Save draft to backend
   };
 
-  const handleIssuePrescription = () => {
+  const handleIssuePrescription = async () => {
     if (!diagnosis.trim() || medications.every((m) => !m.name.trim())) {
       setShowValidation(true);
       return;
     }
+
+    if (!appointmentData) {
+      toast({ title: 'Error', description: 'Appointment data not loaded', variant: 'destructive' });
+      return;
+    }
+
     setShowValidation(false);
-    // TODO: Issue prescription via API
-    alert('Prescription issued successfully!');
+    setIsSubmitting(true);
+
+    try {
+      const input = {
+        appointmentId: appointmentData.id,
+        diagnosis,
+        medications: medications
+          .filter((m) => m.name.trim())
+          .map((m) => ({
+            name: m.name,
+            dosage: m.dosage,
+            frequency: m.frequency,
+            duration: m.duration,
+            instructions: m.instructions || null,
+          })),
+        tests: testRecommendations.length > 0 ? testRecommendations.join(', ') : null,
+        notes: notes.treatmentPlan || notes.clinicalNotes || null,
+      };
+
+      await createPrescription.mutateAsync(input);
+      toast({
+        title: 'Success',
+        description: 'Prescription issued successfully!',
+        variant: 'success',
+      });
+      setSaved(true);
+    } catch (error) {
+      console.error('Failed to issue prescription:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to issue prescription. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleCompleteConsultation = () => {
+  const handleCompleteConsultation = async () => {
     if (!diagnosis.trim() || medications.every((m) => !m.name.trim())) {
       setShowValidation(true);
       return;
     }
-    setCompleted(true);
-    setSaved(true);
+
+    if (!appointmentData) {
+      toast({ title: 'Error', description: 'Appointment data not loaded', variant: 'destructive' });
+      return;
+    }
+
     setShowValidation(false);
+    setIsSubmitting(true);
+
+    try {
+      // Combine all consultation notes into a comprehensive note
+      const consultationNotes = [
+        notes.chiefComplaint && `Chief Complaint: ${notes.chiefComplaint}`,
+        notes.symptoms && `Symptoms: ${notes.symptoms}`,
+        notes.clinicalNotes && `Clinical Notes: ${notes.clinicalNotes}`,
+        notes.diagnosis && `Diagnosis: ${notes.diagnosis}`,
+        notes.treatmentPlan && `Treatment Plan: ${notes.treatmentPlan}`,
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+
+      // Complete the appointment via API
+      await completeAppointment.mutateAsync({
+        id: appointmentData.id,
+        notes: consultationNotes || null,
+        diagnosis: diagnosis.trim() || null,
+      });
+
+      // Mark as completed locally
+      setCompleted(true);
+      setSaved(true);
+      toast({
+        title: 'Success',
+        description: 'Consultation completed successfully!',
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error('Failed to complete consultation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to complete consultation. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleBack = () => {
-    if (completed) {
-      setCompleted(false);
-      setSaved(false);
-      setNotes(initialNotes);
-      setMedications(initialMedications);
-      setDiagnosis('');
-      setTestRecommendations([]);
-      setShowValidation(false);
-    } else {
-      router.back();
-    }
+    router.back();
   };
 
   // Show loading state
@@ -260,6 +338,14 @@ export default function DoctorConsultationPage() {
             onIssuePrescription={handleIssuePrescription}
             onCompleteConsultation={handleCompleteConsultation}
           />
+          {isSubmitting && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="bg-card flex items-center gap-3 rounded-2xl p-6">
+                <Loader2 className="text-primary size-6 animate-spin" />
+                <span>Creating prescription...</span>
+              </div>
+            </div>
+          )}
         </div>
       </DoctorPortalShell>
     </ProtectedRoute>

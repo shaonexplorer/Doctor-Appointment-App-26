@@ -11,7 +11,7 @@ interface SlotCellProps {
   index: number;
 }
 
-export function SlotCell({ _day, slot, selected, onToggle, index }: SlotCellProps) {
+export function SlotCell({ day: _day, slot, selected, onToggle, index }: SlotCellProps) {
   const isSelected = selected.includes(slot.id);
 
   return (

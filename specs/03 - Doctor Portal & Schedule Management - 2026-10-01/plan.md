@@ -3,7 +3,7 @@
 **Duration:** Weeks 9–12 (4 weeks)  
 **Start Date:** 2026-10-01  
 **End Date:** 2026-10-29  
-**Status:** 🟢 Week 9 Complete — Week 10 Complete — Week 11 In Progress
+**Status:** 🟢 Week 9 Complete — Week 10 Complete — Week 11 Complete
 
 ---
 
@@ -96,32 +96,35 @@ Empower doctors to manage schedules, conduct consultations, and access analytics
 **Goal:** Prescription creation, PDF generation, and consultation workspace
 
 #### Backend Deliverables
-- [ ] **Prescriptions Module Enhancement** (`apps/api/src/modules/prescriptions/`)
+- [x] **Prescriptions Module Enhancement** (`apps/api/src/modules/prescriptions/`)
   - `POST /api/prescriptions` — Create prescription (linked to appointment)
   - `GET /api/prescriptions/doctor/recent` — Doctor's recent prescriptions
   - `GET /api/prescriptions/:id/pdf` — Generate and serve PDF
-  - PDF generation service (PDFKit or Puppeteer)
+  - PDF generation service (PDFKit)
   - Structured medication schema: name, dosage, frequency, duration, instructions
   - Diagnosis + test recommendations fields
 
 #### Frontend Deliverables
-- [ ] **Prescription Components** (`apps/web/src/components/doctor-prescriptions/`)
-  - `PrescriptionForm.tsx` — Medication form with dynamic rows
-  - `MedicationRow.tsx` — Single medication entry (name, dosage, frequency, duration, instructions)
-  - `PrescriptionPreview.tsx` — Print-ready preview with clinical formatting
-  - `DiagnosisSection.tsx` — Diagnosis + test recommendations
-  - `PrescriptionBuilder.tsx` — Composed builder with stepper
+- [x] **Prescription Components** (`apps/web/src/components/doctor-prescriptions/`)
+  - `CreatePrescriptionForm.tsx` — Medication form with dynamic rows
+  - `PrescriptionTable.tsx` — Desktop table with sorting, pagination
+  - `PrescriptionCard.tsx` — Mobile card view
+  - `PrescriptionDrawer.tsx` — Slide-over detail panel with PDF preview
+  - `PrescriptionPDFPreview.tsx` — PDF preview with iframe (print/download)
 
-- [ ] **Consultation Components** (`apps/web/src/components/doctor-consultation/`)
+- [x] **Consultation Components** (`apps/web/src/components/doctor-consultation/`)
   - `ConsultationSidebar.tsx` — Patient info, appointment context, vitals
   - `ConsultationNotes.tsx` — SOAP notes editor (Subjective, Objective, Assessment, Plan)
   - `PrescriptionBuilder.tsx` — Integrated prescription creation during consultation
-  - `ConsultationWorkspace.tsx` — Composed layout for active consultation
+  - `ConsultationFooter.tsx` — Action buttons (Save Draft, Issue Prescription, Complete)
+  - `ConsultationCompletion.tsx` — Completion confirmation screen
 
 #### Integration
-- [ ] Prescriptions page: `/doctor/prescriptions`, `/doctor/prescriptions/new`
-- [ ] Consultation page: `/doctor/consultation/[appointmentId]`
-- [ ] PDF download/print functionality
+- [x] Prescriptions page: `/doctor/prescriptions`, `/doctor/prescriptions/new`
+- [x] Consultation page: `/doctor/consultation/[appointmentId]`
+- [x] PDF download/print functionality
+- [x] TanStack Query hooks for prescriptions (`useDoctorPrescriptions.ts`)
+- [x] API client functions (`lib/api.ts` - prescriptionApi)
 
 ---
 

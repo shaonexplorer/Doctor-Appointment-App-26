@@ -248,10 +248,14 @@ export const SlotCreateSchema = z
     endTime: z.string().datetime({ offset: true, message: 'Invalid end time format' }),
     status: z.nativeEnum(SlotStatus).default(SlotStatus.AVAILABLE),
   })
-  .refine((data) => new Date(data.startTime) < new Date(data.endTime), {
-    message: 'Start time must be before end time',
-    path: ['endTime'],
-  });
+  .refine(
+    (data: { startTime: string; endTime: string }) =>
+      new Date(data.startTime) < new Date(data.endTime),
+    {
+      message: 'Start time must be before end time',
+      path: ['endTime'],
+    }
+  );
 
 export const BulkSlotCreateSchema = z
   .object({
@@ -287,7 +291,7 @@ export const SlotUpdateSchema = z
     endTime: z.string().datetime({ offset: true }).optional(),
   })
   .refine(
-    (data) => {
+    (data: { startTime?: string; endTime?: string }) => {
       if (data.startTime && data.endTime) {
         return new Date(data.startTime) < new Date(data.endTime);
       }

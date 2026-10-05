@@ -7,7 +7,28 @@ import type { PrescriptionRepository, AppointmentRepository } from '../../../rep
 import type { PrismaClient } from '@prisma/client';
 import { AppointmentStatus, UserType } from '@prisma/client';
 import { AppError } from '../../../shared/middleware/errorHandler';
-import type { PrescriptionCreateInput, PrescriptionUpdateInput, Prescription } from '../types';
+import type {
+  PrescriptionCreateInput,
+  PrescriptionUpdateInput,
+  Prescription,
+  PrismaMedications,
+} from '../types';
+import { generatePrescriptionPDF, type PrescriptionPDFData } from './pdfService';
+
+/**
+ * Helper to cast Prisma JsonValue medications to PrismaMedications
+ */
+function castMedications(medications: unknown): PrismaMedications {
+  if (medications === null || medications === undefined) return null;
+  if (typeof medications === 'string') {
+    try {
+      return JSON.parse(medications) as PrismaMedications;
+    } catch {
+      return null;
+    }
+  }
+  return medications as PrismaMedications;
+}
 
 export class PrescriptionService {
   constructor(
@@ -17,10 +38,72 @@ export class PrescriptionService {
   ) {}
 
   /**
+   * Generate prescription PDF
+   */
+  async generatePrescriptionPDF(
+    prescriptionId: string,
+    userId: string,
+    userType: UserType
+  ): Promise<Buffer> {
+    const prescription = await this.prescriptionRepository.findById(prescriptionId);
+    if (!prescription) {
+      throw new AppError('NOT_FOUND', 'Prescription not found', 404);
+    }
+
+    // Check authorization
+    const isDoctor = prescription.doctorId === userId;
+    const isPatient = prescription.patientId === userId;
+    const isAdminOrStaff = userType === UserType.ADMIN || userType === UserType.STAFF;
+
+    if (!isDoctor && !isPatient && !isAdminOrStaff) {
+      throw new AppError('FORBIDDEN', 'Not authorized to access this prescription', 403);
+    }
+
+    // Fetch related data for PDF
+    const appointment = await this.appointmentRepository.findById(prescription.appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Associated appointment not found', 404);
+    }
+
+    // Get doctor profile for title/clinic info
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: prescription.doctorId },
+      include: { user: true },
+    });
+
+    // Get patient profile for DOB/blood group
+    const patientProfile = await this.prisma.patientProfile.findUnique({
+      where: { userId: prescription.patientId },
+      include: { user: true },
+    });
+
+    const pdfData: PrescriptionPDFData = {
+      prescription,
+      patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
+      patientDob: patientProfile?.dob || 'Unknown',
+      patientBloodGroup: '—', // Blood group not currently stored
+      doctorName: `Dr. ${doctorProfile?.user.firstName || ''} ${doctorProfile?.user.lastName || ''}`,
+      doctorTitle: doctorProfile?.designation || 'Consultant',
+      clinicName: 'MediBook Health Clinic', // Could be from doctor profile
+      clinicAddress: '12 Park Avenue', // Could be from doctor profile
+      clinicPhone: '+91 98765 43210', // Could be from doctor profile
+      clinicEmail: 'care@medibook.health',
+      prescriptionId,
+      date: new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    };
+
+    return generatePrescriptionPDF(pdfData);
+  }
+
+  /**
    * Create prescription
    */
   async createPrescription(doctorId: string, data: PrescriptionCreateInput): Promise<Prescription> {
-    // Verify appointment exists and is completed
+    // Verify appointment exists and is in a valid status for prescriptions
     const appointment = await this.appointmentRepository.findById(data.appointmentId);
     if (!appointment) {
       throw new AppError('NOT_FOUND', 'Appointment not found', 404);
@@ -35,11 +118,16 @@ export class PrescriptionService {
       );
     }
 
-    // Check if appointment is completed
-    if (appointment.status !== AppointmentStatus.COMPLETED) {
+    // Allow prescriptions for appointments that are scheduled or completed
+    // (but not cancelled or no-show)
+    const allowedStatuses: AppointmentStatus[] = [
+      AppointmentStatus.SCHEDULED,
+      AppointmentStatus.COMPLETED,
+    ];
+    if (!allowedStatuses.includes(appointment.status)) {
       throw new AppError(
         'CONFLICT',
-        'Can only create prescriptions for completed appointments',
+        'Can only create prescriptions for scheduled or completed appointments',
         409
       );
     }
@@ -50,7 +138,7 @@ export class PrescriptionService {
       throw new AppError('CONFLICT', 'Prescription already exists for this appointment', 409);
     }
 
-    return this.prescriptionRepository.create({
+    const created = await this.prescriptionRepository.create({
       appointmentId: data.appointmentId,
       doctorId,
       patientId: appointment.patientId,
@@ -60,6 +148,11 @@ export class PrescriptionService {
       notes: data.notes,
       pdfUrl: null,
     });
+
+    return {
+      ...created,
+      medications: castMedications(created.medications),
+    };
   }
 
   /**
@@ -80,7 +173,10 @@ export class PrescriptionService {
       throw new AppError('FORBIDDEN', 'Not authorized to view this prescription', 403);
     }
 
-    return prescription;
+    return {
+      ...prescription,
+      medications: castMedications(prescription.medications),
+    };
   }
 
   /**
@@ -101,7 +197,12 @@ export class PrescriptionService {
       throw new AppError('FORBIDDEN', 'Not authorized to update this prescription', 403);
     }
 
-    return this.prescriptionRepository.update(id, data);
+    const updated = await this.prescriptionRepository.update(id, data);
+
+    return {
+      ...updated,
+      medications: castMedications(updated.medications),
+    };
   }
 
   /**
@@ -129,7 +230,15 @@ export class PrescriptionService {
     filters: { doctorId?: string; patientId?: string; appointmentId?: string },
     params: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }
   ): Promise<{ data: Prescription[]; meta: { total: number; totalPages: number } }> {
-    return this.prescriptionRepository.findMany(filters, params);
+    const result = await this.prescriptionRepository.findMany(filters, params);
+
+    return {
+      ...result,
+      data: result.data.map((p) => ({
+        ...p,
+        medications: castMedications(p.medications),
+      })),
+    };
   }
 
   /**
@@ -157,21 +266,36 @@ export class PrescriptionService {
       );
     }
 
-    return this.prescriptionRepository.findByAppointmentId(appointmentId);
+    const prescriptions = await this.prescriptionRepository.findByAppointmentId(appointmentId);
+
+    return prescriptions.map((p) => ({
+      ...p,
+      medications: castMedications(p.medications),
+    }));
   }
 
   /**
    * Get recent prescriptions for doctor
    */
   async getRecentByDoctor(doctorId: string, limit: number = 5): Promise<Prescription[]> {
-    return this.prescriptionRepository.getRecentByDoctor(doctorId, limit);
+    const prescriptions = await this.prescriptionRepository.getRecentByDoctor(doctorId, limit);
+
+    return prescriptions.map((p) => ({
+      ...p,
+      medications: castMedications(p.medications),
+    }));
   }
 
   /**
    * Get recent prescriptions for patient
    */
   async getRecentByPatient(patientId: string, limit: number = 5): Promise<Prescription[]> {
-    return this.prescriptionRepository.getRecentByPatient(patientId, limit);
+    const prescriptions = await this.prescriptionRepository.getRecentByPatient(patientId, limit);
+
+    return prescriptions.map((p) => ({
+      ...p,
+      medications: castMedications(p.medications),
+    }));
   }
 }
 

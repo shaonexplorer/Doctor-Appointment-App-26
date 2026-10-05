@@ -162,6 +162,33 @@ export class PrescriptionController {
   };
 
   /**
+   * Generate prescription PDF
+   * GET /api/prescriptions/:id/pdf
+   */
+  generatePrescriptionPDF = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const pdfBuffer = await this.prescriptionService.generatePrescriptionPDF(
+        req.params.id,
+        req.user!.id,
+        req.user!.userType
+      );
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="prescription-${req.params.id}.pdf"`
+      );
+      res.send(pdfBuffer);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * Get middleware for doctor role
    */
   getRequireDoctorMiddleware = () => requireRole(UserType.DOCTOR);

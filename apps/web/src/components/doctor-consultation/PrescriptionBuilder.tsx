@@ -1,7 +1,20 @@
 'use client';
 
+import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2 } from 'lucide-react';
+import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+  useComboboxAnchor,
+} from '@/components/ui/combobox';
 import type { PrescriptionBuilderProps, Medication, FrequencyOption } from './types';
 
 const MEDICATION_FIELDS = [
@@ -19,6 +32,34 @@ const FREQUENCY_OPTIONS: FrequencyOption[] = [
   'As needed',
 ];
 
+const DIAGNOSTIC_TEST_OPTIONS = [
+  'Complete Blood Count (CBC)',
+  'Basic Metabolic Panel (BMP)',
+  'Comprehensive Metabolic Panel (CMP)',
+  'Lipid Panel',
+  'Thyroid Stimulating Hormone (TSH)',
+  'HbA1c',
+  'Urinalysis',
+  'Chest X-Ray',
+  'Electrocardiogram (ECG)',
+  'Stool Occult Blood',
+  'H. Pylori Breath Test',
+  'Vitamin D Level',
+  'Vitamin B12 Level',
+  'Iron Studies',
+  'C-Reactive Protein (CRP)',
+  'Erythrocyte Sedimentation Rate (ESR)',
+  'Liver Function Tests (LFT)',
+  'Renal Function Tests (RFT)',
+  'Coagulation Profile (PT/INR, aPTT)',
+  'HIV Test',
+  'Hepatitis Panel',
+  'COVID-19 PCR',
+  'Rapid Strep Test',
+  'Influenza Test',
+  'Other (specify in notes)',
+];
+
 export function PrescriptionBuilder({
   medications,
   onMedicationsChange,
@@ -28,6 +69,8 @@ export function PrescriptionBuilder({
   onTestRecommendationsChange,
   className,
 }: PrescriptionBuilderProps) {
+  const anchor = useComboboxAnchor();
+
   const updateMedication = (index: number, key: keyof Medication, value: string) => {
     onMedicationsChange(
       medications.map((med, i) => (i === index ? { ...med, [key]: value } : med))
@@ -39,10 +82,10 @@ export function PrescriptionBuilder({
       ...medications,
       {
         name: '',
-        dosage: '',
+        dosage: '1 Tablet',
         frequency: 'Once daily',
         duration: '7 days',
-        instructions: '',
+        instructions: 'After meals',
       },
     ]);
   };
@@ -50,17 +93,6 @@ export function PrescriptionBuilder({
   const removeMedication = (index: number) => {
     if (medications.length <= 1) return;
     onMedicationsChange(medications.filter((_, i) => i !== index));
-  };
-
-  const addTestRecommendation = () => {
-    const newTest = prompt('Enter diagnostic test name:');
-    if (newTest?.trim()) {
-      onTestRecommendationsChange([...testRecommendations, newTest.trim()]);
-    }
-  };
-
-  const removeTestRecommendation = (index: number) => {
-    onTestRecommendationsChange(testRecommendations.filter((_, i) => i !== index));
   };
 
   return (
@@ -97,6 +129,13 @@ export function PrescriptionBuilder({
               {MEDICATION_FIELDS.map(([label, key, placeholder]) => (
                 <input
                   key={key}
+                  // defaultValue={
+                  //   key == 'dosage'
+                  //     ? '1 Tablet'
+                  //     : key == 'instructions'
+                  //       ? 'After meals'
+                  //       : medication[key]
+                  // }
                   value={medication[key]}
                   onChange={(event) => updateMedication(index, key, event.target.value)}
                   placeholder={placeholder}
@@ -136,30 +175,36 @@ export function PrescriptionBuilder({
         </button>
         <div>
           <label className="text-xs font-bold">Test recommendations</label>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {testRecommendations.map((test, index) => (
-              <span
-                key={index}
-                className="border-border bg-background flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs"
-              >
-                {test}
-                <button
-                  onClick={() => removeTestRecommendation(index)}
-                  className="text-muted-foreground hover:text-destructive"
-                  aria-label={`Remove ${test}`}
-                >
-                  <Trash2 className="size-3" />
-                </button>
-              </span>
-            ))}
-            <button
-              onClick={addTestRecommendation}
-              className="border-border text-muted-foreground hover:bg-secondary flex items-center gap-2 rounded-xl border p-2 text-xs font-semibold"
-            >
-              <Plus className="text-primary size-4" />
-              Add diagnostic test
-            </button>
-          </div>
+          <Combobox
+            multiple
+            autoHighlight
+            items={DIAGNOSTIC_TEST_OPTIONS}
+            defaultValue={testRecommendations}
+            onValueChange={onTestRecommendationsChange}
+          >
+            <ComboboxChips ref={anchor} className="w-full">
+              <ComboboxValue>
+                {(values) => (
+                  <React.Fragment>
+                    {values.map((value: string) => (
+                      <ComboboxChip key={value}>{value}</ComboboxChip>
+                    ))}
+                    <ComboboxChipsInput placeholder="Add test" />
+                  </React.Fragment>
+                )}
+              </ComboboxValue>
+            </ComboboxChips>
+            <ComboboxContent anchor={anchor}>
+              <ComboboxEmpty>No tests found.</ComboboxEmpty>
+              <ComboboxList>
+                {(item) => (
+                  <ComboboxItem key={item} value={item}>
+                    {item}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
         <label className="grid gap-1.5 text-xs font-bold">
           Diagnosis

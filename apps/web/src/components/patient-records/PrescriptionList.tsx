@@ -27,7 +27,7 @@ export function PrescriptionList({
   items,
   onPreview,
   onDownload,
-  _onPrint,
+  onPrint: _onPrint,
   onUpload,
   className,
 }: PrescriptionListProps) {

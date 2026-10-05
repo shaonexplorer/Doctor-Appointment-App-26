@@ -34,7 +34,7 @@ export function ConsultationSidebar({ patient, className }: ConsultationSidebarP
             <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
               {label}
             </p>
-            <p className="mt-1 text-xs font-semibold">{value}</p>
+            <p className="mt-1 truncate text-xs font-semibold">{value}</p>
           </div>
         ))}
       </div>

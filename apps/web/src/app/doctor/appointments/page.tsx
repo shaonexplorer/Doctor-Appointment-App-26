@@ -21,7 +21,6 @@ import {
   useDoctorAppointments,
   useCancelAppointmentAsDoctor,
   useRescheduleAppointmentAsDoctor,
-  transformDoctorAppointmentsToUI,
   getAppointmentTabByDate,
   type DoctorAppointmentUI,
 } from '@/hooks/useDoctorAppointments';
@@ -91,9 +90,7 @@ export default function DoctorAppointmentsPage() {
   const rescheduleMutation = useRescheduleAppointmentAsDoctor();
 
   // Transform and filter appointments by tab
-  const allAppointments = allAppointmentsData
-    ? transformDoctorAppointmentsToUI(allAppointmentsData.data)
-    : [];
+  const allAppointments = allAppointmentsData?.data || [];
 
   // Filter appointments by tab based on date and status
   const appointmentsByTab = allAppointments.reduce(
