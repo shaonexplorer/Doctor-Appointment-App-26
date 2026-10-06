@@ -5,6 +5,7 @@ export { ConsultationFooter } from './ConsultationFooter';
 export { ConsultationCompletion } from './ConsultationCompletion';
 export { ValidationAlert } from './ValidationAlert';
 export { UnsavedChangesIndicator } from './UnsavedChangesIndicator';
+export { ConsultationEmptyState } from './EmptyState';
 
 export type {
   PatientInfo,

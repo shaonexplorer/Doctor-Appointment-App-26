@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { DoctorPortalShell } from '@/components/doctor-portal/DoctorPortalShell';
+import { ConsultationEmptyState } from '@/components/doctor-consultation/EmptyState';
 
-export default function DoctorConsultationRedirectPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // Redirect to appointments page since consultations are started from specific appointments
-    router.push('/doctor/appointments');
-  }, [router]);
-
-  return null;
+export default function DoctorConsultationPage() {
+  return (
+    <DoctorPortalShell active="Consultation">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight">Consultation</h1>
+          <p className="text-muted-foreground mt-1">
+            Start a clinical consultation from a scheduled appointment
+          </p>
+        </div>
+        <ConsultationEmptyState />
+      </div>
+    </DoctorPortalShell>
+  );
 }

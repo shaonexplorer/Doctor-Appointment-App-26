@@ -291,6 +291,11 @@ export function getAppointmentTabByDate(
   if (appointmentDate >= todayStart && appointmentDate < todayEnd) {
     return 'Today';
   }
+  // Check if appointment is in the past (backdated) - should be treated as Completed
+  if (appointmentDate < todayStart) {
+    return 'Completed';
+  }
+  // Future appointment
   return 'Upcoming';
 }
 

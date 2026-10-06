@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { X, Download, Printer, ChevronLeft } from 'lucide-react';
+import { X, ChevronLeft } from 'lucide-react';
 import type { PrescriptionUI } from '@/hooks/useDoctorPrescriptions';
 import { prescriptionApi } from '@/lib/api';
 
@@ -9,17 +9,9 @@ interface PrescriptionDrawerProps {
   prescription: PrescriptionUI | null;
   isOpen: boolean;
   onClose: () => void;
-  onDownloadPDF?: (id: string) => void;
-  onPrint?: () => void;
 }
 
-export function PrescriptionDrawer({
-  prescription,
-  isOpen,
-  onClose,
-  onDownloadPDF,
-  onPrint,
-}: PrescriptionDrawerProps) {
+export function PrescriptionDrawer({ prescription, isOpen, onClose }: PrescriptionDrawerProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
 
@@ -87,15 +79,15 @@ export function PrescriptionDrawer({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            {/* <button
               onClick={onPrint}
               disabled={!pdfUrl}
               className="text-muted-foreground hover:text-primary rounded-lg p-2 transition-colors disabled:opacity-50"
               aria-label="Print prescription"
             >
               <Printer className="size-4" />
-            </button>
-            {onDownloadPDF && (
+            </button> */}
+            {/* {onDownloadPDF && (
               <button
                 onClick={() => onDownloadPDF(prescription.id)}
                 className="text-muted-foreground hover:text-primary rounded-lg p-2 transition-colors"
@@ -103,7 +95,7 @@ export function PrescriptionDrawer({
               >
                 <Download className="size-4" />
               </button>
-            )}
+            )} */}
             <button
               onClick={onClose}
               className="text-muted-foreground hover:text-foreground rounded-lg p-2 transition-colors lg:hidden"

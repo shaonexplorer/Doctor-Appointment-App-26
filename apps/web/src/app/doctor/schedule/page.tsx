@@ -82,7 +82,7 @@ export function DoctorSchedulePageContent() {
     );
   }
 
-  if (!doctorId) {
+  if (!doctorId && !isLoading) {
     return (
       <DoctorPortalShell active="Schedule">
         <div className="mt-8 space-y-5">
