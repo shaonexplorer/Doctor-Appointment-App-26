@@ -30,6 +30,9 @@ import {
 export function createAppointmentRoutes(appointmentController: AppointmentController): Router {
   const router = Router();
 
+  // Doctor-only middleware (must be declared before use)
+  const doctorMiddleware = requireRole(UserType.DOCTOR);
+
   // All appointment routes require authentication
   router.use(requireAuth);
 
@@ -57,6 +60,23 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
     asyncHandler(appointmentController.getDoctorDashboardStats)
   );
 
+  // Analytics endpoints (Doctor Portal)
+  router.get(
+    '/stats/doctor/volume',
+    doctorMiddleware,
+    asyncHandler(appointmentController.getDoctorVolumeStats)
+  );
+  router.get(
+    '/stats/doctor/utilization',
+    doctorMiddleware,
+    asyncHandler(appointmentController.getDoctorUtilizationStats)
+  );
+  router.get(
+    '/stats/doctor/revenue',
+    doctorMiddleware,
+    asyncHandler(appointmentController.getDoctorRevenueStats)
+  );
+
   // Timeline endpoints
   router.get('/timeline/upcoming', asyncHandler(appointmentController.getUpcomingWithDetails));
   router.get(
@@ -73,7 +93,6 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
   router.get('/', validateAppointmentFilters, asyncHandler(appointmentController.listAppointments));
 
   // Doctor Portal endpoints (doctor only)
-  const doctorMiddleware = requireRole(UserType.DOCTOR);
   router.get(
     '/doctor',
     doctorMiddleware,

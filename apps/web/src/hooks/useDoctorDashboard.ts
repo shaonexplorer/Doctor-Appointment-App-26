@@ -32,25 +32,25 @@ export interface DoctorDashboardStats {
   totalPatients: number;
 }
 
-// Volume chart data point
+// Volume chart data point (from backend)
 export interface VolumeDataPoint {
-  day: string;
-  patients: number;
+  date: string;
+  count: number;
+  label: string;
 }
 
-// Utilization data point
+// Utilization data point (from backend)
 export interface UtilizationDataPoint {
   name: string;
   value: number;
   color: string;
+  total: number;
 }
 
-// Revenue data point
+// Revenue data point (from backend)
 export interface RevenueDataPoint {
-  day: string;
-  follow: number;
-  new: number;
-  video: number;
+  type: string;
+  amount: number;
 }
 
 /**
@@ -98,26 +98,23 @@ export function useDoctorProfile() {
 }
 
 /**
- * Hook for fetching doctor's upcoming appointments
+ * Hook for fetching doctor's upcoming appointments (Doctor Portal)
  * GET /api/appointments/doctor?status=SCHEDULED
  */
 export function useDoctorAppointments(filters?: {
-  status?: string;
+  status?: string | string[];
+  patientSearch?: string;
   dateFrom?: string;
   dateTo?: string;
+  dateRange?: 'today' | 'week' | 'month' | 'custom';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
 }) {
   return useQuery({
     queryKey: doctorDashboardKeys.appointments(filters),
-    queryFn: () =>
-      appointmentApi.listAppointments({
-        status: filters?.status || 'SCHEDULED',
-        dateFrom: filters?.dateFrom,
-        dateTo: filters?.dateTo,
-        page: 1,
-        limit: 20,
-        sortBy: 'slot.startTime',
-        sortOrder: 'asc',
-      }),
+    queryFn: () => appointmentApi.getDoctorAppointments(filters || {}),
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
     retry: 1,
@@ -132,38 +129,7 @@ export function useDoctorAppointments(filters?: {
 export function useVolumeData(days: number = 7) {
   return useQuery({
     queryKey: doctorDashboardKeys.volume(days),
-    queryFn: async () => {
-      // For now, we'll derive from appointments
-      // In the future, we can add a dedicated volume endpoint
-      const response = await appointmentApi.listAppointments({
-        status: ['SCHEDULED', 'COMPLETED'],
-        page: 1,
-        limit: 1000,
-        sortBy: 'slot.startTime',
-        sortOrder: 'asc',
-      });
-
-      // Group by day
-      const dayMap = new Map<string, number>();
-      const now = new Date();
-
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        const dayKey = date.toLocaleDateString('en-US', { weekday: 'short' });
-        dayMap.set(dayKey, 0);
-      }
-
-      response.data.forEach((appt) => {
-        const date = new Date(appt.slot.startTime);
-        const dayKey = date.toLocaleDateString('en-US', { weekday: 'short' });
-        if (dayMap.has(dayKey)) {
-          dayMap.set(dayKey, (dayMap.get(dayKey) || 0) + 1);
-        }
-      });
-
-      return Array.from(dayMap.entries()).map(([day, patients]) => ({ day, patients }));
-    },
+    queryFn: () => appointmentApi.getDoctorVolumeStats(days),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 1,
@@ -179,14 +145,12 @@ export function useUtilizationData() {
   return useQuery({
     queryKey: doctorDashboardKeys.utilization(),
     queryFn: async () => {
-      // Get doctor profile stats
-      const profile = await userApi.getDoctorProfile();
-      const utilization = profile.stats?.slotUtilization || 0;
-
+      const data = await appointmentApi.getDoctorUtilizationStats();
       return [
-        { name: 'Booked', value: utilization, color: '#1E40AF' },
-        { name: 'Available', value: 100 - utilization, color: '#059669' },
-        { name: 'Cancelled', value: 0, color: '#DC2626' },
+        { name: 'Booked', value: data.booked, color: '#1E40AF', total: data.total },
+        { name: 'Available', value: data.available, color: '#059669', total: data.total },
+        { name: 'Cancelled', value: data.cancelled, color: '#DC2626', total: data.total },
+        { name: 'No Show', value: data.noShow, color: '#F59E0B', total: data.total },
       ] as UtilizationDataPoint[];
     },
     staleTime: 5 * 60 * 1000,
@@ -203,45 +167,7 @@ export function useUtilizationData() {
 export function useRevenueData() {
   return useQuery({
     queryKey: doctorDashboardKeys.revenue(),
-    queryFn: async () => {
-      // For now, we'll derive from completed appointments
-      const response = await appointmentApi.listAppointments({
-        status: 'COMPLETED',
-        page: 1,
-        limit: 1000,
-        sortBy: 'slot.startTime',
-        sortOrder: 'asc',
-      });
-
-      // Group by day and consultation type
-      const dayMap = new Map<string, { follow: number; new: number; video: number }>();
-      const now = new Date();
-
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        const dayKey = date.toLocaleDateString('en-US', { weekday: 'short' });
-        dayMap.set(dayKey, { follow: 0, new: 0, video: 0 });
-      }
-
-      response.data.forEach((appt) => {
-        const date = new Date(appt.slot.startTime);
-        const dayKey = date.toLocaleDateString('en-US', { weekday: 'short' });
-        if (dayMap.has(dayKey)) {
-          const fee = appt.doctorProfile?.fee || 100;
-          const current = dayMap.get(dayKey)!;
-          if (appt.consultationType === 'VIDEO') {
-            current.video += fee;
-          } else if (appt.consultationType === 'FOLLOW_UP') {
-            current.follow += fee;
-          } else {
-            current.new += fee;
-          }
-        }
-      });
-
-      return Array.from(dayMap.entries()).map(([day, data]) => ({ day, ...data }));
-    },
+    queryFn: () => appointmentApi.getDoctorRevenueStats(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 1,

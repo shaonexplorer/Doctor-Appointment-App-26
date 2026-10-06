@@ -3,7 +3,7 @@
 **Duration:** Weeks 9–12 (4 weeks)  
 **Start Date:** 2026-10-01  
 **End Date:** 2026-10-29  
-**Status:** 🟢 Week 9 Complete — Week 10 Complete — Week 11 Complete
+**Status:** 🟢 Week 9 Complete — Week 10 Complete — Week 11 Complete — Week 12 Complete
 
 ---
 
@@ -133,14 +133,14 @@ Empower doctors to manage schedules, conduct consultations, and access analytics
 **Goal:** Analytics dashboards, final integration, testing, and accessibility
 
 #### Backend Deliverables
-- [ ] **Analytics Endpoints** (`apps/api/src/modules/appointments/stats/`)
+- [x] **Analytics Endpoints** (`apps/api/src/modules/appointments/stats/`)
   - `GET /api/appointments/stats/doctor/volume` — Daily/weekly patient volume (7/30 days)
   - `GET /api/appointments/stats/doctor/utilization` — Slot utilization breakdown
   - `GET /api/appointments/stats/doctor/revenue` — Revenue by consultation type
   - Aggregation queries with proper indexing
 
 #### Frontend Deliverables
-- [ ] **Dashboard Components** (`apps/web/src/components/doctor-dashboard/`)
+- [x] **Dashboard Components** (`apps/web/src/components/doctor-dashboard/`)
   - `DoctorMetric.tsx` — KPI cards (Today's Appointments, Completed, Waiting, Revenue)
   - `ChartCard.tsx` — Chart container with title, subtitle, action slot
   - `UpcomingAppointments.tsx` — Desktop table + mobile cards
@@ -152,15 +152,15 @@ Empower doctors to manage schedules, conduct consultations, and access analytics
   - `QuickActions.tsx` — 4-action button grid
   - `Legend.tsx` — Reusable legend for charts
 
-- [ ] **Dashboard Page** (`apps/web/src/app/doctor/dashboard/page.tsx`)
+- [x] **Dashboard Page** (`apps/web/src/app/doctor/dashboard/page.tsx`)
   - Wire all components with real data from TanStack Query
   - Responsive grid layout (12/8/4 columns)
   - Loading skeletons and error states
 
 #### Cross-Cutting
-- [ ] **Global Search** (`apps/web/src/components/global-search/`) — Adapt for doctor role
-- [ ] **Notification Center** (`apps/web/src/components/notification-center/`) — Adapt for doctor role
-- [ ] **Doctor Profile Page** (`apps/web/src/app/doctor/profile/page.tsx`) — Profile hero, about, clinic info, schedule calendar, reviews
+- [x] **Global Search** (`apps/web/src/components/global-search/`) — Adapt for doctor role
+- [x] **Notification Center** (`apps/web/src/components/notification-center/`) — Adapt for doctor role
+- [x] **Doctor Profile Page** (`apps/web/src/app/doctor/profile/page.tsx`) — Profile hero, about, clinic info, schedule calendar, reviews
 
 #### Quality Assurance
 - [ ] Unit tests >80% coverage (Vitest)

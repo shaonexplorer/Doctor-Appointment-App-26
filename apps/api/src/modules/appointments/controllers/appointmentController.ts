@@ -316,6 +316,50 @@ export class AppointmentController {
   };
 
   /**
+   * Get doctor volume analytics (Doctor Portal)
+   * GET /api/appointments/stats/doctor/volume
+   */
+  getDoctorVolumeStats = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const days = req.query.days ? parseInt(req.query.days as string, 10) : 7;
+      const stats = await this.appointmentService.getDoctorVolumeStats(req.user!.id, days);
+      res.json(buildSuccessResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get doctor slot utilization analytics (Doctor Portal)
+   * GET /api/appointments/stats/doctor/utilization
+   */
+  getDoctorUtilizationStats = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const stats = await this.appointmentService.getDoctorUtilizationStats(req.user!.id);
+      res.json(buildSuccessResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get doctor revenue analytics (Doctor Portal)
+   * GET /api/appointments/stats/doctor/revenue
+   */
+  getDoctorRevenueStats = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const stats = await this.appointmentService.getDoctorRevenueStats(req.user!.id);
+      res.json(buildSuccessResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * Cancel appointment as doctor (with refund)
    * PATCH /api/appointments/doctor/:id/cancel
    */

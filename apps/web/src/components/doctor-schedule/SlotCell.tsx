@@ -24,10 +24,10 @@ export function SlotCell({ day: _day, slot, selected, onToggle, index }: SlotCel
         onClick={() => {
           onToggle(slot.id);
         }}
-        className={`group relative flex h-full w-full flex-col justify-between rounded-xl border p-2 text-left transition ${slot.state === 'BOOKED' ? 'border-primary/20 bg-primary/10' : slot.state === 'CANCELLED' ? 'border-[#f0ccc5] bg-[#fff7f5]' : isSelected ? 'border-primary bg-primary/10 ring-primary/20 ring-2' : 'hover:border-primary border-dashed border-[#a8d8c9] bg-[#f3fbf8]'} ${!slot.id && 'border-dashed border-red-400 bg-red-600/60'}`}
+        className={`group relative flex h-full w-full flex-col justify-between rounded-xl border p-2 text-left transition ${slot.state === 'BOOKED' ? 'border-primary/20 bg-primary/10' : slot.state === 'CANCELLED' ? 'border-[#f0ccc5] bg-[#fff7f5]' : isSelected ? 'border-primary bg-primary/10 ring-primary/20 ring-2' : 'hover:border-primary border-dashed border-[#a8d8c9] bg-[#f3fbf8]'} ${!slot.id && 'border-dashed border-red-400 bg-red-300'}`}
       >
         <span
-          className={`text-[10px] font-black tracking-wide ${slot.state === 'BOOKED' ? 'text-primary' : slot.state === 'CANCELLED' ? 'text-[#c2796d]' : 'text-[#338a70]'} ${!slot.id && 'text-red-400'}`}
+          className={`text-[10px] font-black tracking-wide ${slot.state === 'BOOKED' ? 'text-primary' : slot.state === 'CANCELLED' ? 'text-[#c2796d]' : 'text-[#338a70]'} ${!slot.id && 'text-red-800'}`}
         >
           {!slot.id ? 'DELETED' : slot.state}
         </span>

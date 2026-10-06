@@ -178,7 +178,7 @@ export function EmptyDoctorsState({
 
 export function EmptyAppointmentsState({
   tab,
-  onBook,
+
   className,
 }: {
   tab: 'Upcoming' | 'Completed' | 'Cancelled';
@@ -188,7 +188,7 @@ export function EmptyAppointmentsState({
   const messages = {
     Upcoming: {
       title: 'No upcoming appointments',
-      description: 'When you book a visit, it will appear here.',
+      description: 'When patients book a visit, it will appear here.',
       actionLabel: 'Book appointment',
     },
     Completed: {
@@ -203,14 +203,14 @@ export function EmptyAppointmentsState({
     },
   };
 
-  const { title, description, actionLabel } = messages[tab];
+  const { title, description } = messages[tab];
 
   return (
     <EmptyState
       icon={<CalendarDays className="text-primary/50 size-14" />}
       title={title}
       description={description}
-      action={onBook ? { label: actionLabel, onClick: onBook, variant: 'primary' } : undefined}
+      // action={onBook ? { label: actionLabel, onClick: onBook, variant: 'primary' } : undefined}
       className={className}
     />
   );

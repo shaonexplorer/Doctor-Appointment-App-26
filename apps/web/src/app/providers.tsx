@@ -25,9 +25,8 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <Toaster>{children}</Toaster>
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
+        <Toaster />
       </TooltipProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

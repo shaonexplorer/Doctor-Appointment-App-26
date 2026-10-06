@@ -822,18 +822,38 @@ export class AppointmentService {
 
   /**
    * Get doctor dashboard statistics
+   * Note: doctorId here is the User ID, need to look up DoctorProfile ID for Schedule queries
    */
-  async getDoctorDashboardStats(doctorId: string): Promise<DoctorDashboardStats> {
+  async getDoctorDashboardStats(userId: string): Promise<DoctorDashboardStats> {
+    // Look up DoctorProfile ID from User ID
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { id: true, fee: true },
+    });
+
+    if (!doctorProfile) {
+      return {
+        todayAppointments: 0,
+        weeklyAppointments: 0,
+        slotUtilization: 0,
+        totalRevenue: 0,
+        revenueByConsultationType: [],
+        dailyVolume: [],
+      };
+    }
+
+    const doctorId = doctorProfile.id;
+    const fee = doctorProfile.fee ? Number(doctorProfile.fee) : 0;
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
     const weekStart = new Date(todayStart);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
 
-    // Get today's appointments
+    // Get today's appointments (doctorId in Appointment is User ID)
     const todayAppointments = await this.prisma.appointment.count({
       where: {
-        doctorId,
+        doctorId: userId,
         slot: {
           startTime: { gte: todayStart, lt: todayEnd },
         },
@@ -844,7 +864,7 @@ export class AppointmentService {
     // Get this week's appointments
     const weeklyAppointments = await this.prisma.appointment.count({
       where: {
-        doctorId,
+        doctorId: userId,
         slot: {
           startTime: { gte: weekStart },
         },
@@ -852,7 +872,7 @@ export class AppointmentService {
       },
     });
 
-    // Get slot utilization (available vs booked slots this week)
+    // Get slot utilization (available vs booked slots this week) - Schedule uses DoctorProfile ID
     const [totalSlotsThisWeek, bookedSlotsThisWeek] = await Promise.all([
       this.prisma.schedule.count({
         where: {
@@ -875,7 +895,7 @@ export class AppointmentService {
     // Get total revenue (completed appointments)
     const completedAppointments = await this.prisma.appointment.findMany({
       where: {
-        doctorId,
+        doctorId: userId,
         status: AppointmentStatus.COMPLETED,
       },
       include: {
@@ -888,26 +908,19 @@ export class AppointmentService {
     });
 
     const totalRevenue = completedAppointments.reduce((sum, appt) => {
-      const fee = appt.doctor?.doctorProfile?.fee || 0;
-      return sum + Number(fee);
+      const apptFee = appt.doctor?.doctorProfile?.fee || 0;
+      return sum + Number(apptFee);
     }, 0);
 
     // Revenue by consultation type
     const revenueByType = await this.prisma.appointment.groupBy({
       by: ['consultationType'],
       where: {
-        doctorId,
+        doctorId: userId,
         status: AppointmentStatus.COMPLETED,
       },
       _count: { id: true },
     });
-
-    // Get doctor fee for calculation
-    const doctorProfile = await this.prisma.doctorProfile.findUnique({
-      where: { userId: doctorId },
-      select: { fee: true },
-    });
-    const fee = doctorProfile?.fee ? Number(doctorProfile.fee) : 0;
 
     const revenueByConsultationType = revenueByType.map((r) => ({
       type: r.consultationType,
@@ -924,7 +937,7 @@ export class AppointmentService {
 
         const count = await this.prisma.appointment.count({
           where: {
-            doctorId,
+            doctorId: userId,
             slot: {
               startTime: { gte: date, lt: nextDate },
             },
@@ -947,6 +960,131 @@ export class AppointmentService {
       revenueByConsultationType,
       dailyVolume,
     };
+  }
+
+  /**
+   * Get patient volume analytics (daily/weekly)
+   * GET /api/appointments/stats/doctor/volume
+   */
+  async getDoctorVolumeStats(
+    doctorId: string,
+    days: number = 7
+  ): Promise<Array<{ date: string; count: number; label: string }>> {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startDate = new Date(todayStart);
+    startDate.setDate(startDate.getDate() - (days - 1));
+
+    const volumeData = await Promise.all(
+      Array.from({ length: days }, async (_, i) => {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+
+        const count = await this.prisma.appointment.count({
+          where: {
+            doctorId,
+            slot: {
+              startTime: { gte: date, lt: nextDate },
+            },
+            status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+          },
+        });
+
+        return {
+          date: date.toISOString().split('T')[0],
+          count,
+          label: date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+          }),
+        };
+      })
+    );
+
+    return volumeData;
+  }
+
+  /**
+   * Get slot utilization analytics
+   * GET /api/appointments/stats/doctor/utilization
+   * Note: doctorId here is the User ID, need to look up DoctorProfile ID
+   */
+  async getDoctorUtilizationStats(userId: string): Promise<{
+    booked: number;
+    available: number;
+    cancelled: number;
+    noShow: number;
+    total: number;
+  }> {
+    // Look up DoctorProfile ID from User ID
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      return { booked: 0, available: 0, cancelled: 0, noShow: 0, total: 0 };
+    }
+
+    const doctorId = doctorProfile.id;
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+    const [booked, available, cancelled, noShow, total] = await Promise.all([
+      this.prisma.schedule.count({
+        where: { doctorId, startTime: { gte: weekStart }, status: SlotStatus.BOOKED },
+      }),
+      this.prisma.schedule.count({
+        where: { doctorId, startTime: { gte: weekStart }, status: SlotStatus.AVAILABLE },
+      }),
+      this.prisma.schedule.count({
+        where: { doctorId, startTime: { gte: weekStart }, status: SlotStatus.CANCELLED },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          doctorId: userId,
+          slot: { startTime: { gte: weekStart } },
+          status: AppointmentStatus.NO_SHOW,
+        },
+      }),
+      this.prisma.schedule.count({
+        where: { doctorId, startTime: { gte: weekStart } },
+      }),
+    ]);
+
+    return { booked, available, cancelled, noShow, total };
+  }
+
+  /**
+   * Get revenue analytics by consultation type
+   * GET /api/appointments/stats/doctor/revenue
+   * Note: doctorId here is the User ID
+   */
+  async getDoctorRevenueStats(userId: string): Promise<Array<{ type: string; amount: number }>> {
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { fee: true },
+    });
+    const fee = doctorProfile?.fee ? Number(doctorProfile.fee) : 0;
+
+    const revenueByType = await this.prisma.appointment.groupBy({
+      by: ['consultationType'],
+      where: {
+        doctorId: userId,
+        status: AppointmentStatus.COMPLETED,
+      },
+      _count: { id: true },
+    });
+
+    return revenueByType.map((r) => ({
+      type: r.consultationType,
+      amount: r._count.id * fee,
+    }));
   }
 
   /**

@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { CalendarDays } from 'lucide-react';
 
 export interface Appointment {
   time: string;
@@ -14,6 +15,26 @@ export interface ScheduleTimelineProps {
 }
 
 export function ScheduleTimeline({ appointments }: ScheduleTimelineProps) {
+  // console.log({ appointments });
+
+  if (appointments.length === 0) {
+    return (
+      <section className="border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6">
+        <h2 className="font-bold">Today&apos;s schedule</h2>
+        <p className="text-muted-foreground mt-1 text-xs">A visual timeline of your clinic day</p>
+        <div className="mt-5">
+          <div className="border-border bg-card rounded-2xl border-dashed p-10 text-center">
+            <div className="bg-muted mx-auto mb-4 grid size-14 place-items-center rounded-full">
+              <CalendarDays className="text-muted-foreground size-7" aria-hidden="true" />
+            </div>
+            <h3 className="text-lg font-black">No appointments scheduled for today</h3>
+            <p className="text-muted-foreground mt-2 text-sm">Enjoy your free day!</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6">
       <h2 className="font-bold">Today&apos;s schedule</h2>

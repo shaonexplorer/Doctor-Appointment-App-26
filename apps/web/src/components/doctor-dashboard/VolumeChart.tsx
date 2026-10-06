@@ -1,10 +1,19 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Line,
+  LineChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 export interface VolumeData {
-  day: string;
-  patients: number;
+  date: string;
+  count: number;
+  label: string;
 }
 
 export interface VolumeChartProps {
@@ -15,22 +24,15 @@ export interface VolumeChartProps {
 export function VolumeChart({ data, height = 220 }: VolumeChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} layout="vertical">
+      <LineChart data={data}>
         <CartesianGrid vertical={false} stroke="#e9eef5" />
         <XAxis
+          dataKey="label"
           axisLine={false}
           tickLine={false}
           tick={{ fontSize: 11, fill: '#8292a7' }}
-          type="number"
         />
-        <YAxis
-          dataKey="day"
-          type="category"
-          axisLine={false}
-          tickLine={false}
-          tick={{ fontSize: 11, fill: '#8292a7' }}
-          width={50}
-        />
+        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8292a7' }} />
         <Tooltip
           contentStyle={{
             backgroundColor: 'white',
@@ -41,8 +43,14 @@ export function VolumeChart({ data, height = 220 }: VolumeChartProps) {
           labelStyle={{ color: '#1e293b', fontWeight: 600 }}
           itemStyle={{ fontSize: 12 }}
         />
-        <Bar dataKey="patients" fill="#1E40AF" radius={[4, 0, 0, 4]} maxBarSize={32} />
-      </BarChart>
+        <Line
+          type="monotone"
+          dataKey="count"
+          stroke="#1E40AF"
+          strokeWidth={3}
+          dot={{ r: 4, fill: '#1E40AF' }}
+        />
+      </LineChart>
     </ResponsiveContainer>
   );
 }

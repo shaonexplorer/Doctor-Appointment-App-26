@@ -544,7 +544,7 @@ export default function MediBookLanding() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {/* Logo and Brand */}
             <div className="flex flex-col items-center gap-3 sm:items-start sm:gap-4">
-              <a href="#top" className="flex items-center gap-2.5">
+              <a href="#top" className="flex flex-col items-center gap-2.5 sm:flex-row">
                 <span className="bg-primary flex size-10 items-center justify-center rounded-[13px] text-white shadow-[0_8px_18px_rgba(37,99,235,.2)]">
                   <HeartPulse className="size-5" />
                 </span>
@@ -564,8 +564,10 @@ export default function MediBookLanding() {
 
             {/* Quick Links */}
             <div className="space-y-2 sm:flex sm:flex-col sm:items-start sm:space-y-0">
-              <h3 className="text-primary font-manrope text-[14px] font-semibold">Company</h3>
-              <nav className="flex flex-col items-start gap-1">
+              <h3 className="text-primary font-manrope text-center text-[14px] font-semibold sm:text-left">
+                Company
+              </h3>
+              <nav className="flex flex-col gap-1 text-center sm:text-left">
                 {[
                   ['About Us', '#about'],
                   ['How It Works', '#how-it-works'],
@@ -585,8 +587,10 @@ export default function MediBookLanding() {
 
             {/* Resources */}
             <div className="space-y-2 sm:flex sm:flex-col sm:items-start sm:space-y-0">
-              <h3 className="text-primary font-manrope text-[14px] font-semibold">Resources</h3>
-              <nav className="flex flex-col items-start gap-1">
+              <h3 className="text-primary font-manrope text-center text-[14px] font-semibold sm:text-left">
+                Resources
+              </h3>
+              <nav className="flex flex-col gap-1 text-center sm:text-left">
                 {[
                   ['Privacy Policy', '#'],
                   ['Terms of Service', '#'],
@@ -605,18 +609,20 @@ export default function MediBookLanding() {
             </div>
 
             {/* Contact & Social */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
               <div className="space-y-2">
-                <h3 className="text-primary font-manrope text-[14px] font-semibold">Contact</h3>
-                <p className="text-muted-foreground font-inter flex items-center gap-2 text-[13px]">
+                <h3 className="text-primary font-manrope text-center text-[14px] font-semibold sm:text-left">
+                  Contact
+                </h3>
+                <p className="text-muted-foreground font-inter flex items-center justify-center gap-2 text-[13px] sm:justify-start">
                   <MapPin className="text-primary size-4" />
                   <span>123 Healthcare Ave, Medical City</span>
                 </p>
-                <p className="text-muted-foreground font-inter flex items-center gap-2 text-[13px]">
+                <p className="text-muted-foreground font-inter flex items-center justify-center gap-2 text-[13px] sm:justify-start">
                   <Stethoscope className="text-primary size-4" />
                   <span>(555) 123-4567</span>
                 </p>
-                <p className="text-muted-foreground font-inter flex items-center gap-2 text-[13px]">
+                <p className="text-muted-foreground font-inter flex items-center justify-center gap-2 text-[13px] sm:justify-start">
                   <Mail className="text-primary size-4" />
                   <span>info@medibook.com</span>
                 </p>
@@ -647,10 +653,10 @@ export default function MediBookLanding() {
 
           {/* Bottom Section */}
           <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-            <p className="text-muted-foreground font-inter text-[12px]">
+            <p className="text-muted-foreground font-inter text-center text-[12px] sm:text-left">
               MediBook is committed to providing accessible healthcare services to all patients.
             </p>
-            <div className="flex flex-col items-center gap-2 sm:flex-row">
+            <div className="hidden flex-col items-center gap-2 sm:flex sm:flex-row">
               <a
                 href="#"
                 className="text-muted-foreground hover:text-primary font-inter text-[12px] transition-colors"

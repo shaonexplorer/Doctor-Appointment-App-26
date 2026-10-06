@@ -184,8 +184,8 @@ export function ScheduleGrid({
         </div>
         <ScheduleLegend />
       </section>
-      <section className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm">
-        <div className="border-border grid min-w-[900px] grid-cols-[76px_repeat(7,1fr)] border-b">
+      <section className="border-border bg-card overflow-auto rounded-2xl border shadow-sm sm:overflow-hidden">
+        <div className="border-border grid min-w-[900px] grid-cols-[76px_repeat(8,1fr)] border-b">
           <div className="text-muted-foreground p-3 text-[10px] font-bold uppercase">Time</div>
           {days.map((day, index) => (
             <div
@@ -205,7 +205,7 @@ export function ScheduleGrid({
           {grid.map((timeRow, timeIndex) => (
             <div
               key={times[timeIndex]}
-              className="border-border/70 grid grid-cols-[76px_repeat(7,1fr)] border-b last:border-0"
+              className="border-border/70 grid grid-cols-[76px_repeat(8,1fr)] border-b last:border-0"
             >
               <div className="text-muted-foreground flex items-start justify-center pt-4 text-[10px] font-bold">
                 {times[timeIndex]}

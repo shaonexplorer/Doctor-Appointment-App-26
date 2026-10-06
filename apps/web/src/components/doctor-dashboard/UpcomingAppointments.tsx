@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { Play, UserRound, MoreHorizontal } from 'lucide-react';
+import { EmptyAppointmentsState } from '@/components/doctors/EmptyState';
 
 export interface Appointment {
   time: string;
@@ -25,6 +26,27 @@ export function UpcomingAppointments({
   const handleAction = (action: string, patient: string) => {
     onAction?.(action, patient);
   };
+
+  // Show empty state when no appointments
+  if (appointments.length === 0) {
+    return (
+      <section className="border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-bold">Upcoming appointments</h2>
+            <p className="text-muted-foreground mt-1 text-xs">Your clinic schedule for today</p>
+          </div>
+          <button
+            onClick={onViewFullSchedule}
+            className="border-border hover:bg-secondary rounded-xl border px-3 py-2 text-xs font-bold"
+          >
+            View full schedule
+          </button>
+        </div>
+        <EmptyAppointmentsState tab="Upcoming" onBook={onViewFullSchedule} />
+      </section>
+    );
+  }
 
   return (
     <section className="border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6">

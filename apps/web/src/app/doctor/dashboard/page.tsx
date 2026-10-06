@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { UserType } from '@doctor-appointment-app/shared';
 import {
@@ -32,18 +33,20 @@ import {
   useUtilizationData,
   useRevenueData,
   useRecentPatients,
+  type VolumeDataPoint,
 } from '@/hooks/useDoctorDashboard';
 
 const quickActions = [
-  { icon: CalendarDays, label: 'View Schedule' },
-  { icon: Plus, label: 'New Appointment' },
-  { icon: UsersRound, label: 'Patient List' },
-  { icon: Pill, label: 'Prescriptions' },
+  { icon: CalendarDays, label: 'View Schedule', href: '/doctor/schedule' },
+  { icon: Plus, label: 'New Appointment', href: '/doctor/appointments' },
+  { icon: UsersRound, label: 'Patient List', href: '/doctor/patients' },
+  { icon: Pill, label: 'Prescriptions', href: '/doctor/prescriptions' },
 ];
 
 export default function DoctorDashboardPage() {
   const [notice, setNotice] = useState('');
   const [range, setRange] = useState('Week');
+  const router = useRouter();
 
   const {
     data: stats,
@@ -54,6 +57,9 @@ export default function DoctorDashboardPage() {
 
   const { data: appointmentsData, isLoading: appointmentsLoading } = useDoctorAppointments({
     status: 'SCHEDULED',
+    sortBy: 'slot.startTime',
+    sortOrder: 'asc',
+    limit: 20,
   });
 
   const { data: volumeData, isLoading: volumeLoading } = useVolumeData(7);
@@ -100,6 +106,10 @@ export default function DoctorDashboardPage() {
             : ('Waiting' as const),
       payment: appt.paymentStatus === 'PAID' ? ('Paid' as const) : ('Pending' as const),
     })) || [];
+
+  // Format utilization data for donut chart
+  // Hook now returns data in the correct format for the chart
+  const formattedUtilization = utilizationData || [];
 
   if (isLoading) {
     return (
@@ -237,10 +247,10 @@ export default function DoctorDashboardPage() {
                 </div>
               }
             >
-              <VolumeChart data={volumeData || []} />
+              <VolumeChart data={(volumeData || []) as VolumeDataPoint[]} />
             </ChartCard>
             <ChartCard title="Slot utilization" subtitle="This week's appointment capacity">
-              <UtilizationDonutChart data={utilizationData || []} />
+              <UtilizationDonutChart data={formattedUtilization} />
             </ChartCard>
           </div>
 
@@ -256,19 +266,22 @@ export default function DoctorDashboardPage() {
           <UpcomingAppointments
             appointments={transformedAppointments}
             onAction={action}
-            onViewFullSchedule={() => action('View full schedule')}
+            onViewFullSchedule={() => router.push('/doctor/schedule')}
           />
 
           {/* Recent Patients */}
           <RecentPatients
             patients={recentPatients || []}
             onAction={action}
-            onViewAll={() => action('Patient directory')}
+            onViewAll={() => router.push('/doctor/patients')}
           />
 
           {/* Quick Actions */}
           <QuickActions
-            actions={quickActions.map((a) => ({ ...a, onClick: () => action(a.label) }))}
+            actions={quickActions.map((a) => ({
+              ...a,
+              onClick: () => a.href && router.push(a.href),
+            }))}
           />
 
           <div className="flex justify-end">

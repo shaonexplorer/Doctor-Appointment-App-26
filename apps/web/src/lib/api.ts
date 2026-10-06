@@ -809,6 +809,48 @@ export const appointmentApi = {
       body: JSON.stringify(data),
     });
   },
+
+  /**
+   * Get doctor volume analytics
+   * GET /api/appointments/stats/doctor/volume
+   */
+  getDoctorVolumeStats: async (
+    days: number = 7
+  ): Promise<Array<{ date: string; count: number; label: string }>> => {
+    return apiRequest<Array<{ date: string; count: number; label: string }>>(
+      `/api/appointments/stats/doctor/volume?days=${days}`
+    );
+  },
+
+  /**
+   * Get doctor slot utilization analytics
+   * GET /api/appointments/stats/doctor/utilization
+   */
+  getDoctorUtilizationStats: async (): Promise<{
+    booked: number;
+    available: number;
+    cancelled: number;
+    noShow: number;
+    total: number;
+  }> => {
+    return apiRequest<{
+      booked: number;
+      available: number;
+      cancelled: number;
+      noShow: number;
+      total: number;
+    }>('/api/appointments/stats/doctor/utilization');
+  },
+
+  /**
+   * Get doctor revenue analytics
+   * GET /api/appointments/stats/doctor/revenue
+   */
+  getDoctorRevenueStats: async (): Promise<Array<{ type: string; amount: number }>> => {
+    return apiRequest<Array<{ type: string; amount: number }>>(
+      '/api/appointments/stats/doctor/revenue'
+    );
+  },
 };
 
 // Patient API types (Doctor Portal)

@@ -101,5 +101,25 @@ export interface DoctorDashboardStats {
   dailyVolume: Array<{ date: string; count: number }>;
 }
 
+// Analytics endpoints types
+export interface DoctorVolumeStats {
+  date: string;
+  count: number;
+  label: string;
+}
+
+export interface DoctorUtilizationStats {
+  booked: number;
+  available: number;
+  cancelled: number;
+  noShow: number;
+  total: number;
+}
+
+export interface DoctorRevenueStats {
+  type: string;
+  amount: number;
+}
+
 export type { AppointmentCreateInput, AppointmentUpdateInput, AppointmentFilters };
 export { AppointmentStatus, PaymentStatus, ConsultationType };
