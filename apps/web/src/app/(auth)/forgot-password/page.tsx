@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/toast';
 import { ForgotPasswordSchema, type ForgotPasswordInput } from '@doctor-appointment-app/shared';
 
 function Field({
@@ -130,16 +130,16 @@ export default function ForgotPasswordPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: 'destructive',
+        toast.add({
+          type: 'error',
           title: 'Request failed',
           description: result.error?.message || 'An error occurred',
         });
         return;
       }
 
-      toast({
-        variant: 'success',
+      toast.add({
+        type: 'success',
         title: 'Reset link sent',
         description: 'If the email exists, a password reset link has been sent.',
       });
@@ -147,8 +147,8 @@ export default function ForgotPasswordPage() {
       void router.push('/reset-password');
       router.refresh();
     } catch {
-      toast({
-        variant: 'destructive',
+      toast.add({
+        type: 'error',
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
       });

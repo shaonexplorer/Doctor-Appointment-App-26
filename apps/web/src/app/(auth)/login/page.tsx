@@ -9,7 +9,7 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/toast';
 import { LoginSchema, type LoginInput } from '@doctor-appointment-app/shared';
 
 // Extend LoginInput to include rememberMe
@@ -108,8 +108,8 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: 'destructive',
+        toast.add({
+          type: 'error',
           title: 'Login failed',
           description: result.error?.message || 'Invalid credentials',
         });
@@ -125,8 +125,8 @@ export default function LoginPage() {
       void router.push('/dashboard');
       router.refresh();
     } catch {
-      toast({
-        variant: 'destructive',
+      toast.add({
+        type: 'error',
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
       });

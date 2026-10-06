@@ -6,8 +6,10 @@ import { Plus, Trash2, ArrowLeft, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useDoctorAppointments } from '@/hooks/useDoctorAppointments';
 import { useCreatePrescription } from '@/hooks/useDoctorPrescriptions';
-import { PrescriptionPDFPreview } from './PrescriptionPDFPreview';
+// import { PrescriptionPreviewPDF } from './PrescriptionPreviewPDF';
+
 import type { PrescriptionCreateInput } from '@/lib/api';
+import { toast } from '@/components/ui/toast';
 
 const defaultMedication = {
   name: '',
@@ -50,9 +52,6 @@ export function CreatePrescriptionForm({
   const [tests, setTests] = useState('');
   const [notes, setNotes] = useState('');
   const [saved, setSaved] = useState(false);
-  const [previewPrescription, setPreviewPrescription] = useState<PrescriptionCreateInput | null>(
-    null
-  );
 
   // Update selected appointment if initialAppointmentId changes
   useEffect(() => {
@@ -87,15 +86,27 @@ export function CreatePrescriptionForm({
 
   const validateForm = () => {
     if (!selectedAppointmentId) {
-      alert('Please select an appointment');
+      toast.add({
+        type: 'error',
+        title: 'Validation error',
+        description: 'Please select an appointment',
+      });
       return false;
     }
     if (!diagnosis.trim()) {
-      alert('Please enter a diagnosis');
+      toast.add({
+        type: 'error',
+        title: 'Validation error',
+        description: 'Please enter a diagnosis',
+      });
       return false;
     }
     if (medications.every((m) => !m.name.trim())) {
-      alert('Please add at least one medication');
+      toast.add({
+        type: 'error',
+        title: 'Validation error',
+        description: 'Please add at least one medication',
+      });
       return false;
     }
     return true;
@@ -106,9 +117,12 @@ export function CreatePrescriptionForm({
 
     // Check if the appointment is completed before allowing submission
     if (!isAppointmentCompleted) {
-      alert(
-        'Prescriptions can only be created for completed appointments. Please complete the appointment first.'
-      );
+      toast.add({
+        type: 'error',
+        title: 'Invalid appointment',
+        description:
+          'Prescriptions can only be created for completed appointments. Please complete the appointment first.',
+      });
       return;
     }
 
@@ -131,38 +145,41 @@ export function CreatePrescriptionForm({
     try {
       await createPrescription.mutateAsync(input);
       setSaved(true);
-      setPreviewPrescription(input);
       // Navigate to the prescriptions list after a short delay
       setTimeout(() => {
         router.push('/doctor/prescriptions');
       }, 2000);
     } catch (error) {
       console.error('Failed to create prescription:', error);
-      alert('Failed to create prescription. Please try again.');
+      toast.add({
+        type: 'error',
+        title: 'Error',
+        description: 'Failed to create prescription. Please try again.',
+      });
     }
   };
 
-  const handlePreview = () => {
-    if (!validateForm()) return;
+  // const handlePreview = () => {
+  //   if (!validateForm()) return;
 
-    const input: PrescriptionCreateInput = {
-      appointmentId: selectedAppointmentId,
-      diagnosis,
-      medications: medications
-        .filter((m) => m.name.trim())
-        .map((m) => ({
-          name: m.name,
-          dosage: m.dosage,
-          frequency: m.frequency,
-          duration: m.duration,
-          instructions: m.instructions || null,
-        })),
-      tests: tests.trim() || null,
-      notes: notes.trim() || null,
-    };
+  //   const input: PrescriptionCreateInput = {
+  //     appointmentId: selectedAppointmentId,
+  //     diagnosis,
+  //     medications: medications
+  //       .filter((m) => m.name.trim())
+  //       .map((m) => ({
+  //         name: m.name,
+  //         dosage: m.dosage,
+  //         frequency: m.frequency,
+  //         duration: m.duration,
+  //         instructions: m.instructions || null,
+  //       })),
+  //     tests: tests.trim() || null,
+  //     notes: notes.trim() || null,
+  //   };
 
-    setPreviewPrescription(input);
-  };
+  //   setPreviewPrescription(input);
+  // };
 
   if (isLoadingAppointments) {
     return (
@@ -199,14 +216,14 @@ export function CreatePrescriptionForm({
           </div> */}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
+          {/* <button
             type="button"
             onClick={handlePreview}
             disabled={hasInvalidInitialAppointment}
             className="border-border bg-card hover:bg-accent flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-colors"
           >
             Preview
-          </button>
+          </button> */}
           <button
             type="button"
             onClick={handleSave}
@@ -237,7 +254,8 @@ export function CreatePrescriptionForm({
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_440px]">
+      {/* <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_440px]"> */}
+      <div className=" ">
         {/* Main Form */}
         <section className="border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6">
           {/* Appointment Selection */}
@@ -418,36 +436,19 @@ export function CreatePrescriptionForm({
         </section>
 
         {/* Preview Panel */}
-        <PrescriptionPDFPreview
-          prescription={
-            previewPrescription
-              ? {
-                  id: 'preview',
-                  patient: selectedAppointment?.patient || 'Patient',
-                  diagnosis: previewPrescription.diagnosis,
-                  medications: previewPrescription.medications.map((m) => ({
-                    name: m.name,
-                    dosage: m.dosage,
-                    frequency: m.frequency,
-                    duration: m.duration,
-                    instructions: m.instructions || '',
-                  })),
-                  tests: previewPrescription.tests ?? null,
-                  notes: previewPrescription.notes ?? null,
-                  date: new Date().toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  }),
-                  appointmentId: previewPrescription.appointmentId,
-                  doctorName: 'Dr. Current User',
-                }
-              : null
-          }
+        {/* <PrescriptionPreviewPDF
+          prescription={previewPrescription}
+          patientName={selectedAppointment?.patient || 'Patient'}
+          doctorName="Dr. Current User"
+          appointmentDate={new Date().toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })}
           onClose={() => setPreviewPrescription(null)}
           onDownload={() => {}}
           onPrint={() => {}}
-        />
+        /> */}
       </div>
     </div>
   );

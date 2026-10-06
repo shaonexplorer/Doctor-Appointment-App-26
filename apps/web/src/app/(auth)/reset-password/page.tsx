@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, Eye, EyeOff, LockKeyhole } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/toast';
 import { ResetPasswordSchema, type ResetPasswordInput } from '@doctor-appointment-app/shared';
 
 function Field({
@@ -163,16 +163,16 @@ function ResetPasswordPageContent() {
       const result = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: 'destructive',
+        toast.add({
+          type: 'error',
           title: 'Reset failed',
           description: result.error?.message || 'Invalid or expired reset token',
         });
         return;
       }
 
-      toast({
-        variant: 'success',
+      toast.add({
+        type: 'success',
         title: 'Password updated',
         description: 'Your password has been reset successfully.',
       });
@@ -180,8 +180,8 @@ function ResetPasswordPageContent() {
       void router.push('/login');
       router.refresh();
     } catch {
-      toast({
-        variant: 'destructive',
+      toast.add({
+        type: 'error',
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
       });

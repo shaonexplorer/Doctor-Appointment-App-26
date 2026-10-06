@@ -20,7 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/toast';
 import {
   type RegisterInput,
   UserBaseSchema,
@@ -548,16 +548,16 @@ export default function RegisterPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: 'destructive',
+        toast.add({
+          type: 'error',
           title: 'Registration failed',
           description: result.error?.message || 'An error occurred',
         });
         return;
       }
 
-      toast({
-        variant: 'success',
+      toast.add({
+        type: 'success',
         title: 'Account created!',
         description: 'Please check your email to verify your account.',
       });
@@ -567,8 +567,8 @@ export default function RegisterPage() {
       void router.push(`/verify-email?email=${encodeURIComponent(email)}`);
       router.refresh();
     } catch {
-      toast({
-        variant: 'destructive',
+      toast.add({
+        type: 'error',
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
       });

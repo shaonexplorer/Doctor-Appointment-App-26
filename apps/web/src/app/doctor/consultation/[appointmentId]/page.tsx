@@ -25,7 +25,7 @@ import { useDoctorPatientDetail, type DoctorPatientDetail } from '@/hooks/useDoc
 import { useCreatePrescription } from '@/hooks/useDoctorPrescriptions';
 import { useCompleteAppointmentAsDoctor } from '@/hooks/useDoctorAppointments';
 import { useRouter, useParams } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/toast';
 
 const initialNotes: ConsultationNotesData = {
   chiefComplaint: '',
@@ -104,7 +104,6 @@ export default function DoctorConsultationPage() {
   const [showValidation, setShowValidation] = useState(false);
   const [patientInfo, setPatientInfo] = useState<PatientInfo | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   // Update patient info when both appointment and patient detail are loaded
   useEffect(() => {
@@ -136,7 +135,7 @@ export default function DoctorConsultationPage() {
     }
 
     if (!appointmentData) {
-      toast({ title: 'Error', description: 'Appointment data not loaded', variant: 'destructive' });
+      toast.add({ title: 'Error', description: 'Appointment data not loaded', type: 'error' });
       return;
     }
 
@@ -161,18 +160,18 @@ export default function DoctorConsultationPage() {
       };
 
       await createPrescription.mutateAsync(input);
-      toast({
+      toast.add({
         title: 'Success',
         description: 'Prescription issued successfully!',
-        variant: 'success',
+        type: 'success',
       });
       setSaved(true);
     } catch (error) {
       console.error('Failed to issue prescription:', error);
-      toast({
+      toast.add({
         title: 'Error',
         description: 'Failed to issue prescription. Please try again.',
-        variant: 'destructive',
+        type: 'error',
       });
     } finally {
       setIsSubmitting(false);
@@ -186,7 +185,7 @@ export default function DoctorConsultationPage() {
     }
 
     if (!appointmentData) {
-      toast({ title: 'Error', description: 'Appointment data not loaded', variant: 'destructive' });
+      toast.add({ title: 'Error', description: 'Appointment data not loaded', type: 'error' });
       return;
     }
 
@@ -215,17 +214,17 @@ export default function DoctorConsultationPage() {
       // Mark as completed locally
       setCompleted(true);
       setSaved(true);
-      toast({
+      toast.add({
         title: 'Success',
         description: 'Consultation completed successfully!',
-        variant: 'success',
+        type: 'success',
       });
     } catch (error) {
       console.error('Failed to complete consultation:', error);
-      toast({
+      toast.add({
         title: 'Error',
         description: 'Failed to complete consultation. Please try again.',
-        variant: 'destructive',
+        type: 'error',
       });
     } finally {
       setIsSubmitting(false);

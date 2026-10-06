@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/toast';
 
 function AuthShell({
   eyebrow,
@@ -19,9 +19,9 @@ function AuthShell({
 }) {
   return (
     <div className="mx-auto w-full max-w-md">
-      <p className="text-sm font-bold text-primary">{eyebrow}</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p>
+      <p className="text-primary text-sm font-bold">{eyebrow}</p>
+      <h1 className="text-foreground mt-2 text-3xl font-bold tracking-tight">{title}</h1>
+      <p className="text-muted-foreground mt-3 text-sm leading-6">{copy}</p>
       <div className="mt-8">{children}</div>
     </div>
   );
@@ -78,8 +78,8 @@ function VerifyEmailContent() {
     const otpValue = code.join('');
     if (otpValue.length !== 6) return;
     if (!email) {
-      toast({
-        variant: 'destructive',
+      toast.add({
+        type: 'error',
         title: 'Missing email',
         description: 'Please return to the registration page and try again.',
       });
@@ -98,16 +98,16 @@ function VerifyEmailContent() {
       const result = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: 'destructive',
+        toast.add({
+          type: 'error',
           title: 'Verification failed',
           description: result.error?.message || 'Invalid or expired verification code',
         });
         return;
       }
 
-      toast({
-        variant: 'success',
+      toast.add({
+        type: 'success',
         title: 'Email verified!',
         description: 'Your account has been successfully verified.',
       });
@@ -115,8 +115,8 @@ function VerifyEmailContent() {
       void router.push('/login');
       router.refresh();
     } catch {
-      toast({
-        variant: 'destructive',
+      toast.add({
+        type: 'error',
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
       });
@@ -127,8 +127,8 @@ function VerifyEmailContent() {
 
   const handleResend = async () => {
     if (!email) {
-      toast({
-        variant: 'destructive',
+      toast.add({
+        type: 'error',
         title: 'Missing email',
         description: 'Please return to the registration page and try again.',
       });
@@ -146,22 +146,22 @@ function VerifyEmailContent() {
       const result = await response.json();
 
       if (!response.ok) {
-        toast({
-          variant: 'destructive',
+        toast.add({
+          type: 'error',
           title: 'Resend failed',
           description: result.error?.message || 'Could not resend code',
         });
         return;
       }
 
-      toast({
-        variant: 'success',
+      toast.add({
+        type: 'success',
         title: 'Code sent',
         description: 'A new verification code has been sent to your email.',
       });
     } catch {
-      toast({
-        variant: 'destructive',
+      toast.add({
+        type: 'error',
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
       });
@@ -169,7 +169,7 @@ function VerifyEmailContent() {
   };
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-5 py-10">
+    <main className="bg-background flex min-h-screen items-center justify-center px-5 py-10">
       <AuthShell
         eyebrow="Almost there"
         title="Verify your email"
@@ -189,12 +189,12 @@ function VerifyEmailContent() {
                 onPaste={handlePaste}
                 onFocus={() => setFocusedIndex(n)}
                 autoFocus={n === 0}
-                className={`size-12 rounded-xl border bg-background text-center text-xl font-bold text-foreground outline-none transition-colors ${
+                className={`bg-background text-foreground size-12 rounded-xl border text-center text-xl font-bold transition-colors outline-none ${
                   focusedIndex === n
-                    ? 'border-primary ring-4 ring-primary/10'
+                    ? 'border-primary ring-primary/10 ring-4'
                     : code[n]
-                    ? 'border-primary'
-                    : 'border-input'
+                      ? 'border-primary'
+                      : 'border-input'
                 }`}
               />
             ))}
@@ -202,14 +202,17 @@ function VerifyEmailContent() {
           <Button
             onClick={() => void onSubmit()}
             disabled={loading || code.some((c) => !c)}
-            className="h-11 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20"
+            className="bg-primary text-primary-foreground shadow-primary/20 h-11 rounded-xl text-sm font-bold shadow-lg"
           >
             {loading ? 'Verifying...' : 'Verify email'}
             {!loading && <ArrowRight className="size-4" />}
           </Button>
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-center text-sm">
             Didn't receive a code?{' '}
-            <button onClick={() => void handleResend()} className="font-bold text-primary hover:underline">
+            <button
+              onClick={() => void handleResend()}
+              className="text-primary font-bold hover:underline"
+            >
               Resend code
             </button>
           </p>
@@ -221,15 +224,15 @@ function VerifyEmailContent() {
 
 function LoadingFallback() {
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-5 py-10">
+    <main className="bg-background flex min-h-screen items-center justify-center px-5 py-10">
       <AuthShell
         eyebrow="Almost there"
         title="Verify your email"
         copy="We sent a 6-digit verification code to your email address. Enter it below to continue."
       >
-        <div className="flex flex-col gap-6 items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+        <div className="flex flex-col items-center gap-6">
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2" />
+          <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </AuthShell>
     </main>

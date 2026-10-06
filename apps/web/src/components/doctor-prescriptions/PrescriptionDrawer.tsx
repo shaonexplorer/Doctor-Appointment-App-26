@@ -1,8 +1,9 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { X, Download, Printer, ChevronLeft } from 'lucide-react';
 import type { PrescriptionUI } from '@/hooks/useDoctorPrescriptions';
-import { usePrescriptionPDFPreview } from './PrescriptionPDFPreview';
+import { prescriptionApi } from '@/lib/api';
 
 interface PrescriptionDrawerProps {
   prescription: PrescriptionUI | null;
@@ -19,12 +20,33 @@ export function PrescriptionDrawer({
   onDownloadPDF,
   onPrint,
 }: PrescriptionDrawerProps) {
-  const { pdfPreviewUrl, isGeneratingPreview, generatePreview } =
-    usePrescriptionPDFPreview(prescription);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+
+  const generatePreview = useCallback(async () => {
+    if (!prescription) return;
+
+    setIsGeneratingPreview(true);
+    try {
+      const blob = await prescriptionApi.downloadPrescriptionPDF(prescription.id);
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } catch (error) {
+      console.error('Failed to generate PDF preview:', error);
+    } finally {
+      setIsGeneratingPreview(false);
+    }
+  }, [prescription]);
 
   // Generate preview when drawer opens
-  if (isOpen && prescription && !pdfPreviewUrl && !isGeneratingPreview) {
+  if (isOpen && prescription && !pdfUrl && !isGeneratingPreview) {
     void generatePreview();
+  }
+
+  // Cleanup on unmount
+  if (typeof window !== 'undefined' && !isOpen && pdfUrl) {
+    URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
   }
 
   if (!isOpen || !prescription) return null;
@@ -44,7 +66,7 @@ export function PrescriptionDrawer({
       />
 
       {/* Drawer */}
-      <div className="border-border bg-card animate-slide-in-right z-50 flex h-full w-full max-w-3xl flex-col shadow-xl">
+      <div className="border-border bg-card animate-slide-in-right z-50 flex h-full w-full max-w-4xl flex-col shadow-xl">
         {/* Header */}
         <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-3">
@@ -67,7 +89,7 @@ export function PrescriptionDrawer({
           <div className="flex items-center gap-2">
             <button
               onClick={onPrint}
-              disabled={!pdfPreviewUrl}
+              disabled={!pdfUrl}
               className="text-muted-foreground hover:text-primary rounded-lg p-2 transition-colors disabled:opacity-50"
               aria-label="Print prescription"
             >
@@ -93,102 +115,19 @@ export function PrescriptionDrawer({
         </div>
 
         {/* Content */}
-        <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
-          {/* Patient & Doctor Info */}
-          <div className="border-border bg-background grid gap-4 rounded-xl border p-4 sm:grid-cols-2">
-            <div>
-              <p className="text-primary text-[10px] font-bold tracking-wider uppercase">Patient</p>
-              <p className="mt-1 font-semibold">{prescription.patient}</p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Appointment: {prescription.appointmentId}
-              </p>
-            </div>
-            <div className="text-right sm:text-left">
-              <p className="text-primary text-[10px] font-bold tracking-wider uppercase">Doctor</p>
-              <p className="mt-1 font-semibold">{prescription.doctorName}</p>
-              <p className="text-muted-foreground mt-1 text-xs">{prescription.date}</p>
-            </div>
-          </div>
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left Panel - Prescription Details */}
 
-          {/* Diagnosis */}
-          <div className="border-border bg-background rounded-xl border p-4">
-            <p className="text-primary text-[10px] font-bold tracking-wider uppercase">Diagnosis</p>
-            <p className="mt-2 text-base font-semibold">{prescription.diagnosis}</p>
-          </div>
-
-          {/* Medications Table */}
-          <div className="border-border bg-background rounded-xl border p-4">
-            <p className="text-primary mb-3 text-[10px] font-bold tracking-wider uppercase">
-              Medications ({prescription.medications.length})
-            </p>
-            {prescription.medications.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-primary border-border border-b">
-                      <th className="px-2 py-2 text-left">Medicine</th>
-                      <th className="px-2 py-2 text-left">Dosage</th>
-                      <th className="px-2 py-2 text-left">Frequency</th>
-                      <th className="px-2 py-2 text-left">Duration</th>
-                      <th className="px-2 py-2 text-left">Instructions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {prescription.medications.map((med, index) => (
-                      <tr key={index} className="border-border/50 border-b last:border-0">
-                        <td className="px-2 py-2 font-semibold">{med.name}</td>
-                        <td className="px-2 py-2">{med.dosage}</td>
-                        <td className="px-2 py-2">{med.frequency}</td>
-                        <td className="px-2 py-2">{med.duration}</td>
-                        <td className="text-muted-foreground px-2 py-2">
-                          {med.instructions || '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          {/* Right Panel - PDF Viewer */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            {pdfUrl ? (
+              <iframe src={pdfUrl} className="w-full flex-1 border-0" title="Prescription PDF" />
             ) : (
-              <p className="text-muted-foreground py-4 text-center">No medications prescribed</p>
+              <div className="text-muted-foreground flex flex-1 items-center justify-center">
+                <p className="text-sm">Generating PDF preview...</p>
+              </div>
             )}
           </div>
-
-          {/* Test Recommendations */}
-          {prescription.tests && (
-            <div className="border-border bg-background rounded-xl border p-4">
-              <p className="text-primary text-[10px] font-bold tracking-wider uppercase">
-                Test Recommendations
-              </p>
-              <p className="mt-2">{prescription.tests}</p>
-            </div>
-          )}
-
-          {/* Additional Notes */}
-          {prescription.notes && (
-            <div className="border-border bg-background rounded-xl border p-4">
-              <p className="text-primary text-[10px] font-bold tracking-wider uppercase">
-                Additional Notes
-              </p>
-              <p className="mt-2">{prescription.notes}</p>
-            </div>
-          )}
-
-          {/* PDF Preview */}
-          {pdfPreviewUrl && (
-            <div className="border-border bg-background rounded-xl border p-4">
-              <p className="text-primary mb-3 text-[10px] font-bold tracking-wider uppercase">
-                PDF Preview
-              </p>
-              <div className="border-border overflow-hidden rounded-lg border bg-white">
-                <iframe
-                  src={pdfPreviewUrl}
-                  className="h-96 w-full"
-                  title="Prescription PDF Preview"
-                  style={{ border: 'none' }}
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
