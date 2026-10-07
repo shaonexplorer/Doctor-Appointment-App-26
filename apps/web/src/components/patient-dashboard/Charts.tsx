@@ -50,16 +50,19 @@ export function SpecialtyPieChart({
               ))}
             </Pie>
             <Tooltip
+              wrapperStyle={{ zIndex: 1000 }}
               formatter={(value: number, name: string) => [`${value}%`, name]}
               contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
+                backgroundColor: 'rgba(189, 200, 212, 0.65)', // Semi-transparent color (required for blur to show)
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid rgba(187, 196, 206, 0.8)',
                 borderRadius: '8px',
               }}
             />
           </PieChart>
         </ResponsiveContainer>
-        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+        <div className="pointer-events-none absolute inset-0 z-0 grid place-items-center">
           <div className="text-center">
             <p className="text-2xl font-black">
               {total ?? data.reduce((sum, d) => sum + d.value, 0)}
@@ -95,7 +98,7 @@ export interface BarChartProps {
 
 export function MonthlyExpensesBarChart({
   data,
-  barColor = 'hsl(var(--chart-1))',
+  barColor = '#4c46cd',
   className,
   height = 224,
 }: BarChartProps) {
@@ -107,24 +110,24 @@ export function MonthlyExpensesBarChart({
             dataKey="month"
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            tick={{ fontSize: 11, fill: '#489ce6' }}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            tick={{ fontSize: 11, fill: '#489ce6' }}
             tickFormatter={(value) => `$${value}`}
           />
           <Tooltip
-            cursor={{ fill: 'hsl(var(--accent))' }}
+            cursor={{ fill: '#a197d3' }}
             formatter={(value: number) => [`$${value}`, 'Expenses']}
             contentStyle={{
-              backgroundColor: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
+              backgroundColor: '#c2c8cd',
+              border: '1px solid #ccd1d7',
               borderRadius: '8px',
             }}
           />
-          <Bar dataKey="amount" fill={barColor} radius={[6, 6, 0, 0]} barSize={28} />
+          <Bar dataKey="amount" fill={barColor} radius={[6, 6, 0, 0]} barSize={45} />
         </BarChart>
       </ResponsiveContainer>
     </div>

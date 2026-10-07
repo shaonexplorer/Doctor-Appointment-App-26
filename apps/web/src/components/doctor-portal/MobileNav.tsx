@@ -1,16 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  Calendar,
-  Users,
-  FileText,
-  Pill,
-  Stethoscope,
-  Bell,
-  Settings,
-} from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, FileText, Pill } from 'lucide-react';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard },
@@ -18,9 +9,9 @@ const navigation = [
   { label: 'Patients', icon: Users },
   { label: 'Appointments', icon: FileText },
   { label: 'Prescriptions', icon: Pill },
-  { label: 'Consultation', icon: Stethoscope },
-  { label: 'Notifications', icon: Bell },
-  { label: 'Settings', icon: Settings },
+  // { label: 'Consultation', icon: Stethoscope },
+  // { label: 'Notifications', icon: Bell },
+  // { label: 'Settings', icon: Settings },
 ] as const;
 
 export interface DoctorMobileNavProps {
@@ -34,7 +25,7 @@ export function DoctorMobileNav({ active, onNavigate }: DoctorMobileNavProps) {
       className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 fixed right-0 bottom-0 left-0 z-50 border-t backdrop-blur lg:hidden"
       aria-label="Mobile navigation"
     >
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5 overflow-auto">
         {navigation.map((item) => (
           <button
             key={item.label}

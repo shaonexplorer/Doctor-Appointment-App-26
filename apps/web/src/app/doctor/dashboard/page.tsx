@@ -91,20 +91,19 @@ export default function DoctorDashboardPage() {
   // Transform appointments for components
   const transformedAppointments =
     appointmentsData?.data.map((appt) => ({
-      time: new Date(appt.slot.startTime).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      }),
-      patient: `${appt.patient.firstName} ${appt.patient.lastName}`,
+      time: appt.time,
+      patient:
+        typeof appt.patient === 'string'
+          ? appt.patient
+          : `${appt.patient.firstName} ${appt.patient.lastName}`,
       type: appt.consultationType === 'VIDEO' ? 'Video consultation' : 'Follow-up',
       status:
-        appt.status === 'SCHEDULED'
-          ? ('Confirmed' as const)
-          : appt.status === 'COMPLETED'
+        appt.status === 'Cancelled'
+          ? ('Cancelled' as const)
+          : appt.status === 'Checked in' || appt.status === 'Completed'
             ? ('Confirmed' as const)
             : ('Waiting' as const),
-      payment: appt.paymentStatus === 'PAID' ? ('Paid' as const) : ('Pending' as const),
+      payment: appt.payment === 'Paid' ? ('Paid' as const) : ('Pending' as const),
     })) || [];
 
   // Format utilization data for donut chart

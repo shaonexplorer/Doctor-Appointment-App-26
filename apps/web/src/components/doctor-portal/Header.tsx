@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronRight, CircleHelp, Bell, Menu } from 'lucide-react';
+import { ChevronDown, ChevronRight, CircleHelp, Bell, Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { GlobalSearch } from '@/components/global-search';
+import { useDoctorProfile } from '@/hooks/useDoctorDashboard';
+import { useAuth } from '@/context/AuthContext';
 
 export interface HeaderProps {
   active: string;
@@ -23,6 +25,12 @@ export interface HeaderProps {
 
 export function DoctorHeader({ active, onNavigate, onMobileMenuOpen, className }: HeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
+  const { data: profile } = useDoctorProfile();
+  const { logout } = useAuth();
+
+  const doctorInitials = profile
+    ? `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase()
+    : 'DS';
 
   return (
     <header
@@ -42,13 +50,13 @@ export function DoctorHeader({ active, onNavigate, onMobileMenuOpen, className }
           <Menu className="size-5" aria-hidden="true" />
         </Button>
         <div className="text-muted-foreground hidden items-center gap-2 text-xs sm:flex">
-          <span>Patient portal</span>
+          <span>Doctor portal</span>
           <ChevronRight className="size-3" aria-hidden="true" />
           <span className="text-foreground font-semibold">{active}</span>
         </div>
       </div>
       <div className="flex items-center gap-2 sm:gap-4">
-        <GlobalSearch role="patient" onNavigate={onNavigate} />
+        <GlobalSearch role="doctor" onNavigate={onNavigate} />
         <Button
           variant="ghost"
           size="icon"
@@ -70,7 +78,7 @@ export function DoctorHeader({ active, onNavigate, onMobileMenuOpen, className }
             >
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="text-primary bg-[#d9e8ff] text-xs font-bold">
-                  SJ
+                  {doctorInitials}
                 </AvatarFallback>
               </Avatar>
               <ChevronDown
@@ -98,7 +106,16 @@ export function DoctorHeader({ active, onNavigate, onMobileMenuOpen, className }
             >
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem className="hover:bg-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold">
+            <DropdownMenuItem
+              className="hover:bg-secondary text-destructive focus:text-destructive flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold"
+              onClick={() => {
+                void logout().then(() => {
+                  window.location.href = '/login';
+                });
+                setProfileOpen(false);
+              }}
+            >
+              <LogOut className="size-4" />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

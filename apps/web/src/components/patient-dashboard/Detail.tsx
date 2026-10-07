@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 export interface DetailProps {
   icon: ReactNode;
@@ -12,10 +12,10 @@ export interface DetailProps {
 
 export function Detail({ icon, label, value, className }: DetailProps) {
   return (
-    <div className={cn("flex items-center gap-2 rounded-xl bg-secondary p-3", className)}>
-      <div className="size-4 text-primary">{icon}</div>
+    <div className={cn('bg-secondary flex items-center gap-4 rounded-xl p-3', className)}>
+      <div className="text-primary size-4">{icon}</div>
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        <p className="text-muted-foreground text-[10px] font-bold tracking-wide uppercase">
           {label}
         </p>
         <p className="mt-1 text-xs font-bold">{value}</p>

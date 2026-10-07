@@ -41,7 +41,7 @@ export function ScheduleTimeline({ appointments }: ScheduleTimelineProps) {
       <p className="text-muted-foreground mt-1 text-xs">A visual timeline of your clinic day</p>
       <div className="mt-5 space-y-1">
         {appointments.map((item, index) => (
-          <div key={item.time} className="flex gap-3">
+          <div key={index} className="flex gap-3">
             <div className="text-muted-foreground w-16 pt-3 text-right text-[10px] font-bold">
               {item.time}
             </div>

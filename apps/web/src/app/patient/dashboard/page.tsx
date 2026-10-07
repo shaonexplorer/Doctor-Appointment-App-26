@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { UserType } from '@doctor-appointment-app/shared';
 import { PatientPortalShell } from '@/components/patient-portal';
@@ -93,6 +94,7 @@ const quickActions = [
 ];
 
 export default function PatientDashboardPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
 
@@ -102,7 +104,25 @@ export default function PatientDashboardPage() {
     window.setTimeout(() => setLoading(false), 650);
   };
 
-  const action = (label: string) => setNotice(`${label} is ready to open.`);
+  const action = (label: string) => {
+    switch (label) {
+      case 'Find a doctor':
+        router.push('/doctors/search');
+        break;
+      case 'Book appointment':
+        router.push('/doctors/search');
+        break;
+      case 'View prescriptions':
+        router.push('/patient/records');
+        break;
+      case 'Medical records':
+        router.push('/patient/records');
+        break;
+      default:
+        setNotice(`${label} is ready to open.`);
+        break;
+    }
+  };
 
   if (loading) {
     return (

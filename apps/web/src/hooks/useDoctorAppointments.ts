@@ -273,11 +273,6 @@ export function getAppointmentTab(
 export function getAppointmentTabByDate(
   appointment: DoctorAppointmentUI
 ): 'Today' | 'Upcoming' | 'Completed' | 'Cancelled' | 'No-show' {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-  const appointmentDate = new Date(appointment.startTime);
-
   if (appointment.status === 'Completed') {
     return 'Completed';
   }
@@ -287,15 +282,18 @@ export function getAppointmentTabByDate(
   if (appointment.status === 'No-show') {
     return 'No-show';
   }
-  // Check if appointment is today
-  if (appointmentDate >= todayStart && appointmentDate < todayEnd) {
+
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0]; // "YYYY-MM-DD"
+  const aptDateObj = new Date(appointment.startTime);
+  const aptDateStr = aptDateObj.toISOString().split('T')[0];
+
+  if (aptDateStr === todayStr) {
     return 'Today';
   }
-  // Check if appointment is in the past (backdated) - should be treated as Completed
-  if (appointmentDate < todayStart) {
+  if (aptDateStr < todayStr) {
     return 'Completed';
   }
-  // Future appointment
   return 'Upcoming';
 }
 

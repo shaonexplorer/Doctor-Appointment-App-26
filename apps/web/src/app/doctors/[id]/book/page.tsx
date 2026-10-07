@@ -313,7 +313,7 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
             onClick={() => router.back()}
             className="bg-primary text-primary-foreground mt-6 rounded-xl px-6 py-3 text-sm font-bold"
           >
-            <ArrowLeft className="mr-2 size-4" /> Back to doctors
+            Back to doctors
           </button>
         </div>
       </div>

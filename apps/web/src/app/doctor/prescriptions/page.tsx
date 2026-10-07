@@ -204,7 +204,6 @@ export default function DoctorPrescriptionsPage() {
           prescription={selectedPrescription}
           isOpen={isDrawerOpen}
           onClose={handleCloseDrawer}
-          onDownloadPDF={handleDownloadPDF}
         />
       </DoctorPortalShell>
     </ProtectedRoute>

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Brand } from '@/components/patient-portal/Brand';
+import { useDoctorProfile } from '@/hooks/useDoctorDashboard';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/doctor/dashboard' },
@@ -49,6 +50,13 @@ export function DoctorSidebar({
   className,
 }: DoctorSidebarProps) {
   const pathname = usePathname();
+  const { data: profile } = useDoctorProfile();
+
+  const doctorName = profile ? `Dr. ${profile.firstName} ${profile.lastName}` : 'Dr. Michael Smith';
+  const doctorSpecialty = profile?.specialty || 'Cardiology';
+  const doctorInitials = profile
+    ? `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase()
+    : 'DS';
 
   const navItem = (item: (typeof navigation)[number]) => {
     const Icon = item.icon;
@@ -132,12 +140,12 @@ export function DoctorSidebar({
       >
         <div className="flex items-center gap-3">
           <div className="text-primary grid size-9 shrink-0 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold">
-            DS
+            {doctorInitials}
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-xs font-bold">Dr. Michael Smith</p>
-              <p className="text-muted-foreground truncate text-[11px]">Cardiology</p>
+              <p className="truncate text-xs font-bold">{doctorName}</p>
+              <p className="text-muted-foreground truncate text-[11px]">{doctorSpecialty}</p>
             </div>
           )}
         </div>

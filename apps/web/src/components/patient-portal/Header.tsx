@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { GlobalSearch } from '@/components/global-search';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export interface HeaderProps {
   active: string;
@@ -23,6 +25,12 @@ export interface HeaderProps {
 
 export function Header({ active, onNavigate, onMobileMenuOpen, className }: HeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const initials = user
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase()
+    : 'P';
 
   return (
     <header
@@ -70,7 +78,7 @@ export function Header({ active, onNavigate, onMobileMenuOpen, className }: Head
             >
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="text-primary bg-[#d9e8ff] text-xs font-bold">
-                  SJ
+                  {initials}
                 </AvatarFallback>
               </Avatar>
               <ChevronDown
@@ -98,7 +106,17 @@ export function Header({ active, onNavigate, onMobileMenuOpen, className }: Head
             >
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem className="hover:bg-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold">
+            <DropdownMenuItem
+              className="hover:bg-secondary text-destructive focus:text-destructive flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold"
+              onClick={async () => {
+                try {
+                  await logout();
+                  router.push('/login');
+                } catch (error) {
+                  console.error('Failed to logout:', error);
+                }
+              }}
+            >
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

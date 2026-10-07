@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Brand } from './Brand';
+import { useAuth } from '@/context/AuthContext';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/patient/dashboard' },
@@ -49,6 +50,12 @@ export function Sidebar({
   className,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Patient';
+  const initials = user
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase()
+    : 'P';
 
   const navItem = (item: (typeof navigation)[number]) => {
     const Icon = item.icon;
@@ -132,11 +139,11 @@ export function Sidebar({
       >
         <div className="flex items-center gap-3">
           <div className="text-primary grid size-9 shrink-0 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold">
-            SJ
+            {initials}
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-xs font-bold">Sarah Johnson</p>
+              <p className="truncate text-xs font-bold">{fullName || 'Patient'}</p>
               <p className="text-muted-foreground truncate text-[11px]">Patient account</p>
             </div>
           )}

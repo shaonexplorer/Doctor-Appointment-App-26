@@ -789,7 +789,16 @@ export class AppointmentService {
             orderBy: { createdAt: 'desc' },
           },
         },
-        orderBy: sortBy ? { [sortBy]: sortOrder || 'asc' } : { createdAt: 'desc' },
+        orderBy:
+          sortBy === 'slot.startTime'
+            ? { slot: { startTime: sortOrder || 'asc' } }
+            : sortBy === 'slot.endTime'
+              ? { slot: { endTime: sortOrder || 'asc' } }
+              : sortBy === 'slot.status'
+                ? { slot: { status: sortOrder || 'asc' } }
+                : sortBy
+                  ? { [sortBy]: sortOrder || 'asc' }
+                  : { createdAt: 'desc' },
       }),
       this.prisma.appointment.count({ where }),
     ]);

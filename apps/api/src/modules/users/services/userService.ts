@@ -57,7 +57,7 @@ export class UserService {
       throw new AppError('NOT_FOUND', 'User not found', 404);
     }
 
-    const { passwordHash: _passwordHash, ...userWithoutPassword } = user;
+    const { passwordHash: _passwordHash, ..._userWithoutPassword } = user;
     void _passwordHash;
     return userWithoutPassword as UserProfile;
   }
@@ -115,7 +115,7 @@ export class UserService {
       throw new AppError('NOT_FOUND', 'User not found', 404);
     }
 
-    const { passwordHash: _passwordHash, ...userWithoutPassword } = user;
+    const { passwordHash: _passwordHash, ..._userWithoutPassword } = user;
     void _passwordHash;
     return userWithoutPassword as UserProfile;
   }
@@ -273,12 +273,33 @@ export class UserService {
       return sum + Number(fee);
     }, 0);
 
+    // Return user info + doctor profile + stats
+    const { passwordHash: _passwordHash, ..._userWithoutPassword } = user;
+    void _passwordHash;
+
     return {
-      ...doctorProfile,
+      // User basic info
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      userType: user.userType,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      // Doctor profile fields
+      specialty: doctorProfile.specialty,
+      designation: doctorProfile.designation,
+      licenseNo: doctorProfile.licenseNo,
+      bio: doctorProfile.bio,
       fee:
         typeof doctorProfile.fee === 'object' && doctorProfile.fee !== null
           ? Number(doctorProfile.fee)
           : Number(doctorProfile.fee),
+      isVerified: doctorProfile.isVerified,
+      schedules: doctorProfile.schedules,
+      // Stats
       stats: {
         totalAppointments,
         todayAppointments,
