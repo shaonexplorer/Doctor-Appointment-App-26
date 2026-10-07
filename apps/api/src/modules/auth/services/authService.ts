@@ -6,6 +6,7 @@
 import { auth, prisma } from '../../../index';
 import type { UserRepository } from '../../../repositories';
 import { UserType } from '@doctor-appointment-app/shared';
+import type { Gender } from '@doctor-appointment-app/shared';
 import { AppError } from '../../../shared/middleware/errorHandler';
 import type {
   RegisterInput,
@@ -14,9 +15,6 @@ import type {
   ResetPasswordInput,
   VerifyEmailInput,
   AuthResult,
-  BetterAuthSignUpResult,
-  BetterAuthSignInResult,
-  BetterAuthSessionResult,
 } from '../types';
 
 export class AuthService {
@@ -62,7 +60,14 @@ export class AuthService {
     // BetterAuth signUpEmail returns { user, session: null, token: null } initially
     // The session is created separately, we need to fetch it from DB by userId
     const signUpResult = result as {
-      user: { id: string; email: string; emailVerified: boolean; firstName: string; lastName: string; userType: string };
+      user: {
+        id: string;
+        email: string;
+        emailVerified: boolean;
+        firstName: string;
+        lastName: string;
+        userType: string;
+      };
       token: string | null;
     };
 
@@ -83,7 +88,7 @@ export class AuthService {
         data: {
           userId: signUpResult.user.id,
           dob: dob ? new Date(dob) : null,
-          gender: (gender as import('@doctor-appointment-app/shared').Gender) || null,
+          gender: (gender as Gender) || null,
           address,
           emergencyContact,
         },
@@ -137,11 +142,22 @@ export class AuthService {
       // Handle BetterAuth errors for unverified email
       if (error instanceof Error) {
         // Check for email not verified error
-        if (error.message.includes('Email not verified') || error.message.includes('email_verified')) {
-          throw new AppError('EMAIL_NOT_VERIFIED', 'Please verify your email before logging in', 400);
+        if (
+          error.message.includes('Email not verified') ||
+          error.message.includes('email_verified')
+        ) {
+          throw new AppError(
+            'EMAIL_NOT_VERIFIED',
+            'Please verify your email before logging in',
+            400
+          );
         }
         // Check for invalid credentials
-        if (error.message.includes('Invalid') || error.message.includes('incorrect') || error.message.includes('wrong')) {
+        if (
+          error.message.includes('Invalid') ||
+          error.message.includes('incorrect') ||
+          error.message.includes('wrong')
+        ) {
           throw new AppError('INVALID_CREDENTIALS', 'Invalid email or password', 401);
         }
       }
@@ -288,7 +304,6 @@ export class AuthService {
     try {
       const rawData = data as Record<string, unknown>;
       let email: string | null = null;
-      let verificationMethod = 'unknown';
 
       // Check for discriminated union format with 'method' field
       if ('method' in rawData) {
@@ -296,7 +311,6 @@ export class AuthService {
         if (method === 'token' && 'token' in rawData && typeof rawData.token === 'string') {
           // Legacy token-based verification
           console.log('Using legacy token verification');
-          verificationMethod = 'token';
           await (auth.api as any).verifyEmail({
             body: { token: rawData.token },
           });
@@ -304,7 +318,6 @@ export class AuthService {
         } else if (method === 'otp' && 'email' in rawData && 'otp' in rawData) {
           // New OTP-based verification - use email-otp plugin endpoint
           email = rawData.email as string;
-          verificationMethod = 'otp';
           console.log('Using OTP verification for email:', email);
           try {
             // Try email-otp plugin method first
@@ -314,7 +327,10 @@ export class AuthService {
             });
             console.log('emailOtp.verifyEmail succeeded');
           } catch (emailOtpError) {
-            console.log('emailOtp.verifyEmail failed, trying auth.api.verifyEmail with OTP...', emailOtpError);
+            console.log(
+              'emailOtp.verifyEmail failed, trying auth.api.verifyEmail with OTP...',
+              emailOtpError
+            );
             // Fallback: try the standard verifyEmail with OTP (when overrideDefaultEmailVerification=true)
             await (auth.api as any).verifyEmail({
               body: { email: rawData.email, otp: rawData.otp },
@@ -327,9 +343,13 @@ export class AuthService {
           await (auth.api as any).verifyEmail({
             body: { token: rawData.token },
           });
-        } else if ('email' in rawData && 'otp' in rawData && typeof rawData.email === 'string' && typeof rawData.otp === 'string') {
+        } else if (
+          'email' in rawData &&
+          'otp' in rawData &&
+          typeof rawData.email === 'string' &&
+          typeof rawData.otp === 'string'
+        ) {
           email = rawData.email as string;
-          verificationMethod = 'otp';
           console.log('Using OTP verification (no method field) for email:', email);
           try {
             await (auth.api as any).emailOtp?.verifyEmail?.({

@@ -143,6 +143,68 @@ export interface DoctorProfile {
     createdAt: string;
     updatedAt: string;
   }>;
+  stats?: {
+    totalAppointments: number;
+    todayAppointments: number;
+    weeklyAppointments: number;
+    slotUtilization: number;
+    totalRevenue: number;
+    totalPatients: number;
+  };
+}
+
+// Schedule/Slot types
+export interface ScheduleSlot {
+  id: string;
+  doctorId: string;
+  startTime: string;
+  endTime: string;
+  status: 'AVAILABLE' | 'BOOKED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+  doctor?: {
+    id: string;
+    specialty: string;
+    designation: string | null;
+    fee: number | null;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+  };
+}
+
+export interface BulkSlotCreateInput {
+  doctorId: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  slotDuration: number; // minutes
+  daysOfWeek: number[]; // 0 = Sunday, 6 = Saturday
+}
+
+export interface BulkSlotCreateResult {
+  created: number;
+  total: number;
+}
+
+export interface BulkSlotUpdateInput {
+  slotIds: string[];
+  status?: 'AVAILABLE' | 'BOOKED' | 'CANCELLED';
+  startTime?: string; // ISO datetime
+  endTime?: string; // ISO datetime
+}
+
+export interface BulkSlotUpdateResult {
+  updated: number;
+  total: number;
+}
+
+export interface WeeklyScheduleParams {
+  weekStart: string; // ISO date string
 }
 
 // Doctor API functions
@@ -207,6 +269,66 @@ export const doctorApi = {
   },
 };
 
+// Schedule API functions
+export const scheduleApi = {
+  /**
+   * Get weekly schedule for authenticated doctor
+   * GET /api/schedules/doctor?weekStart=
+   */
+  getWeeklySchedule: async (weekStart: string): Promise<ScheduleSlot[]> => {
+    return apiRequest<ScheduleSlot[]>(
+      `/api/schedules/doctor?weekStart=${encodeURIComponent(weekStart)}`
+    );
+  },
+
+  /**
+   * Get doctor slots for booking
+   * GET /api/schedules/doctor/:doctorId?startDate=&endDate=
+   */
+  getDoctorSlots: async (
+    doctorId: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<ScheduleSlot[]> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate.toISOString());
+    if (endDate) params.append('endDate', endDate.toISOString());
+    return apiRequest<ScheduleSlot[]>(`/api/schedules/doctor/${doctorId}?${params.toString()}`);
+  },
+
+  /**
+   * Create bulk slots (Doctor only)
+   * POST /api/schedules/doctor/bulk
+   */
+  createBulkSlots: async (data: BulkSlotCreateInput): Promise<BulkSlotCreateResult> => {
+    return apiRequest<BulkSlotCreateResult>('/api/schedules/doctor/bulk', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Bulk update slots (Doctor only)
+   * PATCH /api/schedules/doctor/bulk
+   */
+  bulkUpdateSlots: async (data: BulkSlotUpdateInput): Promise<BulkSlotUpdateResult> => {
+    return apiRequest<BulkSlotUpdateResult>('/api/schedules/doctor/bulk', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete a single slot (Doctor only)
+   * DELETE /api/schedules/:id
+   */
+  deleteSlot: async (slotId: string): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>(`/api/schedules/${slotId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // User Profile API types
 export interface UserProfile {
   id: string;
@@ -218,15 +340,21 @@ export interface UserProfile {
   emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
-  doctorProfile?: {
-    id: string;
-    specialty: string;
-    designation: string;
-    licenseNo: string;
-    bio: string | null;
-    fee: number;
-    isVerified: boolean;
-  } | null;
+  // Doctor profile fields (returned directly from /api/users/me/doctor-profile)
+  specialty?: string;
+  designation?: string;
+  licenseNo?: string;
+  bio?: string | null;
+  fee?: number;
+  isVerified?: boolean;
+  stats?: {
+    totalAppointments: number;
+    todayAppointments: number;
+    weeklyAppointments: number;
+    slotUtilization: number;
+    totalRevenue: number;
+    totalPatients: number;
+  };
   patientProfile?: {
     id: string;
     dob: string | null;
@@ -269,6 +397,25 @@ export const userApi = {
    */
   updateProfile: async (data: UpdateProfileInput): Promise<UserProfile> => {
     return apiRequest<UserProfile>('/api/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Get current user's doctor profile with stats (Doctor only)
+   * GET /api/users/me/doctor-profile
+   */
+  getDoctorProfile: async (): Promise<UserProfile> => {
+    return apiRequest<UserProfile>('/api/users/me/doctor-profile');
+  },
+
+  /**
+   * Update current user's doctor profile (Doctor only)
+   * PATCH /api/users/me/doctor-profile
+   */
+  updateDoctorProfile: async (data: UpdateProfileInput): Promise<UserProfile> => {
+    return apiRequest<UserProfile>('/api/users/me/doctor-profile', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -409,6 +556,74 @@ export interface MedicalTimelineResponse {
   };
 }
 
+// Doctor Appointment Filters (for Doctor Portal)
+export interface DoctorAppointmentFilters {
+  status?: string | string[];
+  patientSearch?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  dateRange?: 'today' | 'week' | 'month' | 'custom';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface DoctorAppointmentResponse {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  slotId: string;
+  status: string;
+  symptoms: string | null;
+  notes: string | null;
+  paymentStatus: string;
+  consultationType: string;
+  createdAt: string;
+  updatedAt: string;
+  patient: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+  };
+  doctor: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+  };
+  slot: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+  };
+  doctorProfile?: {
+    specialty: string;
+    clinic?: string;
+    designation: string;
+    fee: number;
+  } | null;
+  prescriptions?: Array<{
+    id: string;
+    diagnosis: string;
+    createdAt: string;
+  }>;
+}
+
+export interface PaginatedDoctorAppointmentsResponse {
+  data: DoctorAppointmentResponse[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 // Appointment API functions
 export const appointmentApi = {
   /**
@@ -508,6 +723,393 @@ export const appointmentApi = {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  },
+
+  // ==================== DOCTOR PORTAL ENDPOINTS ====================
+
+  /**
+   * Get doctor appointments with filters (Doctor Portal)
+   * GET /api/appointments/doctor
+   */
+  getDoctorAppointments: async (
+    filters: DoctorAppointmentFilters = {}
+  ): Promise<PaginatedDoctorAppointmentsResponse> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        if (Array.isArray(value)) {
+          value.forEach((v) => params.append(key, String(v)));
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+    return apiRequest<PaginatedDoctorAppointmentsResponse>(
+      `/api/appointments/doctor?${params.toString()}`
+    );
+  },
+
+  /**
+   * Get single doctor appointment detail (Doctor Portal)
+   * GET /api/appointments/doctor/:id
+   */
+  getDoctorAppointmentDetail: async (id: string): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}`);
+  },
+
+  /**
+   * Cancel appointment as doctor (with refund option)
+   * PATCH /api/appointments/doctor/:id/cancel
+   */
+  cancelAppointmentAsDoctor: async (
+    id: string,
+    data: { reason: string; triggerRefund: boolean }
+  ): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}/cancel`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Reschedule appointment as doctor
+   * PATCH /api/appointments/doctor/:id/reschedule
+   */
+  rescheduleAppointmentAsDoctor: async (
+    id: string,
+    data: { newSlotId: string }
+  ): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}/reschedule`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Check in patient (doctor/staff)
+   * PATCH /api/appointments/doctor/:id/check-in
+   */
+  checkInPatient: async (id: string, notes?: string): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}/check-in`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes }),
+    });
+  },
+
+  /**
+   * Complete appointment as doctor
+   * PATCH /api/appointments/doctor/:id/complete
+   */
+  completeAppointmentAsDoctor: async (
+    id: string,
+    data: { notes?: string | null; diagnosis?: string | null }
+  ): Promise<DoctorAppointmentResponse> => {
+    return apiRequest<DoctorAppointmentResponse>(`/api/appointments/doctor/${id}/complete`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Get doctor volume analytics
+   * GET /api/appointments/stats/doctor/volume
+   */
+  getDoctorVolumeStats: async (
+    days: number = 7
+  ): Promise<Array<{ date: string; count: number; label: string }>> => {
+    return apiRequest<Array<{ date: string; count: number; label: string }>>(
+      `/api/appointments/stats/doctor/volume?days=${days}`
+    );
+  },
+
+  /**
+   * Get doctor slot utilization analytics
+   * GET /api/appointments/stats/doctor/utilization
+   */
+  getDoctorUtilizationStats: async (): Promise<{
+    booked: number;
+    available: number;
+    cancelled: number;
+    noShow: number;
+    total: number;
+  }> => {
+    return apiRequest<{
+      booked: number;
+      available: number;
+      cancelled: number;
+      noShow: number;
+      total: number;
+    }>('/api/appointments/stats/doctor/utilization');
+  },
+
+  /**
+   * Get doctor revenue analytics
+   * GET /api/appointments/stats/doctor/revenue
+   */
+  getDoctorRevenueStats: async (): Promise<Array<{ type: string; amount: number }>> => {
+    return apiRequest<Array<{ type: string; amount: number }>>(
+      '/api/appointments/stats/doctor/revenue'
+    );
+  },
+};
+
+// Patient API types (Doctor Portal)
+export interface DoctorPatientListItem {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  dob: string | null;
+  gender: string | null;
+  address: string | null;
+  emergencyContact: string | null;
+  lastVisit: string | null;
+  nextAppointment: string | null;
+  totalAppointments: number;
+  completedAppointments: number;
+  conditions: string[];
+  avatarUrl: string | null;
+}
+
+export interface DoctorPatientListResponse {
+  data: DoctorPatientListItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface DoctorPatientFilters {
+  search?: string;
+  condition?: string;
+  status?: 'all' | 'active' | 'inactive';
+  sortBy?: 'lastVisit' | 'nextAppointment' | 'name' | 'totalAppointments';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface DoctorPatientDetail extends DoctorPatientListItem {
+  appointments: Array<{
+    id: string;
+    date: string;
+    status: string;
+    specialty: string;
+    diagnosis: string | null;
+    prescriptionCount: number;
+  }>;
+  prescriptions: Array<{
+    id: string;
+    date: string;
+    diagnosis: string;
+    medications: string | object;
+  }>;
+}
+
+// Patient API functions
+export const patientApi = {
+  /**
+   * Get doctor's patient list (Doctor Portal)
+   * GET /api/patients/doctor
+   */
+  getDoctorPatientList: async (
+    filters: DoctorPatientFilters
+  ): Promise<DoctorPatientListResponse> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    return apiRequest<DoctorPatientListResponse>(`/api/patients/doctor?${params.toString()}`);
+  },
+
+  /**
+   * Get doctor's patient detail (for Patient Drawer)
+   * GET /api/patients/doctor/:id
+   */
+  getDoctorPatientDetail: async (patientId: string): Promise<DoctorPatientDetail> => {
+    return apiRequest<DoctorPatientDetail>(`/api/patients/doctor/${patientId}`);
+  },
+};
+
+// Prescription API types
+export interface MedicationInput {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions?: string | null;
+}
+
+export interface PrescriptionCreateInput {
+  appointmentId: string;
+  diagnosis: string;
+  medications: MedicationInput[];
+  tests?: string | null;
+  notes?: string | null;
+}
+
+export interface PrescriptionUpdateInput {
+  diagnosis?: string;
+  medications?: MedicationInput[];
+  tests?: string | null;
+  notes?: string | null;
+  pdfUrl?: string | null;
+}
+
+export interface PrescriptionResponse {
+  id: string;
+  appointmentId: string;
+  doctorId: string;
+  patientId: string;
+  diagnosis: string;
+  medications: MedicationInput[];
+  tests: string | null;
+  notes: string | null;
+  pdfUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  appointment?: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    patient: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+    doctor: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+  };
+}
+
+export interface PaginatedPrescriptionsResponse {
+  data: PrescriptionResponse[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface DoctorPrescriptionFilters {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+// Prescription API functions
+export const prescriptionApi = {
+  /**
+   * Create a new prescription (Doctor only)
+   * POST /api/prescriptions
+   */
+  createPrescription: async (input: PrescriptionCreateInput): Promise<PrescriptionResponse> => {
+    return apiRequest<PrescriptionResponse>('/api/prescriptions', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  /**
+   * Get prescription by ID
+   * GET /api/prescriptions/:id
+   */
+  getPrescription: async (id: string): Promise<PrescriptionResponse> => {
+    return apiRequest<PrescriptionResponse>(`/api/prescriptions/${id}`);
+  },
+
+  /**
+   * Update prescription (Doctor only)
+   * PATCH /api/prescriptions/:id
+   */
+  updatePrescription: async (
+    id: string,
+    input: PrescriptionUpdateInput
+  ): Promise<PrescriptionResponse> => {
+    return apiRequest<PrescriptionResponse>(`/api/prescriptions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  },
+
+  /**
+   * Delete prescription (Doctor only)
+   * DELETE /api/prescriptions/:id
+   */
+  deletePrescription: async (id: string): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>(`/api/prescriptions/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * List prescriptions with filters
+   * GET /api/prescriptions
+   */
+  listPrescriptions: async (
+    filters: DoctorPrescriptionFilters = {}
+  ): Promise<PaginatedPrescriptionsResponse> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    return apiRequest<PaginatedPrescriptionsResponse>(`/api/prescriptions?${params.toString()}`);
+  },
+
+  /**
+   * Get recent prescriptions for doctor
+   * GET /api/prescriptions/recent/doctor
+   */
+  getRecentByDoctor: async (limit = 5): Promise<PrescriptionResponse[]> => {
+    return apiRequest<PrescriptionResponse[]>(`/api/prescriptions/recent/doctor?limit=${limit}`);
+  },
+
+  /**
+   * Get recent prescriptions for patient
+   * GET /api/prescriptions/recent/patient
+   */
+  getRecentByPatient: async (limit = 5): Promise<PrescriptionResponse[]> => {
+    return apiRequest<PrescriptionResponse[]>(`/api/prescriptions/recent/patient?limit=${limit}`);
+  },
+
+  /**
+   * Get prescriptions by appointment
+   * GET /api/prescriptions/appointment/:appointmentId
+   */
+  getPrescriptionsByAppointment: async (appointmentId: string): Promise<PrescriptionResponse[]> => {
+    return apiRequest<PrescriptionResponse[]>(`/api/prescriptions/appointment/${appointmentId}`);
+  },
+
+  /**
+   * Download prescription PDF
+   * GET /api/prescriptions/:id/pdf
+   */
+  downloadPrescriptionPDF: async (id: string): Promise<Blob> => {
+    const url = `${API_BASE_URL}/api/prescriptions/${id}/pdf`;
+    const response = await fetch(url, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to download PDF' }));
+      throw new ApiError(
+        error.error?.message || 'Failed to download PDF',
+        error.error?.code || 'DOWNLOAD_ERROR',
+        response.status
+      );
+    }
+    return response.blob();
   },
 };
 

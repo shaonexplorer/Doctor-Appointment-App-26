@@ -21,9 +21,13 @@ export interface ScheduleSlot {
   doctor?: {
     id: string;
     specialty: string;
+    designation: string | null;
+    fee: number | null;
     user: {
+      id: string;
       firstName: string;
       lastName: string;
+      email: string;
     };
   };
 }
@@ -31,6 +35,22 @@ export interface ScheduleSlot {
 export interface BulkSlotResult {
   created: number;
   total: number;
+}
+
+export interface BulkSlotUpdateInput {
+  slotIds: string[];
+  status?: SlotStatus;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface BulkSlotUpdateResult {
+  updated: number;
+  total: number;
+}
+
+export interface WeeklyScheduleParams {
+  weekStart: string;
 }
 
 export type { SlotCreateInput, BulkSlotCreateInput, SlotUpdateInput };

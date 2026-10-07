@@ -12,7 +12,11 @@ import {
   auditUserProfileUpdate,
   auditUserProfileDelete,
 } from '../../../shared/middleware';
-import { validateUpdateProfile, validatePagination } from '../validators';
+import {
+  validateUpdateProfile,
+  validatePagination,
+  validateDoctorProfileUpdate,
+} from '../validators';
 
 export function createUserRoutes(userController: UserController): Router {
   const router = Router();
@@ -27,6 +31,22 @@ export function createUserRoutes(userController: UserController): Router {
     auditUserProfileUpdate,
     validateUpdateProfile,
     asyncHandler(userController.updateProfile)
+  );
+
+  // Doctor profile with stats (Doctor only)
+  const doctorMiddleware = userController.getRequireDoctorMiddleware();
+  router.get(
+    '/me/doctor-profile',
+    doctorMiddleware,
+    auditUserProfileAccess,
+    asyncHandler(userController.getDoctorProfile)
+  );
+  router.patch(
+    '/me/doctor-profile',
+    doctorMiddleware,
+    auditUserProfileUpdate,
+    validateDoctorProfileUpdate,
+    asyncHandler(userController.updateDoctorProfile)
   );
 
   // Admin/Staff only routes

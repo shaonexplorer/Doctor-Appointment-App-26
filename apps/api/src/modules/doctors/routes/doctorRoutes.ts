@@ -37,6 +37,12 @@ export function createDoctorRoutes(doctorController: DoctorController): Router {
     auditDoctorProfileAccess,
     asyncHandler(doctorController.getMyProfile)
   );
+  router.get(
+    '/profile/me/stats',
+    doctorMiddleware,
+    auditDoctorProfileAccess,
+    asyncHandler(doctorController.getMyProfileWithStats)
+  );
   router.patch(
     '/profile/me',
     doctorMiddleware,

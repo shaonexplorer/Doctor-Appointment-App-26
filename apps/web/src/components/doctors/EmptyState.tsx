@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { Search, Stethoscope, CalendarDays, Filter, X, Plus } from "lucide-react";
+import { cn } from '@/lib/utils';
+import { Search, Stethoscope, CalendarDays, X } from 'lucide-react';
 
 export interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -10,13 +10,13 @@ export interface EmptyStateProps {
   action?: {
     label: string;
     onClick: () => void;
-    variant?: "primary" | "secondary" | "outline";
+    variant?: 'primary' | 'secondary' | 'outline';
   };
   secondaryAction?: {
     label: string;
     onClick: () => void;
   };
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
   showSearch?: boolean;
   onSearch?: (value: string) => void;
@@ -29,54 +29,52 @@ export function EmptyState({
   description,
   action,
   secondaryAction,
-  size = "md",
+  size = 'md',
   className,
   showSearch = false,
   onSearch,
-  searchPlaceholder = "Search...",
+  searchPlaceholder = 'Search...',
 }: EmptyStateProps) {
   const sizeStyles = {
-    sm: "p-6",
-    md: "p-10",
-    lg: "p-12",
+    sm: 'p-6',
+    md: 'p-10',
+    lg: 'p-12',
   };
 
   const iconSizes = {
-    sm: "size-10",
-    md: "size-14",
-    lg: "size-16",
+    sm: 'size-10',
+    md: 'size-14',
+    lg: 'size-16',
   };
 
   const titleSizes = {
-    sm: "text-lg",
-    md: "text-xl",
-    lg: "text-2xl",
+    sm: 'text-lg',
+    md: 'text-xl',
+    lg: 'text-2xl',
   };
 
   const descSizes = {
-    sm: "text-sm",
-    md: "text-base",
-    lg: "text-lg",
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg',
   };
 
   const DefaultIcon = ({ className }: { className?: string }) => (
-    <Search className={cn("text-muted-foreground/50", className)} />
+    <Search className={cn('text-muted-foreground/50', className)} />
   );
 
   return (
     <div
       className={cn(
-        "rounded-2xl border border-dashed border-border bg-card text-center",
+        'border-border bg-card rounded-2xl border border-dashed text-center',
         sizeStyles[size],
         className
       )}
     >
-      <div className={cn("mx-auto", iconSizes[size])}>
-        {icon || <DefaultIcon />}
-      </div>
-      <h3 className={cn("mt-4 font-bold", titleSizes[size])}>{title}</h3>
+      <div className={cn('mx-auto', iconSizes[size])}>{icon || <DefaultIcon />}</div>
+      <h3 className={cn('mt-4 font-bold', titleSizes[size])}>{title}</h3>
       {description && (
-        <p className={cn("mx-auto mt-2 max-w-sm", descSizes[size], "text-muted-foreground")}>
+        <p className={cn('mx-auto mt-2 max-w-sm', descSizes[size], 'text-muted-foreground')}>
           {description}
         </p>
       )}
@@ -86,22 +84,31 @@ export function EmptyState({
             <button
               onClick={action.onClick}
               className={cn(
-                "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors",
-                action.variant === "primary" && "bg-primary text-primary-foreground hover:opacity-90",
-                action.variant === "secondary" && "border border-border bg-background hover:bg-secondary",
-                action.variant === "outline" && "border border-border bg-transparent hover:bg-secondary"
+                'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors',
+                action.variant === 'primary' &&
+                  'bg-primary text-primary-foreground hover:opacity-90',
+                action.variant === 'secondary' &&
+                  'border-border bg-background hover:bg-secondary border',
+                action.variant === 'outline' &&
+                  'border-border hover:bg-secondary border bg-transparent'
               )}
             >
-              {action.variant !== "outline" && action.label === "Find a doctor" && <Stethoscope className="size-4" />}
-              {action.variant !== "outline" && action.label === "Book appointment" && <CalendarDays className="size-4" />}
-              {action.variant !== "outline" && action.label === "Clear filters" && <X className="size-4" />}
+              {action.variant !== 'outline' && action.label === 'Find a doctor' && (
+                <Stethoscope className="size-4" />
+              )}
+              {action.variant !== 'outline' && action.label === 'Book appointment' && (
+                <CalendarDays className="size-4" />
+              )}
+              {action.variant !== 'outline' && action.label === 'Clear filters' && (
+                <X className="size-4" />
+              )}
               {action.label}
             </button>
           )}
           {secondaryAction && (
             <button
               onClick={secondaryAction.onClick}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-bold text-muted-foreground hover:bg-secondary"
+              className="border-border text-muted-foreground hover:bg-secondary inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold"
             >
               {secondaryAction.label}
             </button>
@@ -109,18 +116,21 @@ export function EmptyState({
         </div>
       )}
       {showSearch && (
-        <div className="mt-6 max-w-md mx-auto">
+        <div className="mx-auto mt-6 max-w-md">
           <label htmlFor="empty-state-search" className="sr-only">
             Search
           </label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Search
+              className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
+              aria-hidden="true"
+            />
             <input
               id="empty-state-search"
               type="search"
               placeholder={searchPlaceholder}
               onChange={(e) => onSearch?.(e.target.value)}
-              className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm outline-none focus:border-primary"
+              className="border-border bg-background focus:border-primary h-11 w-full rounded-xl border pr-4 pl-10 text-sm outline-none"
               autoComplete="off"
             />
           </div>
@@ -143,13 +153,21 @@ export function EmptyDoctorsState({
 }) {
   return (
     <EmptyState
-      icon={<Stethoscope className="size-14 text-primary/50" />}
-      title={hasFilters ? "No doctors match your filters" : "No doctors found"}
-      description={hasFilters
-        ? "Try adjusting your filters or search terms to find more doctors."
-        : "We couldn't find any doctors matching your search. Try a different keyword or specialty."}
-      action={hasFilters ? { label: "Clear filters", onClick: onClearFilters!, variant: "outline" } : undefined}
-      secondaryAction={!hasFilters ? { label: "Browse all specialties", onClick: () => {} } : undefined}
+      icon={<Stethoscope className="text-primary/50 size-14" />}
+      title={hasFilters ? 'No doctors match your filters' : 'No doctors found'}
+      description={
+        hasFilters
+          ? 'Try adjusting your filters or search terms to find more doctors.'
+          : "We couldn't find any doctors matching your search. Try a different keyword or specialty."
+      }
+      action={
+        hasFilters
+          ? { label: 'Clear filters', onClick: onClearFilters!, variant: 'outline' }
+          : undefined
+      }
+      secondaryAction={
+        !hasFilters ? { label: 'Browse all specialties', onClick: () => {} } : undefined
+      }
       showSearch={!hasFilters}
       onSearch={onSearch}
       searchPlaceholder="Search doctors, specialties, symptoms..."
@@ -160,39 +178,39 @@ export function EmptyDoctorsState({
 
 export function EmptyAppointmentsState({
   tab,
-  onBook,
+
   className,
 }: {
-  tab: "Upcoming" | "Completed" | "Cancelled";
+  tab: 'Upcoming' | 'Completed' | 'Cancelled';
   onBook?: () => void;
   className?: string;
 }) {
   const messages = {
     Upcoming: {
-      title: "No upcoming appointments",
-      description: "When you book a visit, it will appear here.",
-      actionLabel: "Book appointment",
+      title: 'No upcoming appointments',
+      description: 'When patients book a visit, it will appear here.',
+      actionLabel: 'Book appointment',
     },
     Completed: {
-      title: "No completed appointments",
-      description: "Your completed appointment history will appear here.",
-      actionLabel: "Book appointment",
+      title: 'No completed appointments',
+      description: 'Your completed appointment history will appear here.',
+      actionLabel: 'Book appointment',
     },
     Cancelled: {
-      title: "No cancelled appointments",
-      description: "Cancelled appointments will appear here.",
-      actionLabel: "Book appointment",
+      title: 'No cancelled appointments',
+      description: 'Cancelled appointments will appear here.',
+      actionLabel: 'Book appointment',
     },
   };
 
-  const { title, description, actionLabel } = messages[tab];
+  const { title, description } = messages[tab];
 
   return (
     <EmptyState
-      icon={<CalendarDays className="size-14 text-primary/50" />}
+      icon={<CalendarDays className="text-primary/50 size-14" />}
       title={title}
       description={description}
-      action={onBook ? { label: actionLabel, onClick: onBook, variant: "primary" } : undefined}
+      // action={onBook ? { label: actionLabel, onClick: onBook, variant: 'primary' } : undefined}
       className={className}
     />
   );
@@ -209,10 +227,14 @@ export function EmptySearchState({
 }) {
   return (
     <EmptyState
-      icon={<Search className="size-14 text-muted-foreground/50" />}
+      icon={<Search className="text-muted-foreground/50 size-14" />}
       title={`No results for "${query}"`}
       description="Try a different search term or browse specialties below."
-      action={onClearSearch ? { label: "Clear search", onClick: onClearSearch, variant: "outline" } : undefined}
+      action={
+        onClearSearch
+          ? { label: 'Clear search', onClick: onClearSearch, variant: 'outline' }
+          : undefined
+      }
       className={className}
     />
   );
@@ -227,10 +249,14 @@ export function EmptyPrescriptionsState({
 }) {
   return (
     <EmptyState
-      icon={<FileText className="size-14 text-primary/50" />}
+      icon={<FileText className="text-primary/50 size-14" />}
       title="No prescriptions found"
       description="Your prescriptions will appear here after your visits."
-      action={onUpload ? { label: "Upload prescription", onClick: onUpload, variant: "primary" } : undefined}
+      action={
+        onUpload
+          ? { label: 'Upload prescription', onClick: onUpload, variant: 'primary' }
+          : undefined
+      }
       className={className}
     />
   );
@@ -247,14 +273,16 @@ export function EmptyRecordsState({
 }) {
   return (
     <EmptyState
-      icon={<FileText className="size-14 text-primary/50" />}
+      icon={<FileText className="text-primary/50 size-14" />}
       title={`No ${category.toLowerCase()}`}
       description={`Your ${category.toLowerCase()} will appear here when they are added to your secure record.`}
-      action={onUpload ? { label: "Upload document", onClick: onUpload, variant: "primary" } : undefined}
+      action={
+        onUpload ? { label: 'Upload document', onClick: onUpload, variant: 'primary' } : undefined
+      }
       className={className}
     />
   );
 }
 
 // Need to import FileText
-import { FileText } from "lucide-react";
+import { FileText } from 'lucide-react';

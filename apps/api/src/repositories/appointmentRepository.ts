@@ -45,6 +45,27 @@ export class AppointmentRepository {
   constructor(private prisma: PrismaClient) {}
 
   /**
+   * Build Prisma orderBy object from sortBy string (supports dot notation for relations)
+   */
+  private buildOrderBy(
+    sortBy: string,
+    sortOrder: 'asc' | 'desc'
+  ): Prisma.AppointmentOrderByWithRelationInput {
+    const parts = sortBy.split('.');
+    if (parts.length === 1) {
+      // Direct field on Appointment
+      return { [parts[0]]: sortOrder } as Prisma.AppointmentOrderByWithRelationInput;
+    }
+    if (parts.length === 2) {
+      // Relation field (e.g., slot.startTime, patient.firstName)
+      const [relation, field] = parts;
+      return { [relation]: { [field]: sortOrder } } as Prisma.AppointmentOrderByWithRelationInput;
+    }
+    // Fallback to createdAt for invalid sortBy
+    return { createdAt: 'desc' };
+  }
+
+  /**
    * Find appointment by ID with relations
    */
   async findById(id: string): Promise<AppointmentWithRelations | null> {
@@ -203,7 +224,7 @@ export class AppointmentRepository {
             orderBy: { createdAt: 'desc' },
           },
         },
-        orderBy: sortBy ? { [sortBy]: sortOrder || 'asc' } : { createdAt: 'desc' },
+        orderBy: sortBy ? this.buildOrderBy(sortBy, sortOrder || 'asc') : { createdAt: 'desc' },
       }),
       this.prisma.appointment.count({ where }),
     ]);

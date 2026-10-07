@@ -5,7 +5,8 @@
 
 import { Router } from 'express';
 import type { AppointmentController } from '../controllers/appointmentController';
-import { requireAuth } from '../../../shared/middleware/auth';
+import { requireAuth, requireRole } from '../../../shared/middleware/auth';
+import { UserType } from '@doctor-appointment-app/shared';
 import { asyncHandler } from '../../../shared/utils';
 import {
   auditAppointmentAccess,
@@ -17,12 +18,20 @@ import {
   validateCreateAppointment,
   validateUpdateAppointment,
   validateAppointmentFilters,
+  validateDoctorAppointmentFilters,
   validateTimelineQuery,
   validateDashboardStatsQuery,
+  validateDoctorCancelAppointment,
+  validateDoctorRescheduleAppointment,
+  validateDoctorCheckIn,
+  validateDoctorCompleteAppointment,
 } from '../validators';
 
 export function createAppointmentRoutes(appointmentController: AppointmentController): Router {
   const router = Router();
+
+  // Doctor-only middleware (must be declared before use)
+  const doctorMiddleware = requireRole(UserType.DOCTOR);
 
   // All appointment routes require authentication
   router.use(requireAuth);
@@ -41,15 +50,61 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
   // Stats
   router.get('/stats/doctor', asyncHandler(appointmentController.getDoctorStats));
   router.get('/stats/patient', asyncHandler(appointmentController.getPatientStats));
-  router.get('/stats/dashboard', validateDashboardStatsQuery, asyncHandler(appointmentController.getDashboardStats));
+  router.get(
+    '/stats/dashboard',
+    validateDashboardStatsQuery,
+    asyncHandler(appointmentController.getDashboardStats)
+  );
+  router.get(
+    '/stats/doctor-dashboard',
+    asyncHandler(appointmentController.getDoctorDashboardStats)
+  );
+
+  // Analytics endpoints (Doctor Portal)
+  router.get(
+    '/stats/doctor/volume',
+    doctorMiddleware,
+    asyncHandler(appointmentController.getDoctorVolumeStats)
+  );
+  router.get(
+    '/stats/doctor/utilization',
+    doctorMiddleware,
+    asyncHandler(appointmentController.getDoctorUtilizationStats)
+  );
+  router.get(
+    '/stats/doctor/revenue',
+    doctorMiddleware,
+    asyncHandler(appointmentController.getDoctorRevenueStats)
+  );
 
   // Timeline endpoints
   router.get('/timeline/upcoming', asyncHandler(appointmentController.getUpcomingWithDetails));
-  router.get('/timeline/completed', asyncHandler(appointmentController.getCompletedWithPrescriptions));
-  router.get('/timeline/medical', validateTimelineQuery, asyncHandler(appointmentController.getMedicalTimeline));
+  router.get(
+    '/timeline/completed',
+    asyncHandler(appointmentController.getCompletedWithPrescriptions)
+  );
+  router.get(
+    '/timeline/medical',
+    validateTimelineQuery,
+    asyncHandler(appointmentController.getMedicalTimeline)
+  );
 
-  // List appointments with filters
+  // List appointments with filters (patient/admin view)
   router.get('/', validateAppointmentFilters, asyncHandler(appointmentController.listAppointments));
+
+  // Doctor Portal endpoints (doctor only)
+  router.get(
+    '/doctor',
+    doctorMiddleware,
+    validateDoctorAppointmentFilters,
+    asyncHandler(appointmentController.getDoctorAppointments)
+  );
+  router.get(
+    '/doctor/:id',
+    doctorMiddleware,
+    auditAppointmentAccess,
+    asyncHandler(appointmentController.getDoctorAppointmentDetail)
+  );
 
   // Single appointment operations
   router.get('/:id', auditAppointmentAccess, asyncHandler(appointmentController.getAppointment));
@@ -69,6 +124,36 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
     '/:id/cancel',
     auditAppointmentDelete,
     asyncHandler(appointmentController.cancelAppointmentAlt)
+  );
+
+  // Doctor-specific appointment actions
+  router.patch(
+    '/doctor/:id/cancel',
+    doctorMiddleware,
+    auditAppointmentDelete,
+    validateDoctorCancelAppointment,
+    asyncHandler(appointmentController.cancelAppointmentAsDoctor)
+  );
+  router.patch(
+    '/doctor/:id/reschedule',
+    doctorMiddleware,
+    auditAppointmentUpdate,
+    validateDoctorRescheduleAppointment,
+    asyncHandler(appointmentController.rescheduleAppointmentAsDoctor)
+  );
+  router.patch(
+    '/doctor/:id/check-in',
+    doctorMiddleware,
+    auditAppointmentUpdate,
+    validateDoctorCheckIn,
+    asyncHandler(appointmentController.checkInPatient)
+  );
+  router.patch(
+    '/doctor/:id/complete',
+    doctorMiddleware,
+    auditAppointmentUpdate,
+    validateDoctorCompleteAppointment,
+    asyncHandler(appointmentController.completeAppointmentAsDoctor)
   );
 
   return router;

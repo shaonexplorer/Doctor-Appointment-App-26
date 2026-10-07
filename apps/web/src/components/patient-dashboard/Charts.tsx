@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Bar,
@@ -10,8 +10,8 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { cn } from "@/lib/utils";
+} from 'recharts';
+import { cn } from '@/lib/utils';
 
 export interface PieChartData {
   name: string;
@@ -26,9 +26,14 @@ export interface PieChartProps {
   className?: string;
 }
 
-export function SpecialtyPieChart({ data, total, totalLabel = "visits", className }: PieChartProps) {
+export function SpecialtyPieChart({
+  data,
+  total,
+  totalLabel = 'visits',
+  className,
+}: PieChartProps) {
   return (
-    <div className={cn("flex items-center gap-5", className)}>
+    <div className={cn('flex items-center gap-5', className)}>
       <div className="relative h-44 w-44 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -45,19 +50,24 @@ export function SpecialtyPieChart({ data, total, totalLabel = "visits", classNam
               ))}
             </Pie>
             <Tooltip
+              wrapperStyle={{ zIndex: 1000 }}
               formatter={(value: number, name: string) => [`${value}%`, name]}
               contentStyle={{
-                backgroundColor: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "8px",
+                backgroundColor: 'rgba(189, 200, 212, 0.65)', // Semi-transparent color (required for blur to show)
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid rgba(187, 196, 206, 0.8)',
+                borderRadius: '8px',
               }}
             />
           </PieChart>
         </ResponsiveContainer>
-        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+        <div className="pointer-events-none absolute inset-0 z-0 grid place-items-center">
           <div className="text-center">
-            <p className="text-2xl font-black">{total ?? data.reduce((sum, d) => sum + d.value, 0)}</p>
-            <p className="text-[10px] text-muted-foreground">{totalLabel}</p>
+            <p className="text-2xl font-black">
+              {total ?? data.reduce((sum, d) => sum + d.value, 0)}
+            </p>
+            <p className="text-muted-foreground text-[10px]">{totalLabel}</p>
           </div>
         </div>
       </div>
@@ -88,46 +98,36 @@ export interface BarChartProps {
 
 export function MonthlyExpensesBarChart({
   data,
-  barColor = "hsl(var(--chart-1))",
+  barColor = '#4c46cd',
   className,
   height = 224,
 }: BarChartProps) {
-  const maxAmount = Math.max(...data.map((d) => d.amount), 1);
-
   return (
-    <div className={cn("h-56", className)} style={{ height }}>
+    <div className={cn('h-56', className)} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          margin={{ top: 10, right: 4, left: -18, bottom: 0 }}
-        >
+        <BarChart data={data} margin={{ top: 10, right: 4, left: -18, bottom: 0 }}>
           <XAxis
             dataKey="month"
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+            tick={{ fontSize: 11, fill: '#489ce6' }}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+            tick={{ fontSize: 11, fill: '#489ce6' }}
             tickFormatter={(value) => `$${value}`}
           />
           <Tooltip
-            cursor={{ fill: "hsl(var(--accent))" }}
-            formatter={(value: number) => [`$${value}`, "Expenses"]}
+            cursor={{ fill: '#a197d3' }}
+            formatter={(value: number) => [`$${value}`, 'Expenses']}
             contentStyle={{
-              backgroundColor: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: "8px",
+              backgroundColor: '#c2c8cd',
+              border: '1px solid #ccd1d7',
+              borderRadius: '8px',
             }}
           />
-          <Bar
-            dataKey="amount"
-            fill={barColor}
-            radius={[6, 6, 0, 0]}
-            barSize={28}
-          />
+          <Bar dataKey="amount" fill={barColor} radius={[6, 6, 0, 0]} barSize={45} />
         </BarChart>
       </ResponsiveContainer>
     </div>

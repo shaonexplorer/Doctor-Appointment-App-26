@@ -4,7 +4,7 @@
  */
 
 import type { AppointmentRepository, ScheduleRepository } from '../../../repositories';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Schedule } from '@prisma/client';
 import {
   AppointmentStatus,
   PaymentStatus,
@@ -22,6 +22,8 @@ import type {
   DoctorStats,
   PatientStats,
   TimelineEntry,
+  DoctorDashboardStats,
+  DoctorCompleteAppointmentInput,
 } from '../types';
 
 export class AppointmentService {
@@ -271,16 +273,6 @@ export class AppointmentService {
       }
     }
 
-    // Get slot info for notification
-    const slot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
-    const doctor = appointment.doctor
-      ? {
-          id: appointment.doctor.id,
-          firstName: appointment.doctor.firstName,
-          lastName: appointment.doctor.lastName,
-        }
-      : null;
-
     // Release the slot
     await this.scheduleRepository.releaseSlot(appointment.slotId);
 
@@ -290,23 +282,82 @@ export class AppointmentService {
     });
 
     // Send cancellation notification
-    if (doctor && slot) {
-      const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
-      await this.notificationService.sendBookingCancellation({
-        appointmentId: appointment.id,
-        patientId: appointment.patientId,
-        doctorId: doctor.id,
-        slotId: appointment.slotId,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        doctorName,
-        specialty: slot.doctor?.specialty || 'Unknown',
-        clinic: slot.doctor?.clinic || 'Clinic',
-        consultationType: appointment.consultationType,
-      });
-    }
+    await this.sendCancellationNotification(
+      appointment.id,
+      appointment.patientId,
+      appointment.doctorId,
+      appointment.slotId,
+      appointment.consultationType
+    );
 
     return cancelledAppointment;
+  }
+
+  /**
+   * Get cancellation notification data
+   */
+  private async getCancellationNotificationData(
+    appointmentId: string,
+    slotId: string,
+    doctorId: string
+  ): Promise<{
+    doctorName: string;
+    specialty: string;
+    clinic: string;
+    startTime: Date;
+    endTime: Date;
+  } | null> {
+    const slot = await this.scheduleRepository.findByIdWithDoctor(slotId);
+    if (!slot || !slot.doctor) return null;
+
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: doctorId },
+      select: { bio: true },
+    });
+
+    const doctor = await this.prisma.user.findUnique({
+      where: { id: doctorId },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (!doctor) return null;
+
+    return {
+      doctorName: `Dr. ${doctor.firstName} ${doctor.lastName}`,
+      specialty: slot.doctor.specialty || 'Unknown',
+      clinic: doctorProfile?.bio || 'Clinic',
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+    };
+  }
+
+  // Send cancellation notification
+  async sendCancellationNotification(
+    appointmentId: string,
+    patientId: string,
+    doctorId: string,
+    slotId: string,
+    consultationType: ConsultationType
+  ): Promise<void> {
+    const notificationData = await this.getCancellationNotificationData(
+      appointmentId,
+      slotId,
+      doctorId
+    );
+    if (notificationData) {
+      await this.notificationService.sendBookingCancellation({
+        appointmentId,
+        patientId,
+        doctorId,
+        slotId,
+        startTime: notificationData.startTime,
+        endTime: notificationData.endTime,
+        doctorName: notificationData.doctorName,
+        specialty: notificationData.specialty,
+        clinic: notificationData.clinic,
+        consultationType,
+      });
+    }
   }
 
   /**
@@ -327,7 +378,24 @@ export class AppointmentService {
     userId: string,
     userType: UserType,
     limit: number = 5
-  ): Promise<Appointment[]> {
+  ): Promise<
+    Array<{
+      id: string;
+      patientId: string;
+      doctorId: string;
+      slotId: string;
+      status: AppointmentStatus;
+      symptoms: string | null;
+      notes: string | null;
+      paymentStatus: PaymentStatus;
+      consultationType: ConsultationType;
+      createdAt: Date;
+      updatedAt: Date;
+      patient: { id: string; firstName: string; lastName: string };
+      doctor: { id: string; firstName: string; lastName: string };
+      slot: { id: string; startTime: Date; endTime: Date };
+    }>
+  > {
     return this.appointmentRepository.getUpcoming(userId, userType, limit);
   }
 
@@ -353,7 +421,23 @@ export class AppointmentService {
     totalAppointments: number;
     totalExpenses: number;
     prescriptionCompliance: number;
-    nextAppointment: Appointment | null;
+    nextAppointment: {
+      id: string;
+      status: AppointmentStatus;
+      symptoms: string | null;
+      notes: string | null;
+      consultationType: ConsultationType;
+      paymentStatus: PaymentStatus;
+      createdAt: Date;
+      slot: { id: string; startTime: Date; endTime: Date };
+      doctor: { id: string; firstName: string; lastName: string; email: string };
+      doctorProfile: {
+        specialty: string;
+        clinic?: string;
+        designation: string;
+        fee: number;
+      } | null;
+    } | null;
     appointmentsByStatus: Record<AppointmentStatus, number>;
     appointmentsBySpecialty: Array<{ specialty: string; count: number }>;
     monthlyExpenses: Array<{ month: string; amount: number }>;
@@ -424,9 +508,15 @@ export class AppointmentService {
     const whereClause: Record<string, unknown> = { patientId };
 
     if (dateFrom || dateTo) {
-      whereClause.createdAt = {};
-      if (dateFrom) whereClause.createdAt.gte = new Date(dateFrom);
-      if (dateTo) whereClause.createdAt.lte = new Date(dateTo);
+      (whereClause as Record<string, { gte?: Date; lte?: Date }>).createdAt = {};
+      if (dateFrom)
+        (whereClause as Record<string, { gte?: Date; lte?: Date }>).createdAt.gte = new Date(
+          dateFrom
+        );
+      if (dateTo)
+        (whereClause as Record<string, { gte?: Date; lte?: Date }>).createdAt.lte = new Date(
+          dateTo
+        );
     }
 
     const [appointments, prescriptions] = await Promise.all([
@@ -493,9 +583,12 @@ export class AppointmentService {
         clinic: 'Clinic',
         prescriptionId: rx.id,
         diagnosis: rx.diagnosis,
-        medications: rx.medications,
-        tests: rx.tests,
-        notes: rx.notes,
+        medications:
+          typeof rx.medications === 'string' ? rx.medications : JSON.stringify(rx.medications),
+        tests:
+          typeof rx.tests === 'string' ? rx.tests : rx.tests ? JSON.stringify(rx.tests) : undefined,
+        notes:
+          typeof rx.notes === 'string' ? rx.notes : rx.notes ? JSON.stringify(rx.notes) : undefined,
       });
     }
 
@@ -607,6 +700,764 @@ export class AppointmentService {
     });
 
     return Math.round((prescriptions / completedAppointments.length) * 100);
+  }
+
+  /**
+   * Get doctor appointments with filters (Doctor Portal)
+   */
+  async getDoctorAppointments(
+    doctorId: string,
+    filters: {
+      page: number;
+      limit: number;
+      status?: string | string[];
+      search?: string;
+      patientSearch?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    }
+  ): Promise<{ data: Appointment[]; meta: { total: number; totalPages: number } }> {
+    const { page, limit, status, patientSearch, dateFrom, dateTo, sortBy, sortOrder } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = { doctorId };
+
+    if (status && status.length > 0) {
+      where.status = { in: Array.isArray(status) ? status : [status] };
+    }
+
+    if (patientSearch) {
+      where.patient = {
+        OR: [
+          { firstName: { contains: patientSearch, mode: 'insensitive' } },
+          { lastName: { contains: patientSearch, mode: 'insensitive' } },
+          { email: { contains: patientSearch, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    if (dateFrom || dateTo) {
+      (where as Record<string, { gte?: Date; lte?: Date }>).createdAt = {};
+      if (dateFrom)
+        (where as Record<string, { gte?: Date; lte?: Date }>).createdAt.gte = new Date(dateFrom);
+      if (dateTo)
+        (where as Record<string, { gte?: Date; lte?: Date }>).createdAt.lte = new Date(dateTo);
+    }
+
+    const [appointments, total] = await Promise.all([
+      this.prisma.appointment.findMany({
+        skip,
+        take: limit,
+        where,
+        include: {
+          patient: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              userType: true,
+            },
+          },
+          doctor: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              userType: true,
+            },
+          },
+          slot: {
+            select: {
+              id: true,
+              startTime: true,
+              endTime: true,
+              status: true,
+            },
+          },
+          prescriptions: {
+            select: {
+              id: true,
+              diagnosis: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+        orderBy:
+          sortBy === 'slot.startTime'
+            ? { slot: { startTime: sortOrder || 'asc' } }
+            : sortBy === 'slot.endTime'
+              ? { slot: { endTime: sortOrder || 'asc' } }
+              : sortBy === 'slot.status'
+                ? { slot: { status: sortOrder || 'asc' } }
+                : sortBy
+                  ? { [sortBy]: sortOrder || 'asc' }
+                  : { createdAt: 'desc' },
+      }),
+      this.prisma.appointment.count({ where }),
+    ]);
+
+    return {
+      data: appointments,
+      meta: {
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get single appointment detail for doctor
+   */
+  async getDoctorAppointmentDetail(appointmentId: string, doctorId: string): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - doctor must own this appointment or be admin/staff
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to view this appointment', 403);
+    }
+
+    return appointment;
+  }
+
+  /**
+   * Get doctor dashboard statistics
+   * Note: doctorId here is the User ID, need to look up DoctorProfile ID for Schedule queries
+   */
+  async getDoctorDashboardStats(userId: string): Promise<DoctorDashboardStats> {
+    // Look up DoctorProfile ID from User ID
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { id: true, fee: true },
+    });
+
+    if (!doctorProfile) {
+      return {
+        todayAppointments: 0,
+        weeklyAppointments: 0,
+        slotUtilization: 0,
+        totalRevenue: 0,
+        revenueByConsultationType: [],
+        dailyVolume: [],
+      };
+    }
+
+    const doctorId = doctorProfile.id;
+    const fee = doctorProfile.fee ? Number(doctorProfile.fee) : 0;
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+
+    // Get today's appointments (doctorId in Appointment is User ID)
+    const todayAppointments = await this.prisma.appointment.count({
+      where: {
+        doctorId: userId,
+        slot: {
+          startTime: { gte: todayStart, lt: todayEnd },
+        },
+        status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+      },
+    });
+
+    // Get this week's appointments
+    const weeklyAppointments = await this.prisma.appointment.count({
+      where: {
+        doctorId: userId,
+        slot: {
+          startTime: { gte: weekStart },
+        },
+        status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+      },
+    });
+
+    // Get slot utilization (available vs booked slots this week) - Schedule uses DoctorProfile ID
+    const [totalSlotsThisWeek, bookedSlotsThisWeek] = await Promise.all([
+      this.prisma.schedule.count({
+        where: {
+          doctorId,
+          startTime: { gte: weekStart },
+        },
+      }),
+      this.prisma.schedule.count({
+        where: {
+          doctorId,
+          startTime: { gte: weekStart },
+          status: { in: [SlotStatus.BOOKED] },
+        },
+      }),
+    ]);
+
+    const slotUtilization =
+      totalSlotsThisWeek > 0 ? Math.round((bookedSlotsThisWeek / totalSlotsThisWeek) * 100) : 0;
+
+    // Get total revenue (completed appointments)
+    const completedAppointments = await this.prisma.appointment.findMany({
+      where: {
+        doctorId: userId,
+        status: AppointmentStatus.COMPLETED,
+      },
+      include: {
+        doctor: {
+          include: {
+            doctorProfile: { select: { fee: true } },
+          },
+        },
+      },
+    });
+
+    const totalRevenue = completedAppointments.reduce((sum, appt) => {
+      const apptFee = appt.doctor?.doctorProfile?.fee || 0;
+      return sum + Number(apptFee);
+    }, 0);
+
+    // Revenue by consultation type
+    const revenueByType = await this.prisma.appointment.groupBy({
+      by: ['consultationType'],
+      where: {
+        doctorId: userId,
+        status: AppointmentStatus.COMPLETED,
+      },
+      _count: { id: true },
+    });
+
+    const revenueByConsultationType = revenueByType.map((r) => ({
+      type: r.consultationType,
+      amount: r._count.id * fee,
+    }));
+
+    // Daily volume for the last 7 days
+    const dailyVolume = await Promise.all(
+      Array.from({ length: 7 }, async (_, i) => {
+        const date = new Date(todayStart);
+        date.setDate(date.getDate() - (6 - i));
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+
+        const count = await this.prisma.appointment.count({
+          where: {
+            doctorId: userId,
+            slot: {
+              startTime: { gte: date, lt: nextDate },
+            },
+            status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+          },
+        });
+
+        return {
+          date: date.toISOString().split('T')[0],
+          count,
+        };
+      })
+    );
+
+    return {
+      todayAppointments,
+      weeklyAppointments,
+      slotUtilization,
+      totalRevenue,
+      revenueByConsultationType,
+      dailyVolume,
+    };
+  }
+
+  /**
+   * Get patient volume analytics (daily/weekly)
+   * GET /api/appointments/stats/doctor/volume
+   */
+  async getDoctorVolumeStats(
+    doctorId: string,
+    days: number = 7
+  ): Promise<Array<{ date: string; count: number; label: string }>> {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startDate = new Date(todayStart);
+    startDate.setDate(startDate.getDate() - (days - 1));
+
+    const volumeData = await Promise.all(
+      Array.from({ length: days }, async (_, i) => {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+
+        const count = await this.prisma.appointment.count({
+          where: {
+            doctorId,
+            slot: {
+              startTime: { gte: date, lt: nextDate },
+            },
+            status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.COMPLETED] },
+          },
+        });
+
+        return {
+          date: date.toISOString().split('T')[0],
+          count,
+          label: date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+          }),
+        };
+      })
+    );
+
+    return volumeData;
+  }
+
+  /**
+   * Get slot utilization analytics
+   * GET /api/appointments/stats/doctor/utilization
+   * Note: doctorId here is the User ID, need to look up DoctorProfile ID
+   */
+  async getDoctorUtilizationStats(userId: string): Promise<{
+    booked: number;
+    available: number;
+    cancelled: number;
+    noShow: number;
+    total: number;
+  }> {
+    // Look up DoctorProfile ID from User ID
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      return { booked: 0, available: 0, cancelled: 0, noShow: 0, total: 0 };
+    }
+
+    const doctorId = doctorProfile.id;
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+    const [booked, available, cancelled, noShow, total] = await Promise.all([
+      this.prisma.schedule.count({
+        where: { doctorId, startTime: { gte: weekStart }, status: SlotStatus.BOOKED },
+      }),
+      this.prisma.schedule.count({
+        where: { doctorId, startTime: { gte: weekStart }, status: SlotStatus.AVAILABLE },
+      }),
+      this.prisma.schedule.count({
+        where: { doctorId, startTime: { gte: weekStart }, status: SlotStatus.CANCELLED },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          doctorId: userId,
+          slot: { startTime: { gte: weekStart } },
+          status: AppointmentStatus.NO_SHOW,
+        },
+      }),
+      this.prisma.schedule.count({
+        where: { doctorId, startTime: { gte: weekStart } },
+      }),
+    ]);
+
+    return { booked, available, cancelled, noShow, total };
+  }
+
+  /**
+   * Get revenue analytics by consultation type
+   * GET /api/appointments/stats/doctor/revenue
+   * Note: doctorId here is the User ID
+   */
+  async getDoctorRevenueStats(userId: string): Promise<Array<{ type: string; amount: number }>> {
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { fee: true },
+    });
+    const fee = doctorProfile?.fee ? Number(doctorProfile.fee) : 0;
+
+    const revenueByType = await this.prisma.appointment.groupBy({
+      by: ['consultationType'],
+      where: {
+        doctorId: userId,
+        status: AppointmentStatus.COMPLETED,
+      },
+      _count: { id: true },
+    });
+
+    return revenueByType.map((r) => ({
+      type: r.consultationType,
+      amount: r._count.id * fee,
+    }));
+  }
+
+  /**
+   * Cancel appointment as doctor (with refund trigger)
+   * POST /api/appointments/doctor/:id/cancel
+   */
+  async cancelAppointmentAsDoctor(
+    appointmentId: string,
+    doctorId: string,
+    _data: { reason: string; triggerRefund: boolean }
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - must be the doctor or admin/staff
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to cancel this appointment', 403);
+    }
+
+    if (appointment.status === AppointmentStatus.CANCELLED) {
+      throw new AppError('CONFLICT', 'Appointment is already cancelled', 409);
+    }
+
+    if (appointment.status === AppointmentStatus.COMPLETED) {
+      throw new AppError('CONFLICT', 'Cannot cancel a completed appointment', 409);
+    }
+
+    // Release the slot
+    await this.scheduleRepository.releaseSlot(appointment.slotId);
+
+    // Update appointment status
+    const cancelledAppointment = await this.appointmentRepository.update(appointmentId, {
+      status: AppointmentStatus.CANCELLED,
+    });
+
+    // Send cancellation notification
+    await this.sendCancellationNotification(
+      appointment.id,
+      appointment.patientId,
+      appointment.doctorId,
+      appointment.slotId,
+      appointment.consultationType
+    );
+
+    // TODO: If triggerRefund is true, integrate with payment provider (Stripe) to process refund
+    // This would be implemented when payment integration is added
+
+    return cancelledAppointment;
+  }
+
+  /**
+   * Reschedule appointment as doctor
+   * POST /api/appointments/doctor/:id/reschedule
+   */
+  async rescheduleAppointmentAsDoctor(
+    appointmentId: string,
+    doctorId: string,
+    newSlotId: string
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - must be the doctor or admin/staff
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to reschedule this appointment', 403);
+    }
+
+    if (appointment.status === AppointmentStatus.CANCELLED) {
+      throw new AppError('CONFLICT', 'Cannot reschedule a cancelled appointment', 409);
+    }
+
+    if (appointment.status === AppointmentStatus.COMPLETED) {
+      throw new AppError('CONFLICT', 'Cannot reschedule a completed appointment', 409);
+    }
+
+    // Check if new slot exists and is available
+    const newSlot = await this.scheduleRepository.findByIdWithAppointment(newSlotId);
+    if (!newSlot) {
+      throw new AppError('NOT_FOUND', 'New slot not found', 404);
+    }
+
+    if (newSlot.status !== SlotStatus.AVAILABLE) {
+      throw new AppError('CONFLICT', 'New slot is not available', 409);
+    }
+
+    if (newSlot.appointment) {
+      throw new AppError('CONFLICT', 'New slot is already booked', 409);
+    }
+
+    // Verify new slot belongs to the same doctor
+    // appointment.doctorId is User ID, newSlot.doctorId is DoctorProfile ID
+    // Need to look up DoctorProfile for the appointment's doctor
+    const appointmentDoctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: appointment.doctorId },
+      select: { id: true },
+    });
+
+    if (!appointmentDoctorProfile || newSlot.doctorId !== appointmentDoctorProfile.id) {
+      throw new AppError('FORBIDDEN', 'New slot must belong to the same doctor', 403);
+    }
+
+    // Get old slot with doctor for notification
+    const oldSlot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
+
+    // Perform reschedule in transaction
+    const rescheduledAppointment = await this.prisma.$transaction(async (tx) => {
+      // Release old slot
+      await tx.schedule.update({
+        where: { id: appointment.slotId },
+        data: { status: SlotStatus.AVAILABLE },
+      });
+
+      // Lock new slot
+      await tx.schedule.update({
+        where: { id: newSlotId },
+        data: { status: SlotStatus.BOOKED },
+      });
+
+      // Update appointment with new slot
+      const updatedAppointment = await tx.appointment.update({
+        where: { id: appointmentId },
+        data: {
+          slotId: newSlotId,
+          status: AppointmentStatus.SCHEDULED,
+        },
+        include: {
+          patient: {
+            select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+          },
+          doctor: {
+            select: { id: true, email: true, firstName: true, lastName: true, phone: true },
+          },
+          slot: {
+            select: { id: true, startTime: true, endTime: true, status: true },
+          },
+        },
+      });
+
+      return updatedAppointment;
+    });
+
+    // Send reschedule notification
+    await this.sendRescheduleNotification(
+      appointment.id,
+      appointment.patientId,
+      appointment.doctorId,
+      oldSlot!,
+      newSlot,
+      appointment.consultationType
+    );
+
+    return rescheduledAppointment;
+  }
+
+  /**
+   * Patient check-in by doctor/staff
+   * PATCH /api/appointments/doctor/:id/check-in
+   */
+  async checkInPatient(
+    appointmentId: string,
+    doctorId: string,
+    notes?: string | null
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - must be the doctor or admin/staff
+    // Note: In a real system, staff might also check in patients
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to check in this patient', 403);
+    }
+
+    if (appointment.status !== AppointmentStatus.SCHEDULED) {
+      throw new AppError(
+        'CONFLICT',
+        `Cannot check in appointment with status: ${appointment.status}`,
+        409
+      );
+    }
+
+    // Update appointment status and add check-in notes
+    const updatedAppointment = await this.appointmentRepository.update(appointmentId, {
+      status: AppointmentStatus.SCHEDULED, // Status stays SCHEDULED, but we could add a check-in timestamp
+      notes: notes ? `${appointment.notes || ''}\n[Check-in]: ${notes}`.trim() : appointment.notes,
+    });
+
+    // Send check-in notification to patient
+    await this.sendCheckInNotification(appointment, doctorId);
+
+    return updatedAppointment;
+  }
+
+  /**
+   * Complete appointment as doctor
+   * PATCH /api/appointments/doctor/:id/complete
+   */
+  async completeAppointmentAsDoctor(
+    appointmentId: string,
+    doctorId: string,
+    data: DoctorCompleteAppointmentInput
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(appointmentId);
+    if (!appointment) {
+      throw new AppError('NOT_FOUND', 'Appointment not found', 404);
+    }
+
+    // Check authorization - must be the doctor or admin/staff
+    if (appointment.doctorId !== doctorId) {
+      throw new AppError('FORBIDDEN', 'Not authorized to complete this appointment', 403);
+    }
+
+    if (appointment.status === AppointmentStatus.CANCELLED) {
+      throw new AppError('CONFLICT', 'Cannot complete a cancelled appointment', 409);
+    }
+
+    if (appointment.status === AppointmentStatus.COMPLETED) {
+      throw new AppError('CONFLICT', 'Appointment is already completed', 409);
+    }
+
+    if (appointment.status === AppointmentStatus.NO_SHOW) {
+      throw new AppError('CONFLICT', 'Cannot complete a no-show appointment', 409);
+    }
+
+    // Build notes with completion details
+    const completionNotes = [];
+    if (appointment.notes) completionNotes.push(appointment.notes);
+    if (data.notes) completionNotes.push(`[Completion Notes]: ${data.notes}`);
+    if (data.diagnosis) completionNotes.push(`[Diagnosis]: ${data.diagnosis}`);
+
+    // Update appointment status to COMPLETED
+    const completedAppointment = await this.appointmentRepository.update(appointmentId, {
+      status: AppointmentStatus.COMPLETED,
+      notes: completionNotes.join('\n'),
+    });
+
+    // Send completion notification to patient
+    await this.sendCompletionNotification(appointment, doctorId, data);
+
+    return completedAppointment;
+  }
+
+  /**
+   * Send completion notification
+   */
+  private async sendCompletionNotification(
+    appointment: Appointment,
+    doctorId: string,
+    data: DoctorCompleteAppointmentInput
+  ): Promise<void> {
+    const doctor = await this.prisma.user.findUnique({
+      where: { id: doctorId },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (!doctor) return;
+
+    const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+
+    // Fetch slot with doctor profile for notification
+    const slot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: appointment.doctorId },
+      select: { specialty: true, bio: true },
+    });
+
+    await this.notificationService.sendAppointmentCompletion({
+      appointmentId: appointment.id,
+      patientId: appointment.patientId,
+      doctorId: appointment.doctorId,
+      slotId: appointment.slotId,
+      startTime: slot?.startTime || new Date(),
+      endTime: slot?.endTime || new Date(),
+      doctorName,
+      specialty: doctorProfile?.specialty || slot?.doctor?.specialty || 'Unknown',
+      clinic: doctorProfile?.bio || 'Clinic',
+      consultationType: appointment.consultationType,
+      diagnosis: data.diagnosis,
+      notes: data.notes,
+    });
+  }
+
+  /**
+   * Send reschedule notification
+   */
+  private async sendRescheduleNotification(
+    appointmentId: string,
+    patientId: string,
+    doctorId: string,
+    oldSlot: Schedule & { doctor?: { specialty: string } | null },
+    newSlot: Schedule,
+    consultationType: ConsultationType
+  ): Promise<void> {
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: doctorId },
+      select: { bio: true },
+    });
+
+    const doctor = await this.prisma.user.findUnique({
+      where: { id: doctorId },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (!doctor) return;
+
+    const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+
+    await this.notificationService.sendBookingReschedule({
+      appointmentId,
+      patientId,
+      doctorId,
+      slotId: newSlot.id, // Use new slot as the current slot
+      startTime: newSlot.startTime,
+      endTime: newSlot.endTime,
+      oldSlotId: oldSlot.id,
+      newSlotId: newSlot.id,
+      oldStartTime: oldSlot.startTime,
+      oldEndTime: oldSlot.endTime,
+      newStartTime: newSlot.startTime,
+      newEndTime: newSlot.endTime,
+      doctorName,
+      specialty: oldSlot.doctor?.specialty || 'Unknown',
+      clinic: doctorProfile?.bio || 'Clinic',
+      consultationType,
+    });
+  }
+
+  /**
+   * Send check-in notification
+   */
+  private async sendCheckInNotification(appointment: Appointment, doctorId: string): Promise<void> {
+    const doctor = await this.prisma.user.findUnique({
+      where: { id: doctorId },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (!doctor) return;
+
+    const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+
+    // Fetch slot with doctor profile for notification
+    const slot = await this.scheduleRepository.findByIdWithDoctor(appointment.slotId);
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: appointment.doctorId },
+      select: { specialty: true, bio: true },
+    });
+
+    await this.notificationService.sendCheckInConfirmation({
+      appointmentId: appointment.id,
+      patientId: appointment.patientId,
+      doctorId: appointment.doctorId,
+      slotId: appointment.slotId,
+      startTime: slot?.startTime || new Date(),
+      endTime: slot?.endTime || new Date(),
+      doctorName,
+      specialty: doctorProfile?.specialty || slot?.doctor?.specialty || 'Unknown',
+      clinic: doctorProfile?.bio || 'Clinic',
+      consultationType: appointment.consultationType,
+    });
   }
 }
 

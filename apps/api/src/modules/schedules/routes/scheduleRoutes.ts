@@ -5,17 +5,22 @@
 
 import { Router } from 'express';
 import type { ScheduleController } from '../controllers/scheduleController';
-import { requireAuth, optionalAuth } from '../../../shared/middleware/auth';
+import { requireAuth } from '../../../shared/middleware/auth';
 import { asyncHandler } from '../../../shared/utils';
-import { validateCreateSlot, validateCreateBulkSlots, validateUpdateSlot } from '../validators';
+import {
+  validateCreateSlot,
+  validateCreateBulkSlots,
+  validateUpdateSlot,
+  validateUpdateBulkSlots,
+} from '../validators';
 
 export function createScheduleRoutes(scheduleController: ScheduleController): Router {
   const router = Router();
 
   // Public routes (no auth required)
+  // IMPORTANT: Specific routes MUST come before generic /:id route
   router.get('/doctor/:doctorId/available', asyncHandler(scheduleController.getAvailableSlots));
   router.get('/availability', asyncHandler(scheduleController.getAvailability));
-  router.get('/:id', optionalAuth, asyncHandler(scheduleController.getSlotById));
 
   // Protected routes (auth required)
   router.use(requireAuth);
@@ -29,10 +34,17 @@ export function createScheduleRoutes(scheduleController: ScheduleController): Ro
     asyncHandler(scheduleController.createSlot)
   );
   router.post(
-    '/bulk',
+    '/doctor/bulk',
     doctorMiddleware,
     validateCreateBulkSlots,
     asyncHandler(scheduleController.createBulkSlots)
+  );
+  router.get('/doctor', doctorMiddleware, asyncHandler(scheduleController.getWeeklySchedule));
+  router.patch(
+    '/doctor/bulk',
+    doctorMiddleware,
+    validateUpdateBulkSlots,
+    asyncHandler(scheduleController.bulkUpdateSlots)
   );
   router.get(
     '/doctor/:doctorId',
@@ -46,6 +58,9 @@ export function createScheduleRoutes(scheduleController: ScheduleController): Ro
     asyncHandler(scheduleController.updateSlot)
   );
   router.delete('/:id', doctorMiddleware, asyncHandler(scheduleController.deleteSlot));
+
+  // Generic slot by ID route - MUST be LAST to avoid catching other routes
+  router.get('/:id', asyncHandler(scheduleController.getSlotById));
 
   return router;
 }

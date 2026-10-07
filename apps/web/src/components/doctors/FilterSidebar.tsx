@@ -1,9 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { X, ChevronDown, ChevronUp, SlidersHorizontal, Calendar, MapPin, DollarSign } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { SpecialtyChip, SpecialtyChips } from "./SpecialtyChip";
+import { useState } from 'react';
+import {
+  X,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
+  Calendar,
+  MapPin,
+  DollarSign,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { SpecialtyChip, SpecialtyChips } from './SpecialtyChip';
 
 export interface FilterOption {
   value: string;
@@ -27,8 +35,8 @@ export interface DoctorFilters {
   maxFee: number | null;
   availableFrom: Date | null;
   availableTo: Date | null;
-  consultationType: "in_person" | "video" | "phone" | "all";
-  sortBy: "relevance" | "fee_asc" | "fee_desc" | "rating" | "availability";
+  consultationType: 'in_person' | 'video' | 'phone' | 'all';
+  sortBy: 'relevance' | 'fee_asc' | 'fee_desc' | 'rating' | 'availability';
   onlyVerified: boolean;
   acceptsInsurance: boolean;
 }
@@ -39,40 +47,40 @@ const defaultFilters: DoctorFilters = {
   maxFee: null,
   availableFrom: null,
   availableTo: null,
-  consultationType: "all",
-  sortBy: "relevance",
+  consultationType: 'all',
+  sortBy: 'relevance',
   onlyVerified: false,
   acceptsInsurance: false,
 };
 
 const consultationTypes: FilterOption[] = [
-  { value: "all", label: "All types" },
-  { value: "in_person", label: "In-person" },
-  { value: "video", label: "Video visit" },
-  { value: "phone", label: "Phone call" },
+  { value: 'all', label: 'All types' },
+  { value: 'in_person', label: 'In-person' },
+  { value: 'video', label: 'Video visit' },
+  { value: 'phone', label: 'Phone call' },
 ];
 
 const sortOptions: FilterOption[] = [
-  { value: "relevance", label: "Relevance" },
-  { value: "fee_asc", label: "Fee: Low to High" },
-  { value: "fee_desc", label: "Fee: High to Low" },
-  { value: "rating", label: "Highest Rated" },
-  { value: "availability", label: "Soonest Available" },
+  { value: 'relevance', label: 'Relevance' },
+  { value: 'fee_asc', label: 'Fee: Low to High' },
+  { value: 'fee_desc', label: 'Fee: High to Low' },
+  { value: 'rating', label: 'Highest Rated' },
+  { value: 'availability', label: 'Soonest Available' },
 ];
 
 const commonSpecialties: FilterOption[] = [
-  { value: "Cardiology", label: "Cardiology" },
-  { value: "Dermatology", label: "Dermatology" },
-  { value: "Internal Medicine", label: "Internal Medicine" },
-  { value: "Pediatrics", label: "Pediatrics" },
-  { value: "Neurology", label: "Neurology" },
-  { value: "Orthopedics", label: "Orthopedics" },
-  { value: "Psychiatry", label: "Psychiatry" },
-  { value: "Oncology", label: "Oncology" },
-  { value: "Gastroenterology", label: "Gastroenterology" },
-  { value: "Ophthalmology", label: "Ophthalmology" },
-  { value: "ENT", label: "ENT" },
-  { value: "Urology", label: "Urology" },
+  { value: 'Cardiology', label: 'Cardiology' },
+  { value: 'Dermatology', label: 'Dermatology' },
+  { value: 'Internal Medicine', label: 'Internal Medicine' },
+  { value: 'Pediatrics', label: 'Pediatrics' },
+  { value: 'Neurology', label: 'Neurology' },
+  { value: 'Orthopedics', label: 'Orthopedics' },
+  { value: 'Psychiatry', label: 'Psychiatry' },
+  { value: 'Oncology', label: 'Oncology' },
+  { value: 'Gastroenterology', label: 'Gastroenterology' },
+  { value: 'Ophthalmology', label: 'Ophthalmology' },
+  { value: 'ENT', label: 'ENT' },
+  { value: 'Urology', label: 'Urology' },
 ];
 
 export function FilterSidebar({
@@ -114,15 +122,15 @@ export function FilterSidebar({
     setFilters((prev) => ({ ...prev, minFee: min, maxFee: max }));
   };
 
-  const handleDateChange = (field: "availableFrom" | "availableTo", date: Date | null) => {
+  const handleDateChange = (field: 'availableFrom' | 'availableTo', date: Date | null) => {
     setFilters((prev) => ({ ...prev, [field]: date }));
   };
 
-  const handleSortChange = (sortBy: DoctorFilters["sortBy"]) => {
+  const handleSortChange = (sortBy: DoctorFilters['sortBy']) => {
     setFilters((prev) => ({ ...prev, sortBy }));
   };
 
-  const handleToggle = (field: "onlyVerified" | "acceptsInsurance") => {
+  const handleToggle = (field: 'onlyVerified' | 'acceptsInsurance') => {
     setFilters((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
@@ -132,8 +140,8 @@ export function FilterSidebar({
     filters.maxFee !== null ||
     filters.availableFrom !== null ||
     filters.availableTo !== null ||
-    filters.consultationType !== "all" ||
-    filters.sortBy !== "relevance" ||
+    filters.consultationType !== 'all' ||
+    filters.sortBy !== 'relevance' ||
     filters.onlyVerified ||
     filters.acceptsInsurance;
 
@@ -151,14 +159,14 @@ export function FilterSidebar({
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-foreground/30 lg:hidden"
+        className="bg-foreground/30 fixed inset-0 z-40 lg:hidden"
         onClick={onClose}
         aria-hidden="true"
       />
       <aside
         className={cn(
-          "fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-card border-l border-border shadow-xl transform transition-transform duration-200 lg:relative lg:translate-x-0",
-          isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0",
+          'bg-card border-border fixed inset-y-0 right-0 z-50 w-full max-w-sm transform border-l shadow-xl transition-transform duration-200 lg:relative lg:translate-x-0',
+          isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0',
           className
         )}
         role="complementary"
@@ -166,11 +174,11 @@ export function FilterSidebar({
       >
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border p-4 lg:hidden">
+          <div className="border-border flex items-center justify-between border-b p-4 lg:hidden">
             <h2 className="text-lg font-bold">Filters</h2>
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-muted-foreground hover:bg-secondary"
+              className="text-muted-foreground hover:bg-secondary rounded-lg p-2"
               aria-label="Close filters"
             >
               <X className="size-5" />
@@ -185,19 +193,19 @@ export function FilterSidebar({
                 title="Specialty"
                 icon={<Stethoscope className="size-4" />}
                 expanded={expandedSections.specialty}
-                onToggle={() => toggleSection("specialty")}
+                onToggle={() => toggleSection('specialty')}
               >
                 <div className="space-y-3">
                   <div className="relative">
                     <input
                       type="text"
                       placeholder="Search specialties..."
-                      className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm outline-none focus:border-primary"
-                      onChange={(e) => {
+                      className="border-border bg-background focus:border-primary h-10 w-full rounded-xl border pr-4 pl-10 text-sm outline-none"
+                      onChange={(_e) => {
                         // Could add search filtering here
                       }}
                     />
-                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                   </div>
                   <SpecialtyChips
                     specialties={specialties.map((s) => s.value)}
@@ -229,7 +237,7 @@ export function FilterSidebar({
                 title="Consultation Fee"
                 icon={<DollarSign className="size-4" />}
                 expanded={expandedSections.fee}
-                onToggle={() => toggleSection("fee")}
+                onToggle={() => toggleSection('fee')}
               >
                 <FeeRangeSlider
                   min={feeRange.min}
@@ -244,19 +252,19 @@ export function FilterSidebar({
                 title="Availability"
                 icon={<Calendar className="size-4" />}
                 expanded={expandedSections.availability}
-                onToggle={() => toggleSection("availability")}
+                onToggle={() => toggleSection('availability')}
               >
                 <div className="space-y-3">
                   <DateRangePicker
                     label="Available from"
                     value={filters.availableFrom}
-                    onChange={(date) => handleDateChange("availableFrom", date)}
+                    onChange={(date) => handleDateChange('availableFrom', date)}
                     placeholder="Any date"
                   />
                   <DateRangePicker
                     label="Available to"
                     value={filters.availableTo}
-                    onChange={(date) => handleDateChange("availableTo", date)}
+                    onChange={(date) => handleDateChange('availableTo', date)}
                     placeholder="Any date"
                   />
                 </div>
@@ -267,13 +275,13 @@ export function FilterSidebar({
                 title="Consultation Type"
                 icon={<MapPin className="size-4" />}
                 expanded={expandedSections.consultation}
-                onToggle={() => toggleSection("consultation")}
+                onToggle={() => toggleSection('consultation')}
               >
                 <div className="space-y-2">
                   {consultationTypes.map((type) => (
                     <label
                       key={type.value}
-                      className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-secondary cursor-pointer"
+                      className="border-border hover:bg-secondary flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors"
                     >
                       <input
                         type="radio"
@@ -281,9 +289,12 @@ export function FilterSidebar({
                         value={type.value}
                         checked={filters.consultationType === type.value}
                         onChange={() =>
-                          setFilters((prev) => ({ ...prev, consultationType: type.value as DoctorFilters["consultationType"] }))
+                          setFilters((prev) => ({
+                            ...prev,
+                            consultationType: type.value as DoctorFilters['consultationType'],
+                          }))
                         }
-                        className="size-4 text-primary border-border focus:ring-primary"
+                        className="text-primary border-border focus:ring-primary size-4"
                       />
                       <span className="text-sm font-medium">{type.label}</span>
                     </label>
@@ -296,39 +307,41 @@ export function FilterSidebar({
                 title="Advanced"
                 icon={<SlidersHorizontal className="size-4" />}
                 expanded={expandedSections.advanced}
-                onToggle={() => toggleSection("advanced")}
+                onToggle={() => toggleSection('advanced')}
               >
                 <div className="space-y-3">
-                  <label className="flex items-center justify-between gap-4 rounded-xl border border-border p-3 cursor-pointer hover:bg-secondary">
+                  <label className="border-border hover:bg-secondary flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-3">
                     <div>
                       <p className="text-sm font-medium">Verified doctors only</p>
-                      <p className="text-xs text-muted-foreground">Show only verified profiles</p>
+                      <p className="text-muted-foreground text-xs">Show only verified profiles</p>
                     </div>
                     <input
                       type="checkbox"
                       checked={filters.onlyVerified}
-                      onChange={() => handleToggle("onlyVerified")}
-                      className="size-4 text-primary border-border rounded focus:ring-primary"
+                      onChange={() => handleToggle('onlyVerified')}
+                      className="text-primary border-border focus:ring-primary size-4 rounded"
                     />
                   </label>
-                  <label className="flex items-center justify-between gap-4 rounded-xl border border-border p-3 cursor-pointer hover:bg-secondary">
+                  <label className="border-border hover:bg-secondary flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-3">
                     <div>
                       <p className="text-sm font-medium">Accepts insurance</p>
-                      <p className="text-xs text-muted-foreground">Filter by insurance acceptance</p>
+                      <p className="text-muted-foreground text-xs">
+                        Filter by insurance acceptance
+                      </p>
                     </div>
                     <input
                       type="checkbox"
                       checked={filters.acceptsInsurance}
-                      onChange={() => handleToggle("acceptsInsurance")}
-                      className="size-4 text-primary border-border rounded focus:ring-primary"
+                      onChange={() => handleToggle('acceptsInsurance')}
+                      className="text-primary border-border focus:ring-primary size-4 rounded"
                     />
                   </label>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Sort by</label>
+                    <label className="mb-2 block text-sm font-medium">Sort by</label>
                     <select
                       value={filters.sortBy}
-                      onChange={(e) => handleSortChange(e.target.value as DoctorFilters["sortBy"])}
-                      className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm font-medium outline-none focus:border-primary"
+                      onChange={(e) => handleSortChange(e.target.value as DoctorFilters['sortBy'])}
+                      className="border-border bg-background focus:border-primary h-10 w-full rounded-xl border px-3 text-sm font-medium outline-none"
                     >
                       {sortOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -343,12 +356,12 @@ export function FilterSidebar({
 
             {/* Active Filters Summary */}
             {hasActiveFilters && (
-              <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-primary">Active filters</h3>
+              <div className="border-primary/20 bg-primary/5 mt-6 rounded-xl border p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-primary text-sm font-bold">Active filters</h3>
                   <button
                     onClick={clearAllFilters}
-                    className="text-xs font-bold text-primary hover:underline"
+                    className="text-primary text-xs font-bold hover:underline"
                   >
                     Clear all
                   </button>
@@ -372,12 +385,15 @@ export function FilterSidebar({
                       onClick={() => handleFeeChange(null, null)}
                     />
                   ) : null}
-                  {filters.consultationType !== "all" && (
+                  {filters.consultationType !== 'all' && (
                     <SpecialtyChip
-                      label={consultationTypes.find((t) => t.value === filters.consultationType)?.label || ""}
+                      label={
+                        consultationTypes.find((t) => t.value === filters.consultationType)
+                          ?.label || ''
+                      }
                       variant="outline"
                       size="sm"
-                      onClick={() => setFilters((prev) => ({ ...prev, consultationType: "all" }))}
+                      onClick={() => setFilters((prev) => ({ ...prev, consultationType: 'all' }))}
                     />
                   )}
                   {filters.onlyVerified && (
@@ -385,7 +401,7 @@ export function FilterSidebar({
                       label="Verified only"
                       variant="outline"
                       size="sm"
-                      onClick={() => handleToggle("onlyVerified")}
+                      onClick={() => handleToggle('onlyVerified')}
                     />
                   )}
                   {filters.acceptsInsurance && (
@@ -393,7 +409,7 @@ export function FilterSidebar({
                       label="Insurance accepted"
                       variant="outline"
                       size="sm"
-                      onClick={() => handleToggle("acceptsInsurance")}
+                      onClick={() => handleToggle('acceptsInsurance')}
                     />
                   )}
                 </div>
@@ -402,18 +418,18 @@ export function FilterSidebar({
           </div>
 
           {/* Footer Actions */}
-          <div className="border-t border-border p-4 lg:hidden">
+          <div className="border-border border-t p-4 lg:hidden">
             <div className="flex gap-2">
               <button
                 onClick={clearAllFilters}
-                className="flex-1 rounded-xl border border-border px-4 py-3 text-sm font-bold text-muted-foreground hover:bg-secondary"
+                className="border-border text-muted-foreground hover:bg-secondary flex-1 rounded-xl border px-4 py-3 text-sm font-bold"
                 disabled={!hasActiveFilters}
               >
                 Clear all
               </button>
               <button
                 onClick={handleApply}
-                className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:opacity-90"
+                className="bg-primary text-primary-foreground flex-1 rounded-xl px-4 py-3 text-sm font-bold hover:opacity-90"
                 disabled={!hasActiveFilters}
               >
                 Apply
@@ -440,7 +456,7 @@ function FilterSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-border last:border-0">
+    <div className="border-border border-b last:border-0">
       <button
         onClick={onToggle}
         className="flex w-full items-center justify-between gap-4 py-3 text-left"
@@ -450,7 +466,11 @@ function FilterSection({
           <span className="text-muted-foreground">{icon}</span>
           <h3 className="text-base font-bold">{title}</h3>
         </div>
-        {expanded ? <ChevronUp className="size-5 text-muted-foreground" /> : <ChevronDown className="size-5 text-muted-foreground" />}
+        {expanded ? (
+          <ChevronUp className="text-muted-foreground size-5" />
+        ) : (
+          <ChevronDown className="text-muted-foreground size-5" />
+        )}
       </button>
       {expanded && <div className="pt-2 pb-4">{children}</div>}
     </div>
@@ -481,7 +501,10 @@ function FeeRangeSlider({
   };
 
   const handleApply = () => {
-    onChange(localValue[0] === min ? null : localValue[0], localValue[1] === max ? null : localValue[1]);
+    onChange(
+      localValue[0] === min ? null : localValue[0],
+      localValue[1] === max ? null : localValue[1]
+    );
   };
 
   return (
@@ -492,7 +515,7 @@ function FeeRangeSlider({
       </div>
       <div className="relative h-2">
         <div
-          className="absolute inset-0 h-full bg-primary/20 rounded-full"
+          className="bg-primary/20 absolute inset-0 h-full rounded-full"
           style={{
             left: `${((localValue[0] - min) / (max - min)) * 100}%`,
             right: `${(1 - (localValue[1] - min) / (max - min)) * 100}%`,
@@ -504,7 +527,7 @@ function FeeRangeSlider({
           max={max}
           value={localValue[0]}
           onChange={(e) => handleMinChange(Number(e.target.value))}
-          className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer"
+          className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent"
           aria-label="Minimum fee"
         />
         <input
@@ -513,11 +536,14 @@ function FeeRangeSlider({
           max={max}
           value={localValue[1]}
           onChange={(e) => handleMaxChange(Number(e.target.value))}
-          className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer"
+          className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent"
           aria-label="Maximum fee"
         />
       </div>
-      <button onClick={handleApply} className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90">
+      <button
+        onClick={handleApply}
+        className="bg-primary text-primary-foreground w-full rounded-xl px-4 py-2 text-sm font-bold hover:opacity-90"
+      >
         Apply range
       </button>
     </div>
@@ -535,7 +561,9 @@ function DateRangePicker({
   onChange: (date: Date | null) => void;
   placeholder: string;
 }) {
-  const [localValue, setLocalValue] = useState<string>(value ? value.toISOString().split("T")[0] : "");
+  const [localValue, setLocalValue] = useState<string>(
+    value ? value.toISOString().split('T')[0] : ''
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dateStr = e.target.value;
@@ -545,18 +573,18 @@ function DateRangePicker({
 
   return (
     <div>
-      <label className="block text-xs font-bold text-muted-foreground mb-1">{label}</label>
+      <label className="text-muted-foreground mb-1 block text-xs font-bold">{label}</label>
       <input
         type="date"
         value={localValue}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+        className="border-border bg-background focus:border-primary h-10 w-full rounded-xl border px-3 text-sm outline-none"
       />
     </div>
   );
 }
 
 // Need to import Search icon
-import { Search } from "lucide-react";
-import { Stethoscope } from "lucide-react";
+import { Search } from 'lucide-react';
+import { Stethoscope } from 'lucide-react';

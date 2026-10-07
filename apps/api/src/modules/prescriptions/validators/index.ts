@@ -4,7 +4,8 @@
  */
 
 import type { ZodTypeAny } from 'zod';
-import type { Request, Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
+import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
 import {
   PrescriptionCreateSchema,
   PrescriptionUpdateSchema,
@@ -28,7 +29,7 @@ export const prescriptionValidators = {
 
 // Validation middleware factory
 export function createValidationMiddleware<T extends ZodTypeAny>(schema: T) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const parseResult = schema.safeParse(req.body);
     if (!parseResult.success) {
       return res.status(400).json({
@@ -49,7 +50,7 @@ export function createValidationMiddleware<T extends ZodTypeAny>(schema: T) {
 
 // Query validation middleware factory
 export function createQueryValidationMiddleware<T extends ZodTypeAny>(schema: T) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const parseResult = schema.safeParse(req.query);
     if (!parseResult.success) {
       return res.status(400).json({

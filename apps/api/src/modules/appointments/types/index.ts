@@ -45,18 +45,19 @@ export interface Appointment {
 }
 
 export interface DoctorStats {
-  totalAppointments: number;
-  byStatus: Record<AppointmentStatus, number>;
-  byConsultationType: Record<ConsultationType, number>;
-  totalRevenue: number;
-  upcomingCount: number;
+  total: number;
+  scheduled: number;
+  completed: number;
+  cancelled: number;
+  noShow: number;
 }
 
 export interface PatientStats {
-  totalAppointments: number;
-  byStatus: Record<AppointmentStatus, number>;
-  upcomingCount: number;
-  totalSpent: number;
+  total: number;
+  scheduled: number;
+  completed: number;
+  cancelled: number;
+  noShow: number;
 }
 
 export interface TimelineEntry {
@@ -77,6 +78,47 @@ export interface TimelineEntry {
   medications?: string;
   tests?: string;
   notes?: string;
+}
+
+// Doctor-specific appointment filters
+export interface DoctorAppointmentFilters extends Omit<AppointmentFilters, 'doctorId'> {
+  doctorId?: string; // Optional for admin/staff to filter by specific doctor
+}
+
+// Complete appointment input
+export interface DoctorCompleteAppointmentInput {
+  notes?: string | null;
+  diagnosis?: string | null;
+}
+
+// Doctor dashboard stats (for Doctor Portal)
+export interface DoctorDashboardStats {
+  todayAppointments: number;
+  weeklyAppointments: number;
+  slotUtilization: number;
+  totalRevenue: number;
+  revenueByConsultationType: Array<{ type: ConsultationType; amount: number }>;
+  dailyVolume: Array<{ date: string; count: number }>;
+}
+
+// Analytics endpoints types
+export interface DoctorVolumeStats {
+  date: string;
+  count: number;
+  label: string;
+}
+
+export interface DoctorUtilizationStats {
+  booked: number;
+  available: number;
+  cancelled: number;
+  noShow: number;
+  total: number;
+}
+
+export interface DoctorRevenueStats {
+  type: string;
+  amount: number;
 }
 
 export type { AppointmentCreateInput, AppointmentUpdateInput, AppointmentFilters };

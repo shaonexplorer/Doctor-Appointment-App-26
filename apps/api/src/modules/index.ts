@@ -69,6 +69,7 @@ export type {
   DoctorSearchFilters,
   DoctorProfileCreateInput,
   DoctorProfileUpdateInput,
+  DoctorProfileWithStats,
 } from './doctors/types';
 
 export {
@@ -124,17 +125,33 @@ export type {
   AppointmentStatus,
   PaymentStatus,
   ConsultationType,
+  DoctorAppointmentFilters,
+  DoctorDashboardStats,
 } from './appointments/types';
 
 export {
   AppointmentCreateSchema,
   AppointmentUpdateSchema,
   AppointmentFiltersSchema,
+  DoctorAppointmentFiltersSchema,
+  DoctorCancelAppointmentSchema,
+  DoctorRescheduleAppointmentSchema,
+  DoctorCheckInSchema,
   createValidationMiddleware as createAppointmentValidationMiddleware,
   createQueryValidationMiddleware as createAppointmentQueryValidationMiddleware,
   validateCreateAppointment,
   validateUpdateAppointment,
   validateAppointmentFilters,
+  validateDoctorAppointmentFilters,
+  validateDoctorCancelAppointment,
+  validateDoctorRescheduleAppointment,
+  validateDoctorCheckIn,
+} from './appointments/validators';
+
+export type {
+  DoctorCancelAppointmentInput,
+  DoctorRescheduleAppointmentInput,
+  DoctorCheckInInput,
 } from './appointments/validators';
 
 export {
@@ -156,14 +173,19 @@ export type {
   UpcomingAppointmentDetail,
   CompletedAppointmentDetail,
   TimelineQuery,
+  DoctorPatientListItem,
+  DoctorPatientListResponse,
+  DoctorPatientDetail,
 } from './patients/types';
 
 export {
   TimelineQuerySchema,
   DashboardStatsQuerySchema,
+  DoctorPatientListQuerySchema,
   createValidationMiddleware as createPatientValidationMiddleware,
   validateTimelineQuery,
   validateDashboardStatsQuery,
+  validateDoctorPatientListQuery,
 } from './patients/validators';
 
 export { PatientService, createPatientService } from './patients/services/patientService';
@@ -234,10 +256,6 @@ export function createAllModules(repositories: Repositories, prisma: PrismaClien
       repositories.appointment,
       prisma
     ),
-    patients: createPatientsModule(
-      repositories.appointment,
-      repositories.prescription,
-      prisma
-    ),
+    patients: createPatientsModule(repositories.appointment, repositories.prescription, prisma),
   };
 }

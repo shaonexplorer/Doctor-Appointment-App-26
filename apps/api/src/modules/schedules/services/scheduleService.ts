@@ -4,7 +4,7 @@
  */
 
 import type { ScheduleRepository } from '../../../repositories';
-import type { PrismaClient, Schedule } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { SlotStatus } from '@prisma/client';
 import { AppError } from '../../../shared/middleware/errorHandler';
 import type {
@@ -13,6 +13,8 @@ import type {
   SlotUpdateInput,
   ScheduleSlot,
   BulkSlotResult,
+  BulkSlotUpdateInput,
+  BulkSlotUpdateResult,
 } from '../types';
 
 export class ScheduleService {
@@ -185,6 +187,7 @@ export class ScheduleService {
 
   /**
    * Get all slots for a doctor (including booked/cancelled)
+   * doctorId is the DoctorProfile ID
    */
   async getDoctorSlots(
     doctorId: string,
@@ -192,6 +195,27 @@ export class ScheduleService {
     endDate?: Date
   ): Promise<ScheduleSlot[]> {
     return this.scheduleRepository.getDoctorSlots(doctorId, startDate, endDate);
+  }
+
+  /**
+   * Get all slots for a doctor by User ID
+   * Looks up DoctorProfile ID from User ID first
+   */
+  async getDoctorSlotsByUserId(
+    userId: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<ScheduleSlot[]> {
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      return [];
+    }
+
+    return this.scheduleRepository.getDoctorSlots(doctorProfile.id, startDate, endDate);
   }
 
   /**
@@ -203,8 +227,17 @@ export class ScheduleService {
       throw new AppError('NOT_FOUND', 'Slot not found', 404);
     }
 
-    // Verify ownership
-    if (slot.doctorId !== doctorId) {
+    // Verify ownership - doctorId is the User ID, need to get DoctorProfile ID
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: doctorId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
+    }
+
+    if (slot.doctorId !== doctorProfile.id) {
       throw new AppError('FORBIDDEN', "Cannot update another doctor's slot", 403);
     }
 
@@ -255,8 +288,17 @@ export class ScheduleService {
       throw new AppError('NOT_FOUND', 'Slot not found', 404);
     }
 
-    // Verify ownership
-    if (slot.doctorId !== doctorId) {
+    // Verify ownership - doctorId is the User ID, need to get DoctorProfile ID
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId: doctorId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
+    }
+
+    if (slot.doctorId !== doctorProfile.id) {
       throw new AppError('FORBIDDEN', "Cannot delete another doctor's slot", 403);
     }
 
@@ -295,7 +337,129 @@ export class ScheduleService {
    * Get slot by ID with doctor info
    */
   async getSlotById(slotId: string): Promise<ScheduleSlot | null> {
-    return this.scheduleRepository.findByIdWithDoctor(slotId);
+    const slot = await this.scheduleRepository.findByIdWithDoctor(slotId);
+    if (!slot) return null;
+    // Map SlotWithDoctor to ScheduleSlot
+    return {
+      id: slot.id,
+      doctorId: slot.doctorId,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      status: slot.status,
+      createdAt: slot.createdAt,
+      updatedAt: slot.updatedAt,
+      doctor: slot.doctor
+        ? {
+            id: slot.doctor.id,
+            specialty: slot.doctor.specialty,
+            designation: slot.doctor.designation,
+            fee: slot.doctor.fee ? Number(slot.doctor.fee) : null,
+            user: {
+              id: slot.doctor.user.id,
+              firstName: slot.doctor.user.firstName,
+              lastName: slot.doctor.user.lastName,
+              email: slot.doctor.user.email,
+            },
+          }
+        : undefined,
+    };
+  }
+
+  /**
+   * Bulk update slots (Doctor only)
+   */
+  async bulkUpdateSlots(
+    doctorId: string,
+    data: BulkSlotUpdateInput
+  ): Promise<BulkSlotUpdateResult> {
+    // Verify all slots belong to this doctor
+    const slots = await this.prisma.schedule.findMany({
+      where: { id: { in: data.slotIds } },
+      select: { id: true, doctorId: true, status: true, startTime: true, endTime: true },
+    });
+
+    if (slots.length !== data.slotIds.length) {
+      throw new AppError('NOT_FOUND', 'One or more slots not found', 404);
+    }
+
+    for (const slot of slots) {
+      if (slot.doctorId !== doctorId) {
+        throw new AppError('FORBIDDEN', 'Cannot update slots for another doctor', 403);
+      }
+    }
+
+    // Cannot update booked slots
+    const bookedSlots = slots.filter((s) => s.status === SlotStatus.BOOKED);
+    if (bookedSlots.length > 0 && data.status && data.status !== SlotStatus.BOOKED) {
+      throw new AppError(
+        'CONFLICT',
+        'Cannot update booked slots. Cancel the appointments first.',
+        409
+      );
+    }
+
+    // Prepare update data
+    const updateData: Partial<{ status: SlotStatus; startTime: Date; endTime: Date }> = {};
+    if (data.status) updateData.status = data.status;
+    if (data.startTime) updateData.startTime = new Date(data.startTime);
+    if (data.endTime) updateData.endTime = new Date(data.endTime);
+
+    // If updating time, check for overlaps
+    if (updateData.startTime || updateData.endTime) {
+      for (const slot of slots) {
+        const newStart = updateData.startTime || slot.startTime;
+        const newEnd = updateData.endTime || slot.endTime;
+
+        if (newStart >= newEnd) {
+          throw new AppError('VALIDATION_ERROR', 'Start time must be before end time', 400);
+        }
+
+        const overlapping = await this.prisma.schedule.findFirst({
+          where: {
+            doctorId,
+            id: { notIn: data.slotIds },
+            status: { not: SlotStatus.CANCELLED },
+            OR: [
+              {
+                startTime: { lt: newEnd },
+                endTime: { gt: newStart },
+              },
+            ],
+          },
+        });
+
+        if (overlapping) {
+          throw new AppError(
+            'CONFLICT',
+            `Updated slot overlaps with existing schedule at ${newStart.toISOString()}`,
+            409
+          );
+        }
+      }
+    }
+
+    const updated = await this.scheduleRepository.updateMany(data.slotIds, updateData);
+    return { updated, total: data.slotIds.length };
+  }
+
+  /**
+   * Get weekly schedule for a doctor (Doctor Portal)
+   * doctorId is the authenticated user's ID (User ID)
+   * We need to look up the DoctorProfile ID to query the Schedule table
+   */
+  async getWeeklySchedule(userId: string, weekStart: Date): Promise<ScheduleSlot[]> {
+    // Look up the doctor profile for this user
+    const doctorProfile = await this.prisma.doctorProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!doctorProfile) {
+      throw new AppError('NOT_FOUND', 'Doctor profile not found', 404);
+    }
+
+    // Use the DoctorProfile ID to query schedules
+    return this.scheduleRepository.findWeeklySchedule(doctorProfile.id, weekStart);
   }
 }
 

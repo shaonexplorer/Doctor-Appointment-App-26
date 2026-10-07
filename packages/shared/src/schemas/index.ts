@@ -32,7 +32,7 @@ export const DateSchema = z
 // Pagination
 export const PaginationParamsSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+  limit: z.coerce.number().int().positive().max(1000).default(20),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
@@ -235,7 +235,7 @@ export const DoctorSearchFiltersSchema = z.object({
   availableTo: z.string().datetime({ offset: true }).optional(),
   consultationType: z.nativeEnum(ConsultationType).optional(),
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+  limit: z.coerce.number().int().positive().max(1000).default(20),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
@@ -248,10 +248,14 @@ export const SlotCreateSchema = z
     endTime: z.string().datetime({ offset: true, message: 'Invalid end time format' }),
     status: z.nativeEnum(SlotStatus).default(SlotStatus.AVAILABLE),
   })
-  .refine((data) => new Date(data.startTime) < new Date(data.endTime), {
-    message: 'Start time must be before end time',
-    path: ['endTime'],
-  });
+  .refine(
+    (data: { startTime: string; endTime: string }) =>
+      new Date(data.startTime) < new Date(data.endTime),
+    {
+      message: 'Start time must be before end time',
+      path: ['endTime'],
+    }
+  );
 
 export const BulkSlotCreateSchema = z
   .object({
@@ -287,7 +291,7 @@ export const SlotUpdateSchema = z
     endTime: z.string().datetime({ offset: true }).optional(),
   })
   .refine(
-    (data) => {
+    (data: { startTime?: string; endTime?: string }) => {
       if (data.startTime && data.endTime) {
         return new Date(data.startTime) < new Date(data.endTime);
       }
@@ -348,7 +352,7 @@ export const AppointmentFiltersSchema = z.object({
   doctorId: z.string().cuid().optional(),
   patientId: z.string().cuid().optional(),
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+  limit: z.coerce.number().int().positive().max(1000).default(20),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });

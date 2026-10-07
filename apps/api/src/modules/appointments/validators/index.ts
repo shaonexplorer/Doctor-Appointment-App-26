@@ -24,6 +24,15 @@ export { AppointmentCreateSchema, AppointmentUpdateSchema, AppointmentFiltersSch
 
 export type { AppointmentCreateInput, AppointmentUpdateInput, AppointmentFilters };
 
+// Doctor appointment filters (extends base filters, removes doctorId since it's inferred from auth)
+export const DoctorAppointmentFiltersSchema = AppointmentFiltersSchema.omit({
+  doctorId: true,
+}).extend({
+  // Doctor-specific filters
+  patientSearch: z.string().optional(), // Search by patient name
+  dateRange: z.enum(['today', 'week', 'month', 'custom']).optional(),
+});
+
 // Timeline query params (for timeline endpoints)
 export const TimelineQuerySchema = PaginationParamsSchema.extend({
   type: z.enum(['all', 'appointments', 'prescriptions']).optional(),
@@ -40,14 +49,40 @@ export const DashboardStatsQuerySchema = z.object({
 // Type exports
 export type TimelineQuery = z.infer<typeof TimelineQuerySchema>;
 export type DashboardStatsQuery = z.infer<typeof DashboardStatsQuerySchema>;
+export type DoctorCancelAppointmentInput = z.infer<typeof DoctorCancelAppointmentSchema>;
+export type DoctorRescheduleAppointmentInput = z.infer<typeof DoctorRescheduleAppointmentSchema>;
+export type DoctorCheckInInput = z.infer<typeof DoctorCheckInSchema>;
+
+// Module-specific validation helpers
+export const DoctorCancelAppointmentSchema = z.object({
+  reason: z.string().min(1, { message: 'Cancellation reason is required' }).max(500),
+  triggerRefund: z.boolean().default(true),
+});
+
+export const DoctorRescheduleAppointmentSchema = z.object({
+  newSlotId: z.string().cuid({ message: 'Invalid new slot ID' }),
+});
+
+export const DoctorCheckInSchema = z.object({
+  notes: z.string().max(500).optional().nullable(),
+});
+
+export const DoctorCompleteAppointmentSchema = z.object({
+  notes: z.string().max(2000).optional().nullable(),
+  diagnosis: z.string().max(1000).optional().nullable(),
+});
 
 // Module-specific validation helpers
 export const appointmentValidators = {
   create: AppointmentCreateSchema,
   update: AppointmentUpdateSchema,
   filters: AppointmentFiltersSchema,
+  doctorFilters: DoctorAppointmentFiltersSchema,
   timelineQuery: TimelineQuerySchema,
   dashboardStatsQuery: DashboardStatsQuerySchema,
+  doctorCancel: DoctorCancelAppointmentSchema,
+  doctorReschedule: DoctorRescheduleAppointmentSchema,
+  doctorCheckIn: DoctorCheckInSchema,
 } as const;
 
 // Validation middleware factory
@@ -96,5 +131,19 @@ export function createQueryValidationMiddleware<T extends ZodTypeAny>(schema: T)
 export const validateCreateAppointment = createValidationMiddleware(AppointmentCreateSchema);
 export const validateUpdateAppointment = createValidationMiddleware(AppointmentUpdateSchema);
 export const validateAppointmentFilters = createQueryValidationMiddleware(AppointmentFiltersSchema);
+export const validateDoctorAppointmentFilters = createQueryValidationMiddleware(
+  DoctorAppointmentFiltersSchema
+);
 export const validateTimelineQuery = createQueryValidationMiddleware(TimelineQuerySchema);
-export const validateDashboardStatsQuery = createQueryValidationMiddleware(DashboardStatsQuerySchema);
+export const validateDashboardStatsQuery =
+  createQueryValidationMiddleware(DashboardStatsQuerySchema);
+export const validateDoctorCancelAppointment = createValidationMiddleware(
+  DoctorCancelAppointmentSchema
+);
+export const validateDoctorRescheduleAppointment = createValidationMiddleware(
+  DoctorRescheduleAppointmentSchema
+);
+export const validateDoctorCheckIn = createValidationMiddleware(DoctorCheckInSchema);
+export const validateDoctorCompleteAppointment = createValidationMiddleware(
+  DoctorCompleteAppointmentSchema
+);

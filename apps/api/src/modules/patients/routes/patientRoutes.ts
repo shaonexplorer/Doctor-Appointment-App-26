@@ -11,8 +11,9 @@ import { auditPatientProfileAccess } from '../../../shared/middleware/auditLogge
 import {
   validateTimelineQuery,
   validateDashboardStatsQuery,
+  validateDoctorPatientListQuery,
 } from '../validators';
-import { UserType } from '@prisma/client';
+import { UserType } from '@doctor-appointment-app/shared';
 
 export function createPatientRoutes(patientController: PatientController): Router {
   const router = Router();
@@ -38,15 +39,24 @@ export function createPatientRoutes(patientController: PatientController): Route
   );
 
   // Upcoming appointments
-  router.get(
-    '/appointments/upcoming',
-    asyncHandler(patientController.getUpcomingAppointments)
-  );
+  router.get('/appointments/upcoming', asyncHandler(patientController.getUpcomingAppointments));
 
   // Completed appointments with prescriptions
+  router.get('/appointments/completed', asyncHandler(patientController.getCompletedAppointments));
+
+  // Doctor Portal endpoints (doctor only)
+  const doctorMiddleware = requireRole(UserType.DOCTOR);
   router.get(
-    '/appointments/completed',
-    asyncHandler(patientController.getCompletedAppointments)
+    '/doctor',
+    doctorMiddleware,
+    validateDoctorPatientListQuery,
+    asyncHandler(patientController.getDoctorPatientList)
+  );
+  router.get(
+    '/doctor/:id',
+    doctorMiddleware,
+    auditPatientProfileAccess,
+    asyncHandler(patientController.getDoctorPatientDetail)
   );
 
   return router;

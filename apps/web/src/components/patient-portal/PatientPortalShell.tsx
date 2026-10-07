@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { MobileSidebar } from './MobileSidebar';
 import { MobileNav } from './MobileNav';
+import { useAuth } from '@/context/AuthContext';
 
 const routeMap: Record<string, string> = {
   Dashboard: '/patient/dashboard',
@@ -32,6 +33,18 @@ export function PatientPortalShell({ children, active, className }: PatientPorta
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [formattedDate, setFormattedDate] = useState('');
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const dateStr = new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date());
+    setFormattedDate(dateStr);
+  }, []);
 
   const handleNavigate = (label: string) => {
     const route = routeMap[label];
@@ -43,6 +56,10 @@ export function PatientPortalShell({ children, active, className }: PatientPorta
   // Determine active from pathname if not provided
   const currentActive =
     active || Object.entries(routeMap).find(([, route]) => pathname === route)?.[0] || 'Dashboard';
+
+  const patientName = user?.firstName ? user.firstName : 'Patient';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
     <div className={cn('bg-background text-foreground min-h-screen overflow-x-hidden', className)}>
@@ -78,10 +95,10 @@ export function PatientPortalShell({ children, active, className }: PatientPorta
         <main className="mx-auto max-w-[1440px] min-w-0 p-5 pb-24 sm:p-8 lg:p-10">
           <div className="mb-8">
             <p className="text-primary mb-2 text-xs font-bold tracking-[0.16em] uppercase">
-              {currentActive === 'Dashboard' ? 'Monday, September 21, 2026' : 'Patient portal'}
+              {currentActive === 'Dashboard' ? formattedDate || 'Welcome' : 'Patient portal'}
             </p>
             <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-              {currentActive === 'Dashboard' ? 'Good morning, Sarah' : currentActive}
+              {currentActive === 'Dashboard' ? `${greeting}, ${patientName}` : currentActive}
             </h1>
             <p className="text-muted-foreground mt-2 max-w-xl text-sm">
               {currentActive === 'Dashboard'

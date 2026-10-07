@@ -64,5 +64,12 @@ export function createPrescriptionRoutes(prescriptionController: PrescriptionCon
     asyncHandler(prescriptionController.deletePrescription)
   );
 
+  // PDF generation (accessible to doctor, patient, admin, staff)
+  router.get(
+    '/:id/pdf',
+    auditPrescriptionAccess,
+    asyncHandler(prescriptionController.generatePrescriptionPDF)
+  );
+
   return router;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -9,8 +9,9 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/toast';
 import { LoginSchema, type LoginInput } from '@doctor-appointment-app/shared';
+import { useAuth } from '@/context/AuthContext';
 
 // Extend LoginInput to include rememberMe
 type LoginFormInput = LoginInput & { rememberMe?: boolean };
@@ -79,6 +80,7 @@ function Divider() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -98,37 +100,17 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginInput): Promise<void> => {
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        credentials: 'include',
+      await login(data.email, data.password);
+
+      startTransition(() => {
+        router.push('/dashboard');
+        router.refresh();
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        toast({
-          variant: 'destructive',
-          title: 'Login failed',
-          description: result.error?.message || 'Invalid credentials',
-        });
-        return;
-      }
-
-      // toast({
-      //   variant: 'success',
-      //   title: 'Welcome back!',
-      //   description: 'You have been signed in successfully.',
-      // });
-
-      void router.push('/dashboard');
-      router.refresh();
-    } catch {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+    } catch (err) {
+      toast.add({
+        type: 'error',
+        title: 'Login failed',
+        description: err.message || 'Invalid credentials',
       });
     } finally {
       setLoading(false);
@@ -154,30 +136,25 @@ export default function LoginPage() {
           </span>
         </Link>
       </div>
+      <div className="mb-8">
+        <p className="text-primary text-sm font-bold">Welcome back</p>
+        <h1 className="text-foreground mt-2 text-3xl font-bold tracking-tight">
+          Sign in to your account
+        </h1>
+        <p className="text-muted-foreground mt-3 text-sm leading-6">
+          Enter your email and password to access your dashboard.
+        </p>
+      </div>
 
-      <p className="text-primary text-sm font-bold">Welcome back</p>
-      <h1 className="text-foreground mt-2 text-3xl font-bold tracking-tight">
-        Sign in to your account
-      </h1>
-      <p className="text-muted-foreground mt-3 text-sm leading-6">
-        Manage your appointments and stay connected to your care team.
-      </p>
-
-      {}
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <Field
           label="Email address"
           type="email"
           placeholder="you@example.com"
           icon={Mail}
           {...register('email')}
-          aria-invalid={!!errors.email}
         />
-        {errors.email && (
-          <p className="text-destructive text-sm" role="alert">
-            {errors.email.message}
-          </p>
-        )}
+        {errors.email && <p className="text-destructive -mt-3 text-xs">{errors.email.message}</p>}
 
         <Field
           label="Password"
@@ -185,16 +162,13 @@ export default function LoginPage() {
           placeholder="Enter your password"
           icon={LockKeyhole}
           {...register('password')}
-          aria-invalid={!!errors.password}
         />
         {errors.password && (
-          <p className="text-destructive text-sm" role="alert">
-            {errors.password.message}
-          </p>
+          <p className="text-destructive -mt-3 text-xs">{errors.password.message}</p>
         )}
 
-        <div className="flex items-center justify-between text-xs">
-          <label className="text-muted-foreground flex items-center gap-2 font-medium">
+        <div className="flex items-center justify-between text-sm">
+          <label className="text-muted-foreground flex cursor-pointer items-center gap-2 font-medium">
             <input
               type="checkbox"
               className="border-border accent-primary size-4 rounded"
@@ -202,7 +176,7 @@ export default function LoginPage() {
             />
             Remember me
           </label>
-          <Link href="/forgot-password" className="text-primary font-bold hover:underline">
+          <Link href="/forgot-password" className="text-primary font-semibold hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -210,32 +184,21 @@ export default function LoginPage() {
         <Button
           type="submit"
           disabled={loading}
-          className="bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90 dark:bg-primary flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold shadow-lg transition-colors disabled:opacity-60"
-          size="lg"
+          className="bg-primary text-primary-foreground shadow-primary/20 flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold shadow-lg disabled:opacity-60"
         >
-          {loading ? 'Signing in...' : 'Sign in'}
-          {!loading && <ArrowRight className="size-4" />}
+          {loading ? 'Signing in...' : 'Sign in'} <ArrowRight className="size-4" />
         </Button>
       </form>
 
-      <Divider />
-
-      <Button
-        type="button"
-        variant="outline"
-        className="border-input bg-background text-foreground hover:bg-muted mx-auto flex h-11 w-full items-center justify-center gap-3 rounded-xl border text-sm font-bold"
-        size="lg"
-      >
-        <span className="text-base font-bold text-blue-500">G</span>
-        Continue with Google
-      </Button>
-
-      <p className="text-muted-foreground mt-2 text-center text-sm">
-        New to MediBook?{' '}
-        <Link href="/register" className="text-primary font-bold hover:underline">
-          Create an account
-        </Link>
-      </p>
+      <div className="mt-8">
+        <Divider />
+        <p className="text-muted-foreground mt-6 text-center text-sm">
+          Don't have an account?{' '}
+          <Link href="/register" className="text-primary font-bold hover:underline">
+            Create account
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

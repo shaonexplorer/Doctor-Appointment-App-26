@@ -83,4 +83,16 @@ export interface DoctorSchedule {
   updatedAt: Date;
 }
 
+// Doctor profile with stats (for Doctor Portal)
+export interface DoctorProfileWithStats extends DoctorProfile {
+  stats: {
+    totalAppointments: number;
+    todayAppointments: number;
+    weeklyAppointments: number;
+    slotUtilization: number;
+    totalRevenue: number;
+    totalPatients: number;
+  };
+}
+
 export type { DoctorSearchFilters, DoctorProfileCreateInput, DoctorProfileUpdateInput };

@@ -78,11 +78,11 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
 export async function sendVerificationEmail({
   user,
   url,
-  token,
+  _token,
 }: {
   user: { email: string; firstName?: string; lastName?: string };
   url: string;
-  token: string;
+  _token: string;
 }): Promise<void> {
   const firstName = user.firstName || 'User';
 
@@ -132,21 +132,23 @@ export async function sendVerificationOTP({
   otp: string;
   type: 'email-verification' | 'sign-in' | 'forget-password' | 'change-email';
 }): Promise<void> {
-  const subject = type === 'email-verification'
-    ? 'Your verification code'
-    : type === 'sign-in'
-      ? 'Your sign-in code'
-      : type === 'change-email'
-        ? 'Your email change verification code'
-        : 'Your password reset code';
+  const subject =
+    type === 'email-verification'
+      ? 'Your verification code'
+      : type === 'sign-in'
+        ? 'Your sign-in code'
+        : type === 'change-email'
+          ? 'Your email change verification code'
+          : 'Your password reset code';
 
-  const message = type === 'email-verification'
-    ? 'Use the code below to verify your email address:'
-    : type === 'sign-in'
-      ? 'Use the code below to sign in:'
-      : type === 'change-email'
-        ? 'Use the code below to verify your new email address:'
-        : 'Use the code below to reset your password:';
+  const message =
+    type === 'email-verification'
+      ? 'Use the code below to verify your email address:'
+      : type === 'sign-in'
+        ? 'Use the code below to sign in:'
+        : type === 'change-email'
+          ? 'Use the code below to verify your new email address:'
+          : 'Use the code below to reset your password:';
 
   await sendEmail({
     to: email,
@@ -187,11 +189,11 @@ export async function sendVerificationOTP({
 export async function sendPasswordResetEmail({
   user,
   url,
-  token,
+  _token,
 }: {
   user: { email: string; firstName?: string; lastName?: string };
   url: string;
-  token: string;
+  _token: string;
 }): Promise<void> {
   const firstName = user.firstName || 'User';
 

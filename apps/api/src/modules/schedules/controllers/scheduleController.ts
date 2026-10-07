@@ -5,10 +5,16 @@
 
 import type { Response, NextFunction } from 'express';
 import type { ScheduleService } from '../services/scheduleService';
-import { requireAuth, requireRole } from '../../../shared/middleware/auth';
+import { requireRole } from '../../../shared/middleware/auth';
 import { UserType } from '@doctor-appointment-app/shared';
 import { buildSuccessResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
+import type {
+  SlotCreateInput,
+  BulkSlotCreateInput,
+  SlotUpdateInput,
+  BulkSlotUpdateInput,
+} from '../validators';
 
 export class ScheduleController {
   constructor(private scheduleService: ScheduleService) {}
@@ -20,7 +26,7 @@ export class ScheduleController {
   createSlot = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as SlotCreateInput;
 
       const slot = await this.scheduleService.createSlot(req.user!.id, validatedData);
       res.status(201).json(buildSuccessResponse(slot));
@@ -36,7 +42,7 @@ export class ScheduleController {
   createBulkSlots = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as BulkSlotCreateInput;
 
       const result = await this.scheduleService.createBulkSlots(req.user!.id, validatedData);
       res.status(201).json(buildSuccessResponse(result));
@@ -126,13 +132,16 @@ export class ScheduleController {
   /**
    * Get all slots for a doctor (Doctor only)
    * GET /api/schedules/doctor/:doctorId
+   * Note: doctorId is expected to be a User ID (from appointment response)
    */
   getDoctorSlots = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { startDate, endDate } = req.query;
+      const userId = req.params.doctorId;
 
-      const slots = await this.scheduleService.getDoctorSlots(
-        req.params.doctorId,
+      // Use service method that looks up DoctorProfile ID from User ID
+      const slots = await this.scheduleService.getDoctorSlotsByUserId(
+        userId,
         startDate ? new Date(startDate as string) : undefined,
         endDate ? new Date(endDate as string) : undefined
       );
@@ -150,7 +159,7 @@ export class ScheduleController {
   updateSlot = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       // Validation is handled by middleware
-      const validatedData = req.validatedData;
+      const validatedData = req.validatedData as SlotUpdateInput;
 
       const slot = await this.scheduleService.updateSlot(
         req.params.id,
@@ -171,6 +180,53 @@ export class ScheduleController {
     try {
       const result = await this.scheduleService.deleteSlot(req.params.id, req.user!.id);
       res.json(buildSuccessResponse(result));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Bulk update slots (Doctor only)
+   * PATCH /api/schedules/doctor/bulk
+   */
+  bulkUpdateSlots = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      // Validation is handled by middleware
+      const validatedData = req.validatedData as BulkSlotUpdateInput;
+
+      const result = await this.scheduleService.bulkUpdateSlots(req.user!.id, validatedData);
+      res.json(buildSuccessResponse(result));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get weekly schedule for authenticated doctor (Doctor only)
+   * GET /api/schedules/doctor
+   */
+  getWeeklySchedule = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { weekStart } = req.query;
+
+      if (!weekStart) {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'weekStart query parameter is required',
+            details: null,
+          },
+          meta: null,
+        });
+      }
+
+      const slots = await this.scheduleService.getWeeklySchedule(
+        req.user!.id,
+        new Date(weekStart as string)
+      );
+      res.json(buildSuccessResponse(slots));
     } catch (error) {
       next(error);
     }

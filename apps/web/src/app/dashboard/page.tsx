@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { UserType } from '@doctor-appointment-app/shared';
@@ -12,22 +12,30 @@ export default function DashboardRedirectPage() {
   console.log('DashboardRedirectPage: user:', user, 'loading:', loading);
 
   useEffect(() => {
-    if (!loading && user) {
-      switch (user.userType) {
-        case UserType.PATIENT:
-          router.push('/patient/dashboard');
-          break;
-        case UserType.DOCTOR:
-          router.push('/dashboard/doctor');
-          break;
-        case UserType.STAFF:
-          router.push('/dashboard/staff');
-          break;
-        case UserType.ADMIN:
-          router.push('/dashboard/admin');
-          break;
-        default:
-          router.push('/patient/dashboard');
+    if (!loading) {
+      if (user) {
+        startTransition(() => {
+          switch (user.userType) {
+            case UserType.PATIENT:
+              router.push('/patient/dashboard');
+              break;
+            case UserType.DOCTOR:
+              router.push('/doctor/dashboard');
+              break;
+            case UserType.STAFF:
+              router.push('/dashboard/staff');
+              break;
+            case UserType.ADMIN:
+              router.push('/dashboard/admin');
+              break;
+            default:
+              router.push('/patient/dashboard');
+          }
+        });
+      } else {
+        startTransition(() => {
+          router.push('/login');
+        });
       }
     }
   }, [user, loading, router]);

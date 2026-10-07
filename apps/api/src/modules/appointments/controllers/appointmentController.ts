@@ -12,7 +12,11 @@ import type {
   AppointmentCreateInput,
   AppointmentUpdateInput,
   TimelineQuery,
+  DoctorCancelAppointmentInput,
+  DoctorRescheduleAppointmentInput,
+  DoctorCheckInInput,
 } from '../validators';
+import type { DoctorAppointmentFilters, DoctorCompleteAppointmentInput } from '../types';
 
 export class AppointmentController {
   constructor(private appointmentService: AppointmentService) {}
@@ -245,6 +249,195 @@ export class AppointmentController {
       };
       const timeline = await this.appointmentService.getMedicalTimeline(req.user!.id, query);
       res.json(buildSuccessResponse(timeline));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // ==================== DOCTOR PORTAL ENDPOINTS ====================
+
+  /**
+   * Get doctor appointments with filters (Doctor Portal)
+   * GET /api/appointments/doctor
+   */
+  getDoctorAppointments = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const validatedQuery = req.validatedQuery as DoctorAppointmentFilters;
+      const { page, limit, ...filters } = validatedQuery;
+
+      const result = await this.appointmentService.getDoctorAppointments(req.user!.id, {
+        page: page || 1,
+        limit: limit || 20,
+        ...filters,
+      });
+      res.json(
+        buildSuccessResponse(buildPaginatedResponse(result.data, validatedQuery, result.meta.total))
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get single appointment detail for doctor
+   * GET /api/appointments/doctor/:id
+   */
+  getDoctorAppointmentDetail = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const appointment = await this.appointmentService.getDoctorAppointmentDetail(
+        req.params.id,
+        req.user!.id
+      );
+      res.json(buildSuccessResponse(appointment));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get doctor dashboard statistics (Doctor Portal)
+   * GET /api/appointments/stats/doctor-dashboard
+   */
+  getDoctorDashboardStats = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const stats = await this.appointmentService.getDoctorDashboardStats(req.user!.id);
+      res.json(buildSuccessResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get doctor volume analytics (Doctor Portal)
+   * GET /api/appointments/stats/doctor/volume
+   */
+  getDoctorVolumeStats = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const days = req.query.days ? parseInt(req.query.days as string, 10) : 7;
+      const stats = await this.appointmentService.getDoctorVolumeStats(req.user!.id, days);
+      res.json(buildSuccessResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get doctor slot utilization analytics (Doctor Portal)
+   * GET /api/appointments/stats/doctor/utilization
+   */
+  getDoctorUtilizationStats = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const stats = await this.appointmentService.getDoctorUtilizationStats(req.user!.id);
+      res.json(buildSuccessResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get doctor revenue analytics (Doctor Portal)
+   * GET /api/appointments/stats/doctor/revenue
+   */
+  getDoctorRevenueStats = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const stats = await this.appointmentService.getDoctorRevenueStats(req.user!.id);
+      res.json(buildSuccessResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Cancel appointment as doctor (with refund)
+   * PATCH /api/appointments/doctor/:id/cancel
+   */
+  cancelAppointmentAsDoctor = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const validatedData = req.validatedData as DoctorCancelAppointmentInput;
+      const appointment = await this.appointmentService.cancelAppointmentAsDoctor(
+        req.params.id,
+        req.user!.id,
+        validatedData
+      );
+      res.json(buildSuccessResponse(appointment));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Reschedule appointment as doctor
+   * PATCH /api/appointments/doctor/:id/reschedule
+   */
+  rescheduleAppointmentAsDoctor = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const validatedData = req.validatedData as DoctorRescheduleAppointmentInput;
+      const appointment = await this.appointmentService.rescheduleAppointmentAsDoctor(
+        req.params.id,
+        req.user!.id,
+        validatedData.newSlotId
+      );
+      res.json(buildSuccessResponse(appointment));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Check in patient (doctor/staff)
+   * PATCH /api/appointments/doctor/:id/check-in
+   */
+  checkInPatient = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const validatedData = req.validatedData as DoctorCheckInInput;
+      const appointment = await this.appointmentService.checkInPatient(
+        req.params.id,
+        req.user!.id,
+        validatedData.notes
+      );
+      res.json(buildSuccessResponse(appointment));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Complete appointment as doctor
+   * PATCH /api/appointments/doctor/:id/complete
+   */
+  completeAppointmentAsDoctor = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const validatedData = req.validatedData as DoctorCompleteAppointmentInput;
+      const appointment = await this.appointmentService.completeAppointmentAsDoctor(
+        req.params.id,
+        req.user!.id,
+        validatedData
+      );
+      res.json(buildSuccessResponse(appointment));
     } catch (error) {
       next(error);
     }
