@@ -100,7 +100,7 @@ const seed = [
 function Badge({ children, tone = 'blue' }: { children: ReactNode; tone?: string }) {
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black tracking-wide ${tone === 'green' ? 'bg-[#e7f7f0] text-[#2e9675]' : tone === 'red' ? 'bg-[#fdecec] text-[#be6467]' : tone === 'amber' ? 'bg-[#fff3e2] text-[#b57a2f]' : tone === 'purple' ? 'bg-[#f1edff] text-[#826fd1]' : 'bg-[#eaf0ff] text-[#5577c8]'}`}
+      className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black tracking-wide ${tone === 'green' ? 'bg-success/40 text-success' : tone === 'red' ? 'bg-destructive/40 text-destructive-foreground' : tone === 'amber' ? 'bg-warning/40 text-warning-foreground' : tone === 'purple' ? 'bg-primary/30 text-primary' : 'bg-primary/30 text-primary'}`}
     >
       {children}
     </span>
@@ -135,12 +135,12 @@ export function AdminDoctors() {
   return (
     <div className="mt-8 space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric title="Total doctors" value="486" icon={Stethoscope} tone="blue" />
+        <Metric title="Total doctors" value="486" icon={Stethoscope} tone="amber" />
         <Metric title="Active" value="462" icon={ShieldCheck} tone="green" />
         <Metric title="Pending review" value="12" icon={Clock3} tone="amber" />
         <Metric title="Avg utilization" value="74.8%" icon={Activity} tone="purple" />
       </div>
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#e5e9f2] bg-white p-4 shadow-sm sm:flex-row">
+      <div className="bg-card flex flex-col gap-3 rounded-2xl border border-none p-4 shadow-sm sm:flex-row">
         <label className="relative flex-1">
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -148,14 +148,14 @@ export function AdminDoctors() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search doctors, specialties, or clinics..."
-            className="h-10 w-full rounded-xl border border-[#e5e9f2] bg-[#f8faff] pr-3 pl-9 text-xs outline-none focus:border-[#6b8bd6]"
+            className="border-border bg-accent focus:border-primary h-10 w-full rounded-xl border pr-3 pl-9 text-xs outline-none"
           />
         </label>
         <select
           aria-label="Filter doctor status"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="h-10 rounded-xl border border-[#e5e9f2] bg-white px-3 text-xs font-semibold"
+          className="border-border bg-accent h-10 rounded-xl border px-3 text-xs font-semibold"
         >
           <option>All statuses</option>
           <option>ACTIVE</option>
@@ -164,15 +164,15 @@ export function AdminDoctors() {
         </select>
         <button
           onClick={() => setModal('add')}
-          className="rounded-xl bg-[#5d83d8] px-4 py-2.5 text-xs font-bold text-white"
+          className="bg-primary rounded-xl px-4 py-2.5 text-xs font-bold text-white"
         >
           Add doctor
         </button>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-[#e5e9f2] bg-white shadow-sm">
+      <div className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-left text-xs">
-            <thead className="bg-[#f8faff] text-[10px] tracking-wider text-slate-400 uppercase">
+            <thead className="bg-accent text-[10px] tracking-wider text-slate-400 uppercase">
               <tr>
                 {[
                   'Doctor',
@@ -191,15 +191,15 @@ export function AdminDoctors() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#eef1f6]">
+            <tbody className="divide-border divide-y">
               {filtered.map((doctor) => (
-                <tr key={doctor.name} className="hover:bg-[#fbfcff]">
+                <tr key={doctor.name} className="hover:bg-[var(--muted)]">
                   <td className="p-4">
                     <button
                       onClick={() => setDrawer(doctor)}
                       className="flex items-center gap-3 text-left"
                     >
-                      <span className="grid size-9 place-items-center rounded-full bg-[#eaf0ff] font-bold text-[#5577c8]">
+                      <span className="bg-primary/10 text-primary grid size-9 place-items-center rounded-full">
                         {doctor.name
                           .replace('Dr. ', '')
                           .split(' ')
@@ -207,7 +207,7 @@ export function AdminDoctors() {
                           .join('')}
                       </span>
                       <span>
-                        <strong className="block text-[#17233d]">{doctor.name}</strong>
+                        <strong className="text-foreground block">{doctor.name}</strong>
                         <span className="text-[11px] text-slate-400">{doctor.review}</span>
                       </span>
                     </button>
@@ -219,9 +219,9 @@ export function AdminDoctors() {
                   <td className="p-4 font-semibold">{doctor.appointments}</td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-20 rounded-full bg-[#edf0f6]">
+                      <div className="bg-muted h-2 w-20 rounded-full">
                         <div
-                          className="h-2 rounded-full bg-[#5d83d8]"
+                          className="bg-primary h-2 rounded-full"
                           style={{ width: `${doctor.utilization}%` }}
                         />
                       </div>
@@ -283,7 +283,7 @@ export function AdminDoctors() {
       {notice && (
         <div
           role="status"
-          className="fixed right-5 bottom-6 z-50 rounded-xl border border-[#dce2ee] bg-white px-4 py-3 text-sm font-semibold shadow-lg"
+          className="border-border bg-card fixed right-5 bottom-6 z-50 rounded-xl px-4 py-3 text-sm font-semibold shadow-lg"
         >
           <Check className="mr-2 inline size-4 text-[#43ae91]" />
           {notice}
@@ -305,11 +305,11 @@ function Metric({
   tone: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[#e5e9f2] bg-white p-4 shadow-sm">
+    <div className="border-border bg-card rounded-2xl p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-500">{title}</span>
+        <span className="text-muted-foreground text-xs font-semibold">{title}</span>
         <span
-          className={`grid size-8 place-items-center rounded-lg ${tone === 'green' ? 'bg-[#e7f7f0] text-[#2e9675]' : tone === 'amber' ? 'bg-[#fff3e2] text-[#b57a2f]' : tone === 'purple' ? 'bg-[#f1edff] text-[#826fd1]' : 'bg-[#eaf0ff] text-[#5577c8]'}`}
+          className={`grid size-8 place-items-center rounded-lg ${tone === 'green' ? 'bg-secondary-foreground/5 text-secondary-foreground' : tone === 'amber' ? 'bg-primary/5 text-primary' : tone === 'purple' ? 'bg-primary/5 text-primary' : 'bg-secondary/5 text-secondary'}`}
         >
           <Icon className="size-4" />
         </span>
@@ -335,8 +335,8 @@ function Drawer({
   onReview: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-[#17233d]/30">
-      <div className="h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-2xl sm:p-8">
+    <div className="fixed inset-0 z-50 flex justify-end bg-[var(--foreground)]/30">
+      <div className="bg-card h-full w-full max-w-xl overflow-y-auto p-6 shadow-2xl sm:p-8">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs font-bold tracking-[0.16em] text-[#6b8bd6] uppercase">
@@ -373,14 +373,14 @@ function Drawer({
           <Info label="Appointments" value={`${doctor.appointments} this month`} />
           <Info label="Revenue" value={doctor.revenue} />
         </div>
-        <section className="mt-6 rounded-2xl bg-[#f8faff] p-4">
+        <section className="bg-muted mt-6 rounded-2xl p-4">
           <h3 className="text-sm font-bold">Personal information</h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">{doctor.bio}</p>
           <p className="mt-3 text-xs font-semibold text-slate-500">
-            <span className="text-[#17233d]">Symptoms handled:</span> {doctor.symptoms}
+            <span className="text-foreground">Symptoms handled:</span> {doctor.symptoms}
           </p>
         </section>
-        <section className="mt-5 rounded-2xl border border-[#e5e9f2] p-4">
+        <section className="mt-5 rounded-2xl border border-[var(--border)] p-4">
           <div className="flex items-center gap-2">
             <Activity className="size-4 text-[#5d83d8]" />
             <h3 className="text-sm font-bold">Performance analytics</h3>
@@ -403,14 +403,14 @@ function Drawer({
         <div className="mt-6 grid gap-2 sm:grid-cols-2">
           <button
             onClick={onEdit}
-            className="rounded-xl bg-[#5d83d8] px-4 py-3 text-xs font-bold text-white"
+            className="bg-primary rounded-xl px-4 py-3 text-xs font-bold text-white"
           >
             <Edit3 className="mr-2 inline size-4" />
             Edit doctor
           </button>
           <button
             onClick={onAvailability}
-            className="rounded-xl border border-[#dce2ee] px-4 py-3 text-xs font-bold"
+            className="rounded-xl border border-[var(--border)] px-4 py-3 text-xs font-bold"
           >
             <CalendarDays className="mr-2 inline size-4" />
             Manage availability
@@ -437,7 +437,7 @@ function Drawer({
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[#e5e9f2] p-3">
+    <div className="rounded-xl border border-[var(--border)] p-3">
       <p className="text-[10px] font-bold tracking-wide text-slate-400 uppercase">{label}</p>
       <p className="mt-1 text-sm font-semibold">{value}</p>
     </div>
@@ -454,8 +454,8 @@ function Modal({
   onSave: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[60] grid place-items-center bg-[#17233d]/30 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[60] grid place-items-center bg-[var(--foreground)]/30 p-4">
+      <div className="bg-card w-full max-w-lg rounded-2xl p-6 shadow-2xl">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black">{title}</h2>
           <button
@@ -470,34 +470,34 @@ function Modal({
           <input
             aria-label="Doctor name"
             placeholder="Doctor name"
-            className="h-11 rounded-xl border border-[#e5e9f2] px-3 text-sm"
+            className="h-11 rounded-xl border border-[var(--border)] px-3 text-sm"
           />
           <input
             aria-label="Specialty"
             placeholder="Specialty"
-            className="h-11 rounded-xl border border-[#e5e9f2] px-3 text-sm"
+            className="h-11 rounded-xl border border-[var(--border)] px-3 text-sm"
           />
           <input
             aria-label="Clinic"
             placeholder="Clinic"
-            className="h-11 rounded-xl border border-[#e5e9f2] px-3 text-sm"
+            className="h-11 rounded-xl border border-[var(--border)] px-3 text-sm"
           />
           <input
             aria-label="Consultation fee"
             placeholder="Consultation fee"
-            className="h-11 rounded-xl border border-[#e5e9f2] px-3 text-sm"
+            className="h-11 rounded-xl border border-[var(--border)] px-3 text-sm"
           />
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="rounded-xl border border-[#dce2ee] px-4 py-2.5 text-xs font-bold"
+            className="rounded-xl border border-[var(--border)] px-4 py-2.5 text-xs font-bold"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
-            className="rounded-xl bg-[#5d83d8] px-4 py-2.5 text-xs font-bold text-white"
+            className="bg-primary rounded-xl px-4 py-2.5 text-xs font-bold text-white"
           >
             Save doctor
           </button>

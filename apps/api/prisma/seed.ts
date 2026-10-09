@@ -553,8 +553,8 @@ const doctorsData = [
   },
 ];
 
-// Helper to generate schedules for the next 30 days
-function generateSchedules(doctorId: string, startDate: Date, days: number = 30) {
+// Helper to generate schedules for the next 7 days
+function generateSchedules(doctorId: string, startDate: Date, days: number = 7) {
   const schedules = [];
   const currentDate = new Date(startDate);
   currentDate.setHours(0, 0, 0, 0);

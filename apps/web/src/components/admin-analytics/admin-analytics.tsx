@@ -37,10 +37,10 @@ const specialties = [
   { name: 'Orthopedics', value: 180 },
 ];
 const status = [
-  { name: 'Completed', value: 68, color: '#43ae91' },
-  { name: 'Scheduled', value: 17, color: '#5d83d8' },
-  { name: 'Cancelled', value: 9, color: '#d9a45d' },
-  { name: 'No-shows', value: 6, color: '#d47778' },
+  { name: 'Completed', value: 68, color: 'var(--success)' },
+  { name: 'Scheduled', value: 17, color: 'var(--primary)' },
+  { name: 'Cancelled', value: 9, color: 'var(--warning)' },
+  { name: 'No-shows', value: 6, color: 'var(--warning)' },
 ];
 const revenue = [
   { name: 'Apr 1', amount: 42 },
@@ -66,9 +66,9 @@ const registrations = [
   { name: 'Sep', patients: 2040 },
 ];
 const payments = [
-  { name: 'Paid', value: 74, color: '#43ae91' },
-  { name: 'Pending', value: 18, color: '#d9a45d' },
-  { name: 'Refunded', value: 8, color: '#826fd1' },
+  { name: 'Paid', value: 74, color: 'var(--success)' },
+  { name: 'Pending', value: 18, color: 'var(--warning)' },
+  { name: 'Refunded', value: 8, color: 'var(--primary)' },
 ];
 
 export function AdminAnalytics() {
@@ -80,24 +80,24 @@ export function AdminAnalytics() {
   );
   return (
     <div className="mt-8 space-y-5">
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#e5e9f2] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-sm font-bold">
-          <CalendarDays className="size-4 text-[#5d83d8]" /> Analytics period{' '}
-          <span className="font-normal text-slate-400">{rangeLabel}</span>
+          <CalendarDays className="text-primary size-4" /> Analytics period{' '}
+          <span className="text-muted-foreground font-normal">{rangeLabel}</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {ranges.map((item) => (
             <button
               key={item}
               onClick={() => setRange(item)}
-              className={`rounded-lg px-3 py-2 text-xs font-bold ${range === item ? 'bg-[#eaf0ff] text-[#4f72c9]' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`rounded-lg px-3 py-2 text-xs font-bold ${range === item ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary'}`}
             >
               {item}
             </button>
           ))}
           <button
             onClick={() => setNotice('Analytics report export started')}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#dce2ee] px-3 py-2 text-xs font-bold text-slate-600"
+            className="border-border text-foreground inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold"
           >
             <Download className="size-3.5" /> Export
           </button>
@@ -122,7 +122,7 @@ export function AdminAnalytics() {
                 type="monotone"
                 dataKey="total"
                 name="Appointments"
-                stroke="#5d83d8"
+                stroke="var(--primary)"
                 strokeWidth={3}
                 dot={false}
               />
@@ -130,7 +130,7 @@ export function AdminAnalytics() {
                 type="monotone"
                 dataKey="completed"
                 name="Completed"
-                stroke="#43ae91"
+                stroke="var(--success)"
                 strokeWidth={2}
                 dot={false}
               />
@@ -155,9 +155,14 @@ export function AdminAnalytics() {
                 axisLine={false}
                 tickLine={false}
                 width={92}
-                tick={{ fontSize: 11, fill: '#8993a7' }}
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
               />
-              <Bar dataKey="value" name="Appointments" fill="#5d83d8" radius={[0, 6, 6, 0]} />
+              <Bar
+                dataKey="value"
+                name="Appointments"
+                fill="var(--primary)"
+                radius={[0, 6, 6, 0]}
+              />
               <Tip />
               <Legend />
             </BarChart>
@@ -172,8 +177,8 @@ export function AdminAnalytics() {
                 type="monotone"
                 dataKey="amount"
                 name="Revenue ($K)"
-                stroke="#826fd1"
-                fill="#eeeaff"
+                stroke="var(--primary)"
+                fill="var(--muted)"
                 strokeWidth={3}
               />
               <Tip />
@@ -194,17 +199,17 @@ export function AdminAnalytics() {
                 axisLine={false}
                 tickLine={false}
                 width={92}
-                tick={{ fontSize: 11, fill: '#8993a7' }}
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
               />
               <Bar
                 dataKey="value"
                 name="Utilization"
-                fill="#43ae91"
+                fill="var(--success)"
                 radius={[0, 6, 6, 0]}
                 label={{
                   position: 'right',
                   fontSize: 11,
-                  fill: '#64748b',
+                  fill: 'var(--muted-foreground)',
                   formatter: (v) => `${v}%`,
                 }}
               />
@@ -222,9 +227,9 @@ export function AdminAnalytics() {
                 type="monotone"
                 dataKey="patients"
                 name="New patients"
-                stroke="#d39a56"
+                stroke="var(--warning)"
                 strokeWidth={3}
-                dot={{ r: 3, fill: '#d39a56' }}
+                dot={{ r: 3, fill: 'var(--warning)' }}
               />
               <Tip />
               <Legend />
@@ -236,9 +241,9 @@ export function AdminAnalytics() {
         <Chart title="Payment status" subtitle="Collected, pending, and refunded payments">
           <Donut data={payments} />
         </Chart>
-        <div className="rounded-2xl border border-[#e5e9f2] bg-white p-5 shadow-sm">
+        <div className="border-border bg-card rounded-2xl border p-5 shadow-sm">
           <div className="flex items-center gap-2">
-            <TrendingUp className="size-4 text-[#43ae91]" />
+            <TrendingUp className="text-success size-4" />
             <h2 className="text-sm font-bold">Analytics highlights</h2>
           </div>
           <div className="mt-5 space-y-4">
@@ -250,7 +255,7 @@ export function AdminAnalytics() {
               '74% of payments are collected successfully.',
             ].map((item) => (
               <div key={item} className="flex gap-3 text-sm text-slate-500">
-                <span className="mt-2 size-2 shrink-0 rounded-full bg-[#5d83d8]" />
+                <span className="bg-primary mt-2 size-2 shrink-0 rounded-full" />
                 {item}
               </div>
             ))}
@@ -260,7 +265,7 @@ export function AdminAnalytics() {
       {notice && (
         <div
           role="status"
-          className="fixed right-5 bottom-6 z-50 rounded-xl border border-[#dce2ee] bg-white px-4 py-3 text-sm font-semibold shadow-lg"
+          className="border-border bg-card fixed right-5 bottom-6 z-50 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg"
         >
           {notice}
         </div>
@@ -280,10 +285,10 @@ function Metric({
   negative?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-[#e5e9f2] bg-white p-4 shadow-sm">
-      <p className="text-[11px] font-semibold text-slate-500">{title}</p>
-      <p className="mt-2 text-xl font-black text-[#17233d]">{value}</p>
-      <p className={`mt-3 text-[11px] font-bold ${negative ? 'text-[#43ae91]' : 'text-[#43ae91]'}`}>
+    <div className="border-border bg-card rounded-2xl p-4 shadow-sm">
+      <p className="text-muted-foreground text-[11px] font-semibold">{title}</p>
+      <p className="text-foreground mt-2 text-xl font-black">{value}</p>
+      <p className={`mt-3 text-[11px] font-bold ${negative ? 'text-destructive' : 'text-primary'}`}>
         {trend} vs prior
       </p>
     </div>
@@ -299,15 +304,15 @@ function Chart({
   children: ReactNode;
 }) {
   return (
-    <section className="min-w-0 rounded-2xl border border-[#e5e9f2] bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-bold text-[#17233d]">{title}</h2>
+    <section className="border-border bg-card min-w-0 rounded-2xl p-5 shadow-sm">
+      <h2 className="text-foreground text-sm font-bold">{title}</h2>
       <p className="mt-1 text-[11px] text-slate-500">{subtitle}</p>
       <div className="mt-4 min-w-0">{children}</div>
     </section>
   );
 }
 function Grid() {
-  return <CartesianGrid stroke="#eef1f6" vertical={false} />;
+  return <CartesianGrid stroke="var(--muted)" vertical={false} />;
 }
 function Axis() {
   return (
@@ -316,14 +321,20 @@ function Axis() {
         dataKey="name"
         axisLine={false}
         tickLine={false}
-        tick={{ fontSize: 11, fill: '#8993a7' }}
+        tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
       />
-      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8993a7' }} />
+      <YAxis
+        axisLine={false}
+        tickLine={false}
+        tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+      />
     </>
   );
 }
 function Tip() {
-  return <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e5e9f2', fontSize: 12 }} />;
+  return (
+    <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', fontSize: 12 }} />
+  );
 }
 function Donut({ data }: { data: { name: string; value: number; color: string }[] }) {
   return (
@@ -343,7 +354,7 @@ function Donut({ data }: { data: { name: string; value: number; color: string }[
           <div key={item.name} className="flex items-center gap-2 text-xs text-slate-500">
             <span className="size-2 rounded-full" style={{ background: item.color }} />
             {item.name}
-            <strong className="ml-2 text-[#17233d]">{item.value}%</strong>
+            <strong className="text-foreground ml-2">{item.value}%</strong>
           </div>
         ))}
       </div>

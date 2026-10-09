@@ -248,10 +248,10 @@ function NotificationRow({
             : ShieldCheck;
   return (
     <article
-      className={`group flex gap-3 p-4 transition sm:gap-4 sm:p-5 ${item.unread ? 'bg-[#f7faff]' : 'bg-card'}`}
+      className={`group flex gap-3 p-4 transition sm:gap-4 sm:p-5 ${item.unread ? 'bg-primary/5' : 'bg-card'}`}
     >
       <div
-        className={`mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl ${item.unread ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary'}`}
+        className={`mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl ${item.unread ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary'}`}
       >
         <Icon className="size-4" />
       </div>

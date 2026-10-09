@@ -181,7 +181,7 @@ export function AdminFacilities({ kind }: { kind: 'Clinics' | 'Departments' }) {
           icon={isClinics ? Stethoscope : Users}
         />
       </div>
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#e5e9f2] bg-white p-4 shadow-sm sm:flex-row">
+      <div className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-4 shadow-sm sm:flex-row">
         <label className="relative flex-1">
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -189,14 +189,14 @@ export function AdminFacilities({ kind }: { kind: 'Clinics' | 'Departments' }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Search ${kind.toLowerCase()}...`}
-            className="h-10 w-full rounded-xl border border-[#e5e9f2] bg-[#f8faff] pl-9 text-xs outline-none"
+            className="border-border bg-accent h-10 w-full rounded-xl border pl-9 text-xs outline-none"
           />
         </label>
         <select
           aria-label="Filter status"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="h-10 rounded-xl border border-[#e5e9f2] px-3 text-xs font-semibold"
+          className="border-border bg-accent h-10 rounded-xl border px-3 text-xs font-semibold"
         >
           <option>All statuses</option>
           <option>Active</option>
@@ -209,10 +209,10 @@ export function AdminFacilities({ kind }: { kind: 'Clinics' | 'Departments' }) {
           <Plus className="size-4" /> Create {isClinics ? 'clinic' : 'department'}
         </button>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-[#e5e9f2] bg-white shadow-sm">
+      <div className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] text-left text-xs">
-            <thead className="bg-[#f8faff] text-[10px] tracking-wider text-slate-400 uppercase">
+            <thead className="bg-accent text-[10px] tracking-wider text-slate-400 uppercase">
               <tr>
                 {(isClinics
                   ? ['Clinic name', 'Address', 'Departments', 'Doctors', 'Status', 'Actions']
@@ -232,9 +232,9 @@ export function AdminFacilities({ kind }: { kind: 'Clinics' | 'Departments' }) {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#eef1f6]">
+            <tbody className="divide-border divide-y">
               {rows.map((row) => (
-                <tr key={row.name} className="hover:bg-[#fbfcff]">
+                <tr key={row.name} className="hover:bg-muted">
                   {isClinics ? (
                     <>
                       <td className="p-4 font-bold">{(row as Clinic).name}</td>
@@ -279,7 +279,7 @@ export function AdminFacilities({ kind }: { kind: 'Clinics' | 'Departments' }) {
             No {kind.toLowerCase()} match your filters.
           </div>
         )}
-        <div className="flex items-center justify-between border-t border-[#eef1f6] px-4 py-3 text-xs text-slate-500">
+        <div className="border-border flex items-center justify-between border-t px-4 py-3 text-xs text-slate-500">
           <span>
             Showing {rows.length} of {isClinics ? clinics.length : departments.length}
           </span>
@@ -297,7 +297,7 @@ export function AdminFacilities({ kind }: { kind: 'Clinics' | 'Departments' }) {
       {notice && (
         <div
           role="status"
-          className="fixed right-5 bottom-6 z-50 rounded-xl border bg-white px-4 py-3 text-sm font-semibold shadow-lg"
+          className="bg-card fixed right-5 bottom-6 z-50 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg"
         >
           {notice}
         </div>
@@ -316,10 +316,10 @@ function Metric({
   icon: typeof Building2;
 }) {
   return (
-    <div className="rounded-2xl border border-[#e5e9f2] bg-white p-4 shadow-sm">
+    <div className="border-border bg-card rounded-2xl border p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-500">{title}</span>
-        <span className="grid size-8 place-items-center rounded-lg bg-[#eaf0ff] text-[#5577c8]">
+        <span className="bg-primary/30 grid size-8 place-items-center rounded-lg text-[#5577c8]">
           <Icon className="size-4" />
         </span>
       </div>
@@ -340,7 +340,7 @@ function CreateModal({
   const clinic = kind === 'Clinics';
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center bg-[#17233d]/30 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+      <div className="bg-card w-full max-w-lg rounded-2xl p-6 shadow-2xl">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold tracking-[0.16em] text-[#6b8bd6] uppercase">
