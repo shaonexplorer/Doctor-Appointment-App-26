@@ -18,6 +18,7 @@ import {
   CreditCard,
   FileText,
   LayoutDashboard,
+  LogOut,
   Menu,
   MoreHorizontal,
   PanelLeft,
@@ -29,6 +30,12 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type StatCardProps = {
   title: string;
@@ -70,6 +77,7 @@ import {
   YAxis,
 } from 'recharts';
 import { cn } from 'cn';
+import { Button } from '../ui/button';
 
 const growth = [
   { name: 'Apr', users: 820 },
@@ -188,7 +196,29 @@ export function AdminDashboard() {
               <p className="text-xs font-bold">Alex Morgan</p>
               <p className="text-[11px] text-slate-500">System Administrator</p>
             </div>
-            <MoreHorizontal className="ml-auto size-4 text-slate-400" />
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button variant="ghost" className="rounded-full p-2">
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-44" align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    void fetch('/api/auth/logout', {
+                      method: 'POST',
+                      credentials: 'include',
+                    }).then(() => {
+                      window.location.href = '/login';
+                    });
+                  }}
+                  className="text-destructive focus:text-destructive flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </aside>

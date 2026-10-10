@@ -103,6 +103,8 @@ export class AuthController {
   logout = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const sessionToken = req.cookies?.session_token;
+      const userType = req.user?.userType;
+      const userId = req.user?.id;
 
       if (sessionToken) {
         await this.authService.logout(sessionToken);
@@ -110,6 +112,16 @@ export class AuthController {
 
       // Clear session cookie
       clearSessionCookie(res);
+
+      // Log audit event for logout (especially important for admin roles)
+      if (userId && userType) {
+        const { logAuthEvent } = await import('../../../shared/middleware/auditLogger');
+        logAuthEvent(userId, 'LOGOUT', 'session', req, { userType, resource: 'session' }).catch(
+          (err) => {
+            console.error('Audit log error during logout:', err);
+          }
+        );
+      }
 
       res.json(buildSuccessResponse({ message: 'Logged out successfully' }));
     } catch (error) {
