@@ -54,6 +54,9 @@ export default function DoctorProfilePage() {
     endDate
   );
 
+  // console.log('Doctor Data:', doctorData);
+  // console.log('Schedule Data:', scheduleData);
+
   // Transform doctor data for components
   const doctor = useMemo(() => {
     if (!doctorData) return null;
@@ -122,14 +125,16 @@ export default function DoctorProfilePage() {
     if (selectedDate && slotsByDate.has(selectedDate)) {
       const daySlots = slotsByDate.get(selectedDate)!;
       if (daySlots.morning.length > 0)
-        slotsObj.Morning = daySlots.morning.map((time) => ({ time }));
+        slotsObj.Morning = [...new Set(daySlots.morning)].map((time) => ({ time }));
       if (daySlots.afternoon.length > 0)
-        slotsObj.Afternoon = daySlots.afternoon.map((time) => ({ time }));
+        slotsObj.Afternoon = [...new Set(daySlots.afternoon)].map((time) => ({ time }));
       if (daySlots.evening.length > 0)
-        slotsObj.Evening = daySlots.evening.map((time) => ({ time }));
+        slotsObj.Evening = [...new Set(daySlots.evening)].map((time) => ({ time }));
     }
     return slotsObj;
   }, [slotsByDate, selectedDate]);
+
+  console.log('Slots:', slots);
 
   // Auto-select first available date/time
   useEffect(() => {

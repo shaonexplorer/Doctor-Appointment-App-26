@@ -79,7 +79,7 @@ export function ScheduleCalendar({
             <div className="grid grid-cols-3 gap-2">
               {times.map((slot) => (
                 <button
-                  key={slot.time}
+                  key={`${period}-${slot.time}`}
                   disabled={slot.booked || slot.unavailable}
                   onClick={() => onTimeChange(slot.time)}
                   className={cn(
