@@ -572,6 +572,10 @@ function Dashboard() {
               'Dr. Carter added 4 appointment slots',
               'Payment #PMT-0482 was refunded',
               'New clinic: Northside Health added',
+              'Dr. Patel updated availability for next week',
+              'System maintenance completed successfully',
+              'New patient: John Doe registered',
+              'Dr. Smith completed 12 appointments today',
             ]}
             icon={Activity}
           />
@@ -581,6 +585,10 @@ function Dashboard() {
               '7 pending payment reviews',
               '2 doctors have low availability',
               'System backup completed',
+              '3 clinics require license renewal',
+              '1 doctor has submitted a leave request',
+              'New clinic: Southside Health added',
+              'Dr. Johnson updated their profile',
             ]}
             icon={AlertTriangle}
             warning

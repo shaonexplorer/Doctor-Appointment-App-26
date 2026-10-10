@@ -134,7 +134,7 @@ export default function DoctorProfilePage() {
     return slotsObj;
   }, [slotsByDate, selectedDate]);
 
-  console.log('Slots:', slots);
+  // console.log('Slots:', slots);
 
   // Auto-select first available date/time
   useEffect(() => {

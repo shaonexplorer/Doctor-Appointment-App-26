@@ -23,10 +23,10 @@ export default function DashboardRedirectPage() {
               router.push('/doctor/dashboard');
               break;
             case UserType.STAFF:
-              router.push('/dashboard/staff');
+              router.push('/staff/dashboard');
               break;
             case UserType.ADMIN:
-              router.push('/dashboard/admin');
+              router.push('/admin/dashboard');
               break;
             default:
               router.push('/patient/dashboard');
