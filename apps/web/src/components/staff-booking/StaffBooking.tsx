@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   ArrowLeft,
   CalendarDays,
@@ -10,6 +10,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const patients = [
   {
@@ -46,6 +47,28 @@ const doctors = [
   },
 ];
 const slots = ['09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '01:30 PM', '02:00 PM'];
+
+function SectionTitle({
+  icon,
+  title,
+  description,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="bg-primary/10 text-primary grid size-10 shrink-0 place-items-center rounded-xl">
+        {icon}
+      </div>
+      <div>
+        <h3 className="font-black">{title}</h3>
+        <p className="text-muted-foreground mt-1 text-sm">{description}</p>
+      </div>
+    </div>
+  );
+}
 
 export function StaffBooking({ onBack }: { onBack: () => void }) {
   const [step, setStep] = useState(1);
@@ -100,7 +123,7 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
                 <b>{patient?.name}</b> with {doctor.name}
               </p>
               <p>
-                {date} at {slot} · {doctor.fee}
+                {date} at {slot} &middot; {doctor.fee}
               </p>
               <p>
                 Payment status: <b>Pending</b>
@@ -108,28 +131,19 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <button
-              onClick={() => window.print()}
-              className="border-border hover:bg-secondary rounded-xl border px-4 py-2.5 text-xs font-bold"
-            >
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
               Print confirmation
-            </button>
-            <button
-              onClick={() => setError('Notification sent to the patient.')}
-              className="border-border hover:bg-secondary rounded-xl border px-4 py-2.5 text-xs font-bold"
-            >
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setError('Notification sent to the patient.')}>
               Send notification
-            </button>
-            <button
-              onClick={() => {
+            </Button>
+            <Button size="sm" onClick={() => {
                 setCreated(false);
                 setStep(1);
                 setPatient(null);
-              }}
-              className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold"
-            >
+              }}>
               Book another appointment
-            </button>
+            </Button>
           </div>
           {error && (
             <p role="status" className="text-primary mt-5 text-sm font-semibold">
@@ -142,13 +156,10 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
 
   return (
     <main className="mx-auto max-w-5xl min-w-0 p-5 pb-24 sm:p-8 lg:p-10">
-      <button
-        onClick={onBack}
-        className="text-muted-foreground hover:text-foreground mb-5 inline-flex items-center gap-2 text-xs font-bold"
-      >
-        <ArrowLeft className="size-4" />
+      <Button variant="ghost" className="mb-5 text-muted-foreground hover:text-foreground" onClick={onBack}>
+        <ArrowLeft className="mr-2 size-4" />
         Back to dashboard
-      </button>
+      </Button>
       <div className="mb-8">
         <p className="text-primary text-xs font-bold tracking-[0.16em] uppercase">
           Front desk booking
@@ -162,7 +173,9 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
         {['Patient', 'Doctor', 'Date & time', 'Symptoms', 'Review'].map((label, i) => (
           <div key={label} className="flex items-center gap-2">
             <div
-              className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-black ${step > i + 1 ? 'bg-[#e9f8f3] text-[#258c70]' : step === i + 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+              className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-black ${
+                step > i + 1 ? 'bg-[#e9f8f3] text-[#258c70]' : step === i + 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
+              }`}
             >
               {step > i + 1 ? <Check className="size-4" /> : i + 1}
             </div>
@@ -200,25 +213,24 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
                 <button
                   key={p.id}
                   onClick={() => setPatient(p)}
-                  className={`flex items-center justify-between rounded-xl border p-4 text-left transition ${patient?.id === p.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-secondary'}`}
+                  className={`flex items-center justify-between rounded-xl border p-4 text-left transition ${
+                    patient?.id === p.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-secondary'
+                  }`}
                 >
                   <span>
                     <b className="text-sm">{p.name}</b>
                     <span className="text-muted-foreground ml-2 text-xs">
-                      {p.id} · {p.phone}
+                      {p.id} &middot; {p.phone}
                     </span>
                   </span>
                   {patient?.id === p.id && <Check className="text-primary size-4" />}
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setError('New patient registration opened in a separate workflow.')}
-              className="border-primary/40 text-primary mt-5 inline-flex items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-xs font-bold"
-            >
-              <UserPlus className="size-4" />
+            <Button variant="outline" className="mt-5 border-dashed" onClick={() => setError('New patient registration opened in a separate workflow.')}>
+              <UserPlus className="mr-2 size-4" />
               Create New Patient
-            </button>
+            </Button>
           </>
         )}
         {step === 2 && (
@@ -233,12 +245,14 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
                 <button
                   key={d.name}
                   onClick={() => setDoctor(d)}
-                  className={`flex items-center justify-between rounded-xl border p-4 text-left ${doctor.name === d.name ? 'border-primary bg-primary/5' : 'border-border hover:bg-secondary'}`}
+                  className={`flex items-center justify-between rounded-xl border p-4 text-left ${
+                    doctor.name === d.name ? 'border-primary bg-primary/5' : 'border-border hover:bg-secondary'
+                  }`}
                 >
                   <span>
                     <b className="text-sm">{d.name}</b>
                     <span className="text-muted-foreground mt-1 block text-xs">
-                      {d.specialty} · {d.availability}
+                      {d.specialty} &middot; {d.availability}
                     </span>
                   </span>
                   <span className="text-primary text-sm font-black">{d.fee}</span>
@@ -259,7 +273,9 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
                 <button
                   key={d}
                   onClick={() => setDate(d)}
-                  className={`rounded-xl border px-4 py-3 text-xs font-bold ${date === d ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:bg-secondary'}`}
+                  className={`rounded-xl border px-4 py-3 text-xs font-bold ${
+                    date === d ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:bg-secondary'
+                  }`}
                 >
                   {d}
                 </button>
@@ -270,7 +286,9 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
                 <button
                   key={s}
                   onClick={() => setSlot(s)}
-                  className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold ${slot === s ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:bg-secondary'}`}
+                  className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold ${
+                    slot === s ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:bg-secondary'
+                  }`}
                 >
                   <Clock3 className="size-4" />
                   {s}
@@ -306,12 +324,12 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
               <p>
                 <span className="text-muted-foreground">Patient</span>
                 <br />
-                <b>{patient?.name}</b> · {patient?.id}
+                <b>{patient?.name}</b> &middot; {patient?.id}
               </p>
               <p>
                 <span className="text-muted-foreground">Doctor</span>
                 <br />
-                <b>{doctor.name}</b> · {doctor.specialty}
+                <b>{doctor.name}</b> &middot; {doctor.specialty}
               </p>
               <p>
                 <span className="text-muted-foreground">Date & time</span>
@@ -323,7 +341,7 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
               <p>
                 <span className="text-muted-foreground">Consultation fee</span>
                 <br />
-                <b>{doctor.fee}</b> · Payment status: <b>Pending</b>
+                <b>{doctor.fee}</b> &middot; Payment status: <b>Pending</b>
               </p>
               <p>
                 <span className="text-muted-foreground">Symptoms</span>
@@ -336,44 +354,15 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
       </section>
       <div className="mt-5 flex justify-end gap-3">
         {step > 1 && (
-          <button
-            onClick={() => setStep(step - 1)}
-            className="border-border hover:bg-secondary rounded-xl border px-5 py-3 text-xs font-bold"
-          >
+          <Button variant="outline" onClick={() => setStep(step - 1)}>
             Back
-          </button>
+          </Button>
         )}
-        <button
-          onClick={() => (step === 5 ? setCreated(true) : next())}
-          className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-xl px-5 py-3 text-xs font-bold hover:opacity-90"
-        >
+        <Button onClick={() => (step === 5 ? setCreated(true) : next())}>
           {step === 5 ? 'Confirm booking' : 'Continue'}
-          <ChevronRight className="size-4" />
-        </button>
+          <ChevronRight className="ml-2 size-4" />
+        </Button>
       </div>
     </main>
   );
 }
-
-function SectionTitle({
-  icon,
-  title,
-  description,
-}: {
-  icon: ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="bg-primary/10 text-primary grid size-10 shrink-0 place-items-center rounded-xl">
-        {icon}
-      </div>
-      <div>
-        <h3 className="font-black">{title}</h3>
-        <p className="text-muted-foreground mt-1 text-sm">{description}</p>
-      </div>
-    </div>
-  );
-}
-export default StaffBooking;

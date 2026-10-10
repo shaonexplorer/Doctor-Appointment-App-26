@@ -14,7 +14,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "jsxImportSource": "react",
-    "incremental": true,
+    "incremental": false,
     "plugins": [
       {
         "name": "next"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   AlertCircle,
   CalendarCheck,
@@ -10,6 +10,74 @@ import {
   Search,
   X,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
+const appointments = [
+  {
+    id: 'APT-2026-004821',
+    patient: 'Sarah Johnson',
+    initials: 'SJ',
+    phone: '+1 (555) 014-2288',
+    doctor: 'Dr. Michael Anderson',
+    time: '09:30 AM',
+    status: 'Checked In',
+    payment: 'Paid',
+    order: 1,
+  },
+  {
+    id: 'APT-2026-004822',
+    patient: 'Robert Williams',
+    initials: 'RW',
+    phone: '+1 (555) 019-4432',
+    doctor: 'Dr. Emily Carter',
+    time: '10:00 AM',
+    status: 'Waiting',
+    payment: 'Pending',
+    order: 2,
+  },
+  {
+    id: 'APT-2026-004823',
+    patient: 'Jessica Brown',
+    initials: 'JB',
+    phone: '+1 (555) 018-7621',
+    doctor: 'Dr. Michael Anderson',
+    time: '10:30 AM',
+    status: 'Waiting',
+    payment: 'Paid',
+    order: 3,
+  },
+  {
+    id: 'APT-2026-004824',
+    patient: 'David Miller',
+    initials: 'DM',
+    phone: '+1 (555) 013-9001',
+    doctor: 'Dr. James Wilson',
+    time: '11:00 AM',
+    status: 'In Consultation',
+    payment: 'Paid',
+    order: 4,
+  },
+  {
+    id: 'APT-2026-004825',
+    patient: 'Maria Garcia',
+    initials: 'MG',
+    phone: '+1 (555) 016-3344',
+    doctor: 'Dr. Emily Carter',
+    time: '11:30 AM',
+    status: 'Waiting',
+    payment: 'Pending',
+    order: 5,
+  },
+];
+
+const statusTone: Record<string, string> = {
+  Waiting: 'bg-[#fff3e7] text-[#b8782f]',
+  'Checked In': 'bg-[#e8f8f1] text-[#258c70]',
+  'In Consultation': 'bg-[#edf3ff] text-primary',
+  Completed: 'bg-secondary text-muted-foreground',
+  'No-show': 'bg-[#fff0ef] text-[#b86f63]',
+};
 
 export function StaffCheckin() {
   const [query, setQuery] = useState('');
@@ -171,6 +239,7 @@ function Metric({ label, value, icon }: { label: string; value: string; icon: Re
     </div>
   );
 }
+
 function Row({
   appointment: a,
   checked,
@@ -196,24 +265,20 @@ function Row({
       <td className="text-muted-foreground px-6 py-4 text-xs">{a.doctor}</td>
       <td className="px-6 py-4 text-xs font-semibold">{a.time}</td>
       <td className="px-6 py-4">
-        <span
-          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${checked ? 'Checked In' : a.status}`}
-        >
+        <Badge className={statusTone[checked ? 'Checked In' : a.status]}>
           {checked ? 'Checked In' : a.status}
-        </span>
+        </Badge>
       </td>
       <td className="px-6 py-4 text-xs font-semibold">{a.payment}</td>
       <td className="px-6 py-4">
-        <button
-          onClick={onOpen}
-          className="border-border hover:bg-secondary rounded-lg border px-3 py-1.5 text-[11px] font-bold"
-        >
+        <Button variant="outline" size="xs" onClick={onOpen}>
           {checked ? 'View details' : 'Check in'}
-        </button>
+        </Button>
       </td>
     </tr>
   );
 }
+
 function Card({
   appointment: a,
   checked,
@@ -235,11 +300,9 @@ function Card({
             <p className="text-muted-foreground text-[10px]">{a.id}</p>
           </div>
         </div>
-        <span
-          className={`rounded-full px-2 py-1 text-[10px] font-bold ${checked ? 'Checked In' : a.status}`}
-        >
+        <Badge className={statusTone[checked ? 'Checked In' : a.status]}>
           {checked ? 'Checked In' : a.status}
-        </span>
+        </Badge>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
         <div>
@@ -251,15 +314,13 @@ function Card({
           <p className="mt-1 font-semibold">{a.time}</p>
         </div>
       </div>
-      <button
-        onClick={onOpen}
-        className="border-border hover:bg-secondary mt-4 w-full rounded-xl border py-2 text-xs font-bold"
-      >
+      <Button onClick={onOpen} className="mt-4 w-full">
         {checked ? 'View details' : 'Check in patient'}
-      </button>
+      </Button>
     </div>
   );
 }
+
 function CheckinDialog({
   appointment: a,
   onClose,
@@ -297,7 +358,10 @@ function CheckinDialog({
         </div>
         <div className="mt-5 flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((n) => (
-            <span key={n} className={`h-1.5 flex-1 ${n <= step ? 'bg-primary' : 'bg-secondary'}`} />
+            <span
+              key={n}
+              className={`h-1.5 flex-1 rounded-full ${n <= step ? 'bg-primary' : 'bg-secondary'}`}
+            />
           ))}
         </div>
         <div className="bg-secondary/60 mt-6 rounded-xl p-4">
@@ -308,7 +372,7 @@ function CheckinDialog({
             <div>
               <p className="font-bold">{a.patient}</p>
               <p className="text-muted-foreground text-xs">
-                {a.id} · {a.time}
+                {a.id} &middot; {a.time}
               </p>
             </div>
           </div>
@@ -324,7 +388,7 @@ function CheckinDialog({
             <>
               <p className="font-bold">Verify patient</p>
               <p className="text-muted-foreground">
-                Confirm {a.patient}'s phone number: {a.phone}
+                Confirm {a.patient}&apos;s phone number: {a.phone}
               </p>
             </>
           )}
@@ -332,7 +396,7 @@ function CheckinDialog({
             <>
               <p className="font-bold">Confirm appointment details</p>
               <p className="text-muted-foreground">
-                {a.doctor} · {a.time} · General consultation
+                {a.doctor} &middot; {a.time} &middot; General consultation
               </p>
             </>
           )}
@@ -357,32 +421,24 @@ function CheckinDialog({
           )}
         </div>
         <div className="mt-6 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="border-border rounded-xl border px-4 py-2.5 text-xs font-bold"
-          >
+          <Button variant="outline" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
           {step < 5 ? (
-            <button
-              onClick={() => setStep(step + 1)}
-              className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold"
-            >
+            <Button onClick={() => setStep(step + 1)}>
               Continue
-            </button>
+            </Button>
           ) : (
-            <button
-              onClick={onConfirm}
-              className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold"
-            >
+            <Button onClick={onConfirm}>
               Confirm check-in
-            </button>
+            </Button>
           )}
         </div>
       </div>
     </div>
   );
 }
+
 function Empty() {
   return (
     <div className="text-muted-foreground p-10 text-center text-sm">

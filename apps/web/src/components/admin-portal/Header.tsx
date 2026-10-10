@@ -5,14 +5,12 @@ import { Menu, Bell, CircleHelp } from 'lucide-react';
 interface AdminHeaderProps {
   active: string;
   onNavigate: (label: string) => void;
-  collapsed: boolean;
   onMobileMenuOpen: () => void;
 }
 
 export function AdminHeader({
   active,
   onNavigate,
-  _collapsed,
   onMobileMenuOpen,
 }: AdminHeaderProps) {
   return (

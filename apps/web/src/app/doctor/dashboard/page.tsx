@@ -90,21 +90,24 @@ export default function DoctorDashboardPage() {
 
   // Transform appointments for components
   const transformedAppointments =
-    appointmentsData?.data.map((appt) => ({
-      time: appt.time,
-      patient:
-        typeof appt.patient === 'string'
-          ? appt.patient
-          : `${appt.patient.firstName} ${appt.patient.lastName}`,
-      type: appt.consultationType === 'VIDEO' ? 'Video consultation' : 'Follow-up',
-      status:
-        appt.status === 'Cancelled'
-          ? ('Cancelled' as const)
-          : appt.status === 'Checked in' || appt.status === 'Completed'
-            ? ('Confirmed' as const)
-            : ('Waiting' as const),
-      payment: appt.payment === 'Paid' ? ('Paid' as const) : ('Pending' as const),
-    })) || [];
+    appointmentsData?.data.map((appt) => {
+      const startTime = new Date(appt.slot.startTime);
+      return {
+        time: startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        patient:
+          typeof appt.patient === 'string'
+            ? appt.patient
+            : `${appt.patient.firstName} ${appt.patient.lastName}`,
+        type: appt.consultationType === 'VIDEO' ? 'Video consultation' : 'Follow-up',
+        status:
+          appt.status === 'Cancelled'
+            ? ('Cancelled' as const)
+            : appt.status === 'Checked in' || appt.status === 'Completed'
+              ? ('Confirmed' as const)
+              : ('Waiting' as const),
+        payment: appt.paymentStatus === 'Paid' ? ('Paid' as const) : ('Pending' as const),
+      };
+    }) || [];
 
   // Format utilization data for donut chart
   // Hook now returns data in the correct format for the chart
@@ -263,7 +266,6 @@ export default function DoctorDashboardPage() {
 
           {/* Upcoming Appointments */}
           <UpcomingAppointments
-            appointments={transformedAppointments}
             onAction={action}
             onViewFullSchedule={() => router.push('/doctor/schedule')}
           />

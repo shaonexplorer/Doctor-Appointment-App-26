@@ -100,6 +100,9 @@ export function DoctorSchedulePageContent() {
     );
   }
 
+  // At this point, doctorId is guaranteed to be defined
+  const doctorIdString = doctorId!;
+
   return (
     <DoctorPortalShell active="Schedule">
       <div className="mt-8 space-y-5">
@@ -107,7 +110,7 @@ export function DoctorSchedulePageContent() {
           grid={grid}
           days={days}
           times={times}
-          doctorId={doctorId}
+          doctorId={doctorIdString}
           onSlotsGenerated={refetch}
           view={view}
           onViewChange={setView}

@@ -18,10 +18,5 @@
     }
   },
   "include": ["apps/**/*", "packages/**/*", "eslint.config.js"],
-  "exclude": ["node_modules", "dist", "build", ".next"],
-  "references": [
-    { "path": "./packages/shared" },
-    { "path": "./apps/web" },
-    { "path": "./apps/api" }
-  ]
+  "exclude": ["node_modules", "dist", "build", ".next"]
 }

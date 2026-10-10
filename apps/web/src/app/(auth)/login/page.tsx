@@ -106,11 +106,11 @@ export default function LoginPage() {
         router.push('/dashboard');
         router.refresh();
       });
-    } catch (err) {
+    } catch (err: unknown) {
       toast.add({
         type: 'error',
         title: 'Login failed',
-        description: err.message || 'Invalid credentials',
+        description: err instanceof Error ? err.message : 'Invalid credentials',
       });
     } finally {
       setLoading(false);

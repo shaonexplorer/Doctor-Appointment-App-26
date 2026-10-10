@@ -210,7 +210,7 @@ export function AdminAnalytics() {
                   position: 'right',
                   fontSize: 11,
                   fill: 'var(--muted-foreground)',
-                  formatter: (v) => `${v}%`,
+                  formatter: (v: number) => `${v}%`,
                 }}
               />
               <Tip />

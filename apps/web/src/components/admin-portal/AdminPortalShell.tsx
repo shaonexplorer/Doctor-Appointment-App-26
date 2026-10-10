@@ -92,7 +92,6 @@ export function AdminPortalShell({ children, active, className }: AdminPortalShe
         <AdminHeader
           active={currentActive}
           onNavigate={handleNavigate}
-          collapsed={collapsed}
           onMobileMenuOpen={() => setMobileSidebarOpen(true)}
         />
         <main className="mx-auto max-w-[1500px] min-w-0 p-5 pb-24 sm:p-8 lg:p-10">
