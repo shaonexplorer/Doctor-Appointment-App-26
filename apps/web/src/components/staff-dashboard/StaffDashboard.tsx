@@ -1,13 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import {
-  CalendarDays,
-  ClipboardCheck,
-  CreditCard,
-  Stethoscope,
-  Users,
-} from 'lucide-react';
+import { CalendarDays, ClipboardCheck, CreditCard, Stethoscope, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -94,11 +88,9 @@ export function StaffDashboard({ onAction }: { onAction: (text: string) => void 
               {filtered.length} appointments need attention today
             </p>
           </div>
-          <Button onClick={() => onAction('Booking workspace opened')}>
-            Book appointment
-          </Button>
+          <Button onClick={() => onAction('Booking workspace opened')}>Book appointment</Button>
         </div>
-        <div className="border-border flex flex-col gap-3 border-b p-4">
+        {/* <div className="border-border flex flex-col gap-3 border-b p-4">
           <label className="relative min-w-[220px] flex-1">
             <input
               aria-label="Search queue"
@@ -108,7 +100,7 @@ export function StaffDashboard({ onAction }: { onAction: (text: string) => void 
               className="border-border bg-background focus:border-primary focus:ring-primary/15 h-10 w-full rounded-xl border pr-3 pl-9 text-xs outline-none focus:ring-2"
             />
           </label>
-        </div>
+        </div> */}
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left text-sm">
             <thead className="bg-secondary/60 text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
@@ -224,11 +216,7 @@ function QueueRow({
       <td className="px-6 py-4 text-xs font-semibold">{row.payment}</td>
       <td className="text-muted-foreground px-6 py-4 text-xs">{row.check}</td>
       <td className="px-6 py-4">
-        <Button
-          variant="outline"
-          size="xs"
-          onClick={() => onAction(`${row.patient} checked in`)}
-        >
+        <Button variant="outline" size="xs" onClick={() => onAction(`${row.patient} checked in`)}>
           {row.status === 'Checked In' ? 'Open' : 'Check in'}
         </Button>
       </td>

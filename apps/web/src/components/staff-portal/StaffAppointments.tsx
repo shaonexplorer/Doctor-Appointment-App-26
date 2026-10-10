@@ -1,19 +1,33 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import {
   CalendarDays,
   CheckCircle2,
   Clock3,
   Eye,
-  Filter,
   MoreHorizontal,
   Search,
   UserRound,
   XCircle,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
 
-const appointments = [
+interface Appointment {
+  id: string;
+  time: string;
+  patient: string;
+  age: string;
+  doctor: string;
+  specialty: string;
+  type: string;
+  status: 'Confirmed' | 'Checked in' | 'Waiting' | 'Cancelled';
+  payment: 'Paid' | 'Pending' | 'Refunded';
+}
+
+const mockAppointments: Appointment[] = [
   {
     id: 'APT-004932',
     time: '09:00 AM',
@@ -82,30 +96,43 @@ const appointments = [
   },
 ];
 
-function Badge({ children, tone = 'slate' }: { children: ReactNode; tone?: string }) {
-  const tones: Record<string, string> = {
-    green: 'bg-emerald-50 text-emerald-700',
-    amber: 'bg-amber-50 text-amber-700',
-    red: 'bg-rose-50 text-rose-700',
-    blue: 'bg-blue-50 text-blue-700',
-    slate: 'bg-slate-100 text-slate-600',
-  };
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${tones[tone] ?? tones.slate}`}
-    >
-      {children}
-    </span>
-  );
-}
+const statCards = [
+  { label: 'Today', value: '24', icon: CalendarDays, tone: 'blue' },
+  { label: 'Confirmed', value: '16', icon: CheckCircle2, tone: 'green' },
+  { label: 'Waiting', value: '4', icon: Clock3, tone: 'amber' },
+  { label: 'Cancelled', value: '2', icon: XCircle, tone: 'red' },
+] as const;
+
+const toneStyles: Record<string, string> = {
+  green: 'bg-emerald-50 text-emerald-600',
+  amber: 'bg-amber-50 text-amber-600',
+  red: 'bg-rose-50 text-rose-600',
+  blue: 'bg-blue-50 text-blue-600',
+};
+
+const statusBadgeVariant: Record<string, 'success' | 'warning' | 'destructive' | 'default'> = {
+  Cancelled: 'destructive',
+  Waiting: 'warning',
+  'Checked in': 'default',
+  Confirmed: 'success',
+};
+
+const paymentBadgeVariant: Record<string, 'success' | 'warning' | 'destructive'> = {
+  Paid: 'success',
+  Refunded: 'destructive',
+  Pending: 'warning',
+};
 
 export function StaffAppointments() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('All statuses');
   const [notice, setNotice] = useState('');
+
+  const router = useRouter();
+
   const filtered = useMemo(
     () =>
-      appointments.filter(
+      mockAppointments.filter(
         (item) =>
           `${item.patient} ${item.doctor} ${item.id} ${item.specialty}`
             .toLowerCase()
@@ -114,28 +141,21 @@ export function StaffAppointments() {
       ),
     [query, status]
   );
+
   const action = (message: string) => {
+    // console.log(message);
     setNotice(message);
-    window.setTimeout(() => setNotice(''), 2400);
+    router.push('/staff/booking');
   };
+
   return (
     <section className="mt-8 space-y-5" aria-label="Appointment management">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          ['Today', '24', CalendarDays, 'blue'],
-          ['Confirmed', '16', CheckCircle2, 'green'],
-          ['Waiting', '4', Clock3, 'amber'],
-          ['Cancelled', '2', XCircle, 'red'],
-        ].map(([label, value, Icon, tone]) => (
-          <div
-            key={label as string}
-            className="border-border bg-card rounded-2xl border p-5 shadow-sm"
-          >
+        {statCards.map(({ label, value, icon: Icon, tone }) => (
+          <div key={label} className="border-border bg-card rounded-2xl border p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-sm">{label}</p>
-              <span
-                className={`rounded-xl p-2 ${tone === 'green' ? 'bg-emerald-50 text-emerald-600' : tone === 'amber' ? 'bg-amber-50 text-amber-600' : tone === 'red' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'}`}
-              >
+              <span className={`rounded-xl p-2 ${toneStyles[tone]}`}>
                 <Icon className="size-4" />
               </span>
             </div>
@@ -143,6 +163,7 @@ export function StaffAppointments() {
           </div>
         ))}
       </div>
+
       <div className="border-border bg-card rounded-2xl border shadow-sm">
         <div className="border-border flex flex-col gap-4 border-b p-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -151,13 +172,9 @@ export function StaffAppointments() {
               Monday, September 21, 2026 · 24 scheduled appointments
             </p>
           </div>
-          <button
-            onClick={() => action('Booking workspace opened')}
-            className="mobile-touch-target bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-bold"
-          >
-            Book appointment
-          </button>
+          <Button onClick={() => action('Booking workspace opened')}>Book appointment</Button>
         </div>
+
         <div className="border-border flex flex-col gap-3 border-b p-4 sm:flex-row">
           <label className="relative min-w-0 flex-1">
             <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
@@ -181,11 +198,12 @@ export function StaffAppointments() {
             <option>Waiting</option>
             <option>Cancelled</option>
           </select>
-          <button className="mobile-touch-target border-border text-muted-foreground rounded-xl border px-3 text-sm font-bold">
+          {/* <Button variant="outline" className="text-sm font-bold">
             <Filter className="mr-2 inline size-4" />
             More filters
-          </button>
+          </Button> */}
         </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/40 text-muted-foreground text-xs tracking-wider uppercase">
@@ -222,36 +240,14 @@ export function StaffAppointments() {
                   </td>
                   <td className="text-muted-foreground px-5 py-4">{item.type}</td>
                   <td className="px-5 py-4">
-                    <Badge
-                      tone={
-                        item.status === 'Cancelled'
-                          ? 'red'
-                          : item.status === 'Waiting'
-                            ? 'amber'
-                            : item.status === 'Checked in'
-                              ? 'blue'
-                              : 'green'
-                      }
-                    >
-                      {item.status}
-                    </Badge>
+                    <Badge variant={statusBadgeVariant[item.status]}>{item.status}</Badge>
                   </td>
                   <td className="px-5 py-4">
-                    <Badge
-                      tone={
-                        item.payment === 'Paid'
-                          ? 'green'
-                          : item.payment === 'Refunded'
-                            ? 'red'
-                            : 'amber'
-                      }
-                    >
-                      {item.payment}
-                    </Badge>
+                    <Badge variant={paymentBadgeVariant[item.payment]}>{item.payment}</Badge>
                   </td>
                   <td className="px-5 py-4 text-right">
                     <button
-                      onClick={() => action(`Viewing ${item.patient}'s appointment`)}
+                      onClick={() => {}}
                       aria-label={`View ${item.patient}`}
                       className="mobile-touch-target text-muted-foreground hover:bg-muted rounded-lg p-2"
                     >
@@ -270,12 +266,14 @@ export function StaffAppointments() {
             </tbody>
           </table>
         </div>
+
         {filtered.length === 0 && (
           <div className="text-muted-foreground p-10 text-center text-sm">
             No appointments match these filters.
           </div>
         )}
       </div>
+
       {notice && (
         <div
           role="status"
