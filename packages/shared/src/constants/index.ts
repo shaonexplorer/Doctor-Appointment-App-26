@@ -210,6 +210,35 @@ export const DOCTOR_SPECIALTIES = [
   'Other',
 ] as const;
 
+// Alias for backward compatibility
+export const SPECIALTIES = DOCTOR_SPECIALTIES;
+
+// Doctor designations
+export const DESIGNATIONS = [
+  'Senior Consultant',
+  'Consultant',
+  'Junior Consultant',
+  'Resident',
+  'Fellow',
+  'Medical Director',
+  'Chief of Department',
+  'Attending Physician',
+  'Associate Physician',
+  'Visiting Specialist',
+] as const;
+
+// Clinic locations
+export const CLINICS = [
+  'MediBook Downtown',
+  'MediBook Westside',
+  'MediBook East',
+  'MediBook North',
+  'MediBook South',
+  'MediBook Central',
+  'MediBook University',
+  'MediBook Community',
+] as const;
+
 // Consultation types
 export enum ConsultationType {
   IN_PERSON = 'IN_PERSON',

@@ -42,7 +42,9 @@ export function StaffPatientDirectory() {
   const filteredPatients = useMemo(
     () =>
       patients.filter((p) =>
-        `${p.name} ${p.id} ${p.phone} ${p.email} ${p.doctor}`.toLowerCase().includes(search.toLowerCase())
+        `${p.name} ${p.id} ${p.phone} ${p.email} ${p.doctor}`
+          .toLowerCase()
+          .includes(search.toLowerCase())
       ),
     [patients, search]
   );
@@ -97,12 +99,12 @@ export function StaffPatientDirectory() {
       <div className="mt-8 space-y-5">
         <div className="animate-pulse space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="bg-muted h-20 rounded-2xl border border-border p-4" />
-            <div className="bg-muted h-20 rounded-2xl border border-border p-4" />
-            <div className="bg-muted h-20 rounded-2xl border border-border p-4" />
-            <div className="bg-muted h-20 rounded-2xl border border-border p-4" />
+            <div className="bg-muted border-border h-20 rounded-2xl border p-4" />
+            <div className="bg-muted border-border h-20 rounded-2xl border p-4" />
+            <div className="bg-muted border-border h-20 rounded-2xl border p-4" />
+            <div className="bg-muted border-border h-20 rounded-2xl border p-4" />
           </div>
-          <div className="bg-muted h-64 rounded-2xl border border-border" />
+          <div className="bg-muted border-border h-64 rounded-2xl border" />
         </div>
       </div>
     );
@@ -129,8 +131,16 @@ export function StaffPatientDirectory() {
   }
 
   const metrics = [
-    { label: 'Total patients', value: patientResponse?.meta?.total?.toLocaleString() || '1,248', tone: 'bg-[#edf3ff] text-primary' },
-    { label: 'Active patients', value: patientResponse?.meta?.total?.toLocaleString() || '1,106', tone: 'bg-[#e9f8f3] text-[#258c70]' },
+    {
+      label: 'Total patients',
+      value: patientResponse?.meta?.total?.toLocaleString() || '1,248',
+      tone: 'bg-[#edf3ff] text-primary',
+    },
+    {
+      label: 'Active patients',
+      value: patientResponse?.meta?.total?.toLocaleString() || '1,106',
+      tone: 'bg-[#e9f8f3] text-[#258c70]',
+    },
     { label: 'New this month', value: '86', tone: 'bg-[#f1edff] text-[#7864c8]' },
     { label: 'Appointments today', value: '24', tone: 'bg-[#fff3e7] text-[#d68b42]' },
   ];
@@ -145,16 +155,18 @@ export function StaffPatientDirectory() {
       </div>
 
       {/* Patient Directory Section */}
-      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+      <section className="border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-black">Patient directory</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Search and manage patient records across the clinic.</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Search and manage patient records across the clinic.
+            </p>
           </div>
           <button
             type="button"
             onClick={handleRegisterPatient}
-            className="rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-2"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors"
           >
             <UserPlus className="size-3.5" />
             Register patient
@@ -162,14 +174,14 @@ export function StaffPatientDirectory() {
         </div>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           <label className="relative min-w-0 flex-1">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
             <input
               aria-label="Search patient records"
               value={search}
               onChange={(event) => handleSearchChange(event.target.value)}
               placeholder="Search name, patient ID, phone, or email"
               className={cn(
-                'h-11 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15',
+                'border-border bg-background focus:border-primary focus:ring-primary/15 h-11 w-full rounded-xl border pr-3 pl-9 text-sm outline-none focus:ring-2',
                 'transition-colors'
               )}
             />
@@ -177,21 +189,23 @@ export function StaffPatientDirectory() {
           <select
             aria-label="Patient status"
             value={status}
-            onChange={(event) => handleStatusChange(event.target.value as StaffPatientFilters['status'])}
-            className="h-11 rounded-xl border border-border bg-background px-3 text-sm font-semibold"
+            onChange={(event) =>
+              handleStatusChange(event.target.value as StaffPatientFilters['status'])
+            }
+            className="border-border bg-background h-11 rounded-xl border px-3 text-sm font-semibold"
           >
             <option>All statuses</option>
             <option>Active</option>
             <option>Inactive</option>
           </select>
         </div>
-        <p className="mt-4 text-xs text-muted-foreground">
-          <span className="font-bold text-primary">{filteredPatients.length}</span> records shown
+        <p className="text-muted-foreground mt-4 text-xs">
+          <span className="text-primary font-bold">{filteredPatients.length}</span> records shown
         </p>
       </section>
 
       {/* Patient Table/Card Section */}
-      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <section className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm">
         {filteredPatients.length ? (
           <>
             <PatientTable patients={filteredPatients} onViewPatient={handleViewPatient} />

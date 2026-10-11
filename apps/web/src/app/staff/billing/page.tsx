@@ -1,5 +1,5 @@
 import { StaffPortalShell } from '@/components/staff-portal/StaffPortalShell';
-import { StaffBilling } from '@/components/staff-billing/StaffBillingNew';
+import { StaffBilling } from '@/components/staff-billing/StaffBilling';
 
 export default function StaffBillingPage() {
   return (

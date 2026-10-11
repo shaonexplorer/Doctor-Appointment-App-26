@@ -5,14 +5,14 @@ import { cn } from '@/lib/utils';
 interface MetricProps {
   label: string;
   value: string;
-  tone: string;
+  tone?: string;
 }
 
-export function Metric({ label, value, tone }: MetricProps) {
+export function Metric({ label, value }: MetricProps) {
   return (
-    <div className={cn('rounded-2xl border border-border bg-card p-4 shadow-sm', tone)}>
+    <div className={cn('border-border bg-card rounded-2xl border p-4 shadow-sm')}>
       <div className="mb-3 inline-flex rounded-lg px-2.5 py-1.5 text-lg font-black">{value}</div>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground text-xs">{label}</p>
     </div>
   );
 }
