@@ -6,14 +6,16 @@ import {
   CheckCircle2,
   Clock3,
   Eye,
-  MoreHorizontal,
   Search,
   UserRound,
   XCircle,
+  Phone,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 interface Appointment {
   id: string;
@@ -127,6 +129,8 @@ export function StaffAppointments() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('All statuses');
   const [notice, setNotice] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
   const router = useRouter();
 
@@ -146,6 +150,16 @@ export function StaffAppointments() {
     // console.log(message);
     setNotice(message);
     router.push('/staff/booking');
+  };
+
+  const openDrawer = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setSelectedAppointment(null);
   };
 
   return (
@@ -247,19 +261,19 @@ export function StaffAppointments() {
                   </td>
                   <td className="px-5 py-4 text-right">
                     <button
-                      onClick={() => {}}
+                      onClick={() => openDrawer(item)}
                       aria-label={`View ${item.patient}`}
                       className="mobile-touch-target text-muted-foreground hover:bg-muted rounded-lg p-2"
                     >
                       <Eye className="size-4" />
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => action('Appointment actions opened')}
                       aria-label={`More actions for ${item.patient}`}
                       className="mobile-touch-target text-muted-foreground hover:bg-muted rounded-lg p-2"
                     >
                       <MoreHorizontal className="size-4" />
-                    </button>
+                    </button> */}
                   </td>
                 </tr>
               ))}
@@ -282,6 +296,121 @@ export function StaffAppointments() {
           {notice}
         </div>
       )}
+
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent side="right" className="w-full max-w-xl">
+          {/* {!selectedAppointment && (
+            <SheetHeader>
+              <SheetTitle className="text-lg">Appointment Details</SheetTitle>
+              <SheetDescription>
+                View and manage appointment information for {selectedAppointment?.patient}
+              </SheetDescription>
+            </SheetHeader>
+          )} */}
+          {selectedAppointment && (
+            <div className="mt-4 flex h-screen flex-col space-y-6 px-4 pb-4 sm:px-6 sm:pb-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-primary text-xs font-bold tracking-wider uppercase">
+                    Appointment #{selectedAppointment.id}
+                  </p>
+                  <h2 className="mt-1 text-2xl font-black">{selectedAppointment.patient}</h2>
+                </div>
+                {/* <Button variant="ghost" size="icon" onClick={closeDrawer} aria-label="Close drawer">
+                  <X className="size-5" />
+                </Button> */}
+              </div>
+
+              <div className="bg-muted/30 rounded-2xl p-4">
+                <p className="text-primary text-xs font-bold">Appointment</p>
+                <p className="mt-2 text-lg font-black">
+                  Monday, September 21, 2026 · {selectedAppointment.time}
+                </p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {selectedAppointment.type} · {selectedAppointment.specialty}
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Info label="Patient" value={`${selectedAppointment.age} years`} />
+                <Info label="Doctor" value={selectedAppointment.doctor} />
+                <Info label="Specialty" value={selectedAppointment.specialty} />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-bold">Status & Payment</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={statusBadgeVariant[selectedAppointment.status]}>
+                    {selectedAppointment.status}
+                  </Badge>
+                  <Badge variant={paymentBadgeVariant[selectedAppointment.payment]}>
+                    {selectedAppointment.payment}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-bold">Contact & Location</p>
+                <div className="text-muted-foreground flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Phone className="size-4" />
+                    <span>+1 (555) 000-0000</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="size-4" />
+                    <span>Main Clinic, Room 204</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex w-full flex-wrap gap-2">
+                  <Button
+                    className="flex-1"
+                    onClick={() => {
+                      closeDrawer();
+                      setNotice(`Checked in ${selectedAppointment.patient}`);
+                    }}
+                  >
+                    Check in
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      closeDrawer();
+                      setNotice(`Rescheduling ${selectedAppointment.patient}`);
+                    }}
+                  >
+                    Reschedule
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={() => {
+                      closeDrawer();
+                      setNotice(`Cancelled ${selectedAppointment.patient}`);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </section>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-border rounded-xl border p-3">
+      <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-bold">{value}</p>
+    </div>
   );
 }
