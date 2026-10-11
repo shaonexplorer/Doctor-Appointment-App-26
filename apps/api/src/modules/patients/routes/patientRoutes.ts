@@ -44,17 +44,17 @@ export function createPatientRoutes(patientController: PatientController): Route
   // Completed appointments with prescriptions
   router.get('/appointments/completed', asyncHandler(patientController.getCompletedAppointments));
 
-  // Doctor Portal endpoints (doctor only)
-  const doctorMiddleware = requireRole(UserType.DOCTOR);
+  // Doctor Portal endpoints (DOCTOR, ADMIN, STAFF)
+  const doctorStaffAdminMiddleware = requireRole(UserType.DOCTOR, UserType.ADMIN, UserType.STAFF);
   router.get(
     '/doctor',
-    doctorMiddleware,
+    doctorStaffAdminMiddleware,
     validateDoctorPatientListQuery,
     asyncHandler(patientController.getDoctorPatientList)
   );
   router.get(
     '/doctor/:id',
-    doctorMiddleware,
+    doctorStaffAdminMiddleware,
     auditPatientProfileAccess,
     asyncHandler(patientController.getDoctorPatientDetail)
   );

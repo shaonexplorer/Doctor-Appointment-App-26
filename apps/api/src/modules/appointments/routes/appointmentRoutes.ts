@@ -30,8 +30,10 @@ import {
 export function createAppointmentRoutes(appointmentController: AppointmentController): Router {
   const router = Router();
 
-  // Doctor-only middleware (must be declared before use)
-  const doctorMiddleware = requireRole(UserType.DOCTOR);
+  // Doctor/Staff/Admin middleware for read operations
+  const doctorStaffAdminMiddleware = requireRole(UserType.DOCTOR, UserType.ADMIN, UserType.STAFF);
+  // Doctor-only middleware for write operations
+  const doctorOnlyMiddleware = requireRole(UserType.DOCTOR);
 
   // All appointment routes require authentication
   router.use(requireAuth);
@@ -60,20 +62,20 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
     asyncHandler(appointmentController.getDoctorDashboardStats)
   );
 
-  // Analytics endpoints (Doctor Portal)
+  // Analytics endpoints (Doctor/Staff/Admin Portal - read access)
   router.get(
     '/stats/doctor/volume',
-    doctorMiddleware,
+    doctorStaffAdminMiddleware,
     asyncHandler(appointmentController.getDoctorVolumeStats)
   );
   router.get(
     '/stats/doctor/utilization',
-    doctorMiddleware,
+    doctorStaffAdminMiddleware,
     asyncHandler(appointmentController.getDoctorUtilizationStats)
   );
   router.get(
     '/stats/doctor/revenue',
-    doctorMiddleware,
+    doctorStaffAdminMiddleware,
     asyncHandler(appointmentController.getDoctorRevenueStats)
   );
 
@@ -92,16 +94,16 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
   // List appointments with filters (patient/admin view)
   router.get('/', validateAppointmentFilters, asyncHandler(appointmentController.listAppointments));
 
-  // Doctor Portal endpoints (doctor only)
+  // Doctor Portal endpoints (DOCTOR, ADMIN, STAFF - read access)
   router.get(
     '/doctor',
-    doctorMiddleware,
+    doctorStaffAdminMiddleware,
     validateDoctorAppointmentFilters,
     asyncHandler(appointmentController.getDoctorAppointments)
   );
   router.get(
     '/doctor/:id',
-    doctorMiddleware,
+    doctorStaffAdminMiddleware,
     auditAppointmentAccess,
     asyncHandler(appointmentController.getDoctorAppointmentDetail)
   );
@@ -126,31 +128,31 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
     asyncHandler(appointmentController.cancelAppointmentAlt)
   );
 
-  // Doctor-specific appointment actions
+  // Doctor-specific appointment actions (DOCTOR only - write operations)
   router.patch(
     '/doctor/:id/cancel',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     auditAppointmentDelete,
     validateDoctorCancelAppointment,
     asyncHandler(appointmentController.cancelAppointmentAsDoctor)
   );
   router.patch(
     '/doctor/:id/reschedule',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     auditAppointmentUpdate,
     validateDoctorRescheduleAppointment,
     asyncHandler(appointmentController.rescheduleAppointmentAsDoctor)
   );
   router.patch(
     '/doctor/:id/check-in',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     auditAppointmentUpdate,
     validateDoctorCheckIn,
     asyncHandler(appointmentController.checkInPatient)
   );
   router.patch(
     '/doctor/:id/complete',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     auditAppointmentUpdate,
     validateDoctorCompleteAppointment,
     asyncHandler(appointmentController.completeAppointmentAsDoctor)

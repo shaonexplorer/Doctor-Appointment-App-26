@@ -5,7 +5,8 @@
 
 import { Router } from 'express';
 import type { ScheduleController } from '../controllers/scheduleController';
-import { requireAuth } from '../../../shared/middleware/auth';
+import { requireAuth, requireRole } from '../../../shared/middleware/auth';
+import { UserType } from '@doctor-appointment-app/shared';
 import { asyncHandler } from '../../../shared/utils';
 import {
   validateCreateSlot,
@@ -25,39 +26,42 @@ export function createScheduleRoutes(scheduleController: ScheduleController): Ro
   // Protected routes (auth required)
   router.use(requireAuth);
 
-  // Doctor only routes
-  const doctorMiddleware = scheduleController.getRequireDoctorMiddleware();
+  // Doctor/Staff/Admin middleware for read operations
+  const doctorStaffAdminMiddleware = requireRole(UserType.DOCTOR, UserType.ADMIN, UserType.STAFF);
+  // Doctor-only middleware for write operations
+  const doctorOnlyMiddleware = requireRole(UserType.DOCTOR);
+
   router.post(
     '/',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     validateCreateSlot,
     asyncHandler(scheduleController.createSlot)
   );
   router.post(
     '/doctor/bulk',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     validateCreateBulkSlots,
     asyncHandler(scheduleController.createBulkSlots)
   );
-  router.get('/doctor', doctorMiddleware, asyncHandler(scheduleController.getWeeklySchedule));
+  router.get('/doctor', doctorStaffAdminMiddleware, asyncHandler(scheduleController.getWeeklySchedule));
   router.patch(
     '/doctor/bulk',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     validateUpdateBulkSlots,
     asyncHandler(scheduleController.bulkUpdateSlots)
   );
   router.get(
     '/doctor/:doctorId',
-    doctorMiddleware,
+    doctorStaffAdminMiddleware,
     asyncHandler(scheduleController.getDoctorSlots)
   );
   router.patch(
     '/:id',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     validateUpdateSlot,
     asyncHandler(scheduleController.updateSlot)
   );
-  router.delete('/:id', doctorMiddleware, asyncHandler(scheduleController.deleteSlot));
+  router.delete('/:id', doctorOnlyMiddleware, asyncHandler(scheduleController.deleteSlot));
 
   // Generic slot by ID route - MUST be LAST to avoid catching other routes
   router.get('/:id', asyncHandler(scheduleController.getSlotById));

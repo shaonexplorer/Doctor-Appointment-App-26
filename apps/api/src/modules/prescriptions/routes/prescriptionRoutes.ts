@@ -5,7 +5,8 @@
 
 import { Router } from 'express';
 import type { PrescriptionController } from '../controllers/prescriptionController';
-import { requireAuth } from '../../../shared/middleware/auth';
+import { requireAuth, requireRole } from '../../../shared/middleware/auth';
+import { UserType } from '@doctor-appointment-app/shared';
 import { asyncHandler } from '../../../shared/utils';
 import {
   auditPrescriptionAccess,
@@ -25,24 +26,28 @@ export function createPrescriptionRoutes(prescriptionController: PrescriptionCon
   // All prescription routes require authentication
   router.use(requireAuth);
 
-  // List prescriptions
-  router.get('/', validatePagination, asyncHandler(prescriptionController.listPrescriptions));
+  // Doctor/Staff/Admin middleware for read operations
+  const doctorStaffAdminMiddleware = requireRole(UserType.DOCTOR, UserType.ADMIN, UserType.STAFF);
+  // Doctor-only middleware for write operations
+  const doctorOnlyMiddleware = requireRole(UserType.DOCTOR);
 
-  // Recent prescriptions
-  router.get('/recent/doctor', asyncHandler(prescriptionController.getRecentByDoctor));
+  // List prescriptions (DOCTOR, ADMIN, STAFF)
+  router.get('/', validatePagination, doctorStaffAdminMiddleware, asyncHandler(prescriptionController.listPrescriptions));
+
+  // Recent prescriptions (DOCTOR, ADMIN, STAFF)
+  router.get('/recent/doctor', doctorStaffAdminMiddleware, asyncHandler(prescriptionController.getRecentByDoctor));
   router.get('/recent/patient', asyncHandler(prescriptionController.getRecentByPatient));
 
-  // Prescriptions by appointment
+  // Prescriptions by appointment (accessible via audit middleware)
   router.get(
     '/appointment/:appointmentId',
     asyncHandler(prescriptionController.getPrescriptionsByAppointment)
   );
 
-  // Doctor only - create prescription
-  const doctorMiddleware = prescriptionController.getRequireDoctorMiddleware();
+  // Doctor only - create prescription (write operation)
   router.post(
     '/',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     auditPrescriptionCreate,
     validateCreatePrescription,
     asyncHandler(prescriptionController.createPrescription)
@@ -52,14 +57,14 @@ export function createPrescriptionRoutes(prescriptionController: PrescriptionCon
   router.get('/:id', auditPrescriptionAccess, asyncHandler(prescriptionController.getPrescription));
   router.patch(
     '/:id',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     auditPrescriptionUpdate,
     validateUpdatePrescription,
     asyncHandler(prescriptionController.updatePrescription)
   );
   router.delete(
     '/:id',
-    doctorMiddleware,
+    doctorOnlyMiddleware,
     auditPrescriptionDelete,
     asyncHandler(prescriptionController.deletePrescription)
   );
