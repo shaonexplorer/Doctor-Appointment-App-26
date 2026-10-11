@@ -18,8 +18,6 @@ export interface DoctorWithUser {
   fee: Decimal;
   isVerified: boolean;
   searchVector: string | null;
-  createdAt: Date;
-  updatedAt: Date;
   user: {
     id: string;
     email: string;
@@ -28,6 +26,8 @@ export interface DoctorWithUser {
     phone: string | null;
     userType: UserType;
     emailVerified: boolean;
+    createdAt: Date;
+    updatedAt: Date;
   };
   schedules?: Array<{
     id: string;
@@ -59,6 +59,8 @@ export class DoctorRepository {
             phone: true,
             userType: true,
             emailVerified: true,
+            createdAt: true,
+            updatedAt: true,
           },
         },
         schedules: {
@@ -104,6 +106,8 @@ export class DoctorRepository {
             phone: true,
             userType: true,
             emailVerified: true,
+            createdAt: true,
+            updatedAt: true,
           },
         },
         schedules: {
@@ -134,20 +138,50 @@ export class DoctorRepository {
     licenseNo: string;
     bio?: string | null;
     fee: number;
-  }): Promise<DoctorProfile> {
+  }): Promise<DoctorWithUser> {
     return this.prisma.doctorProfile.create({
       data,
-    });
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            userType: true,
+            emailVerified: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    }) as Promise<DoctorWithUser>;
   }
 
   /**
    * Update doctor profile
    */
-  async update(userId: string, data: Partial<DoctorProfile>): Promise<DoctorProfile> {
+  async update(userId: string, data: Partial<DoctorProfile>): Promise<DoctorWithUser> {
     return this.prisma.doctorProfile.update({
       where: { userId },
       data,
-    });
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            userType: true,
+            emailVerified: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    }) as Promise<DoctorWithUser>;
   }
 
   /**
@@ -227,6 +261,7 @@ export class DoctorRepository {
               phone: true,
               userType: true,
               emailVerified: true,
+              createdAt: true, // Include createdAt for sorting
             },
           },
           schedules: {
@@ -244,7 +279,7 @@ export class DoctorRepository {
             },
           },
         },
-        orderBy: sortBy ? { [sortBy]: sortOrder || 'asc' } : { id: 'desc' },
+        orderBy: this.buildOrderBy(sortBy, sortOrder || 'asc'),
       }),
       this.prisma.doctorProfile.count({ where }),
     ]);
@@ -258,6 +293,36 @@ export class DoctorRepository {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Build orderBy clause for Prisma query
+   * Maps sortBy fields to valid Prisma orderBy fields
+   */
+  private buildOrderBy(sortBy?: string, sortOrder: 'asc' | 'desc' = 'asc'): Prisma.DoctorProfileOrderByWithRelationInput {
+    // Map sortBy to valid fields
+    // DoctorProfile doesn't have createdAt/updatedAt, so map to user.createdAt
+    const fieldMap: Record<string, string | Prisma.DoctorProfileOrderByWithRelationInput> = {
+      createdAt: { user: { createdAt: sortOrder } },
+      updatedAt: { user: { updatedAt: sortOrder } },
+      // Default sortable fields on DoctorProfile
+      id: 'id',
+      specialty: 'specialty',
+      designation: 'designation',
+      fee: 'fee',
+      isVerified: 'isVerified',
+    };
+
+    if (sortBy && fieldMap[sortBy]) {
+      const field = fieldMap[sortBy];
+      if (typeof field === 'string') {
+        return { [field]: sortOrder };
+      }
+      return field;
+    }
+
+    // Default: sort by user createdAt descending (newest doctors first)
+    return { user: { createdAt: 'desc' } };
   }
 
   /**

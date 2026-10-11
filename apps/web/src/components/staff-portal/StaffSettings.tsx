@@ -125,7 +125,7 @@ export function StaffSettings() {
           )}
           {section === 'workspace' && (
             <>
-              <div>
+              <div className="flex flex-col">
                 <label className="text-muted-foreground text-xs font-bold" htmlFor="density">
                   Workspace density
                 </label>

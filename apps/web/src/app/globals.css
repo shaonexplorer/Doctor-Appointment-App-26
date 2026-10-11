@@ -266,6 +266,167 @@
   .mobile-scroll-x::-webkit-scrollbar {
     display: none;
   }
+
+  /* Clinical Clarity Scrollbar Styles */
+  /* Thin, subtle scrollbars matching the design system elevation and color tokens */
+
+  /* Desktop scrollbar (8px track, 6px thumb) */
+  .scrollbar-clinical {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.7 0.02 240 / 0.6) transparent; /* thumb / track */
+  }
+
+  .scrollbar-clinical::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-clinical::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+  }
+
+  .scrollbar-clinical::-webkit-scrollbar-track:hover {
+    background: oklch(0.9 0.015 240 / 0.5); /* Subtle track on hover */
+  }
+
+  .scrollbar-clinical::-webkit-scrollbar-thumb {
+    background: oklch(0.65 0.02 240 / 0.7); /* Muted slate thumb */
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .scrollbar-clinical::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.55 0.03 240 / 0.9); /* Darker on hover */
+    border-color: transparent;
+  }
+
+  .scrollbar-clinical::-webkit-scrollbar-thumb:active {
+    background: oklch(0.5 0.03 240); /* Even darker when dragging */
+  }
+
+  .scrollbar-clinical::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Primary-accented scrollbar variant for primary content areas */
+  .scrollbar-clinical-primary {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.58 0.18 230 / 0.7) transparent;
+  }
+
+  .scrollbar-clinical-primary::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-clinical-primary::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+  }
+
+  .scrollbar-clinical-primary::-webkit-scrollbar-track:hover {
+    background: oklch(0.94 0.03 255 / 0.3); /* Accent tint on hover */
+  }
+
+  .scrollbar-clinical-primary::-webkit-scrollbar-thumb {
+    background: oklch(0.58 0.18 230 / 0.7); /* Primary blue thumb */
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+    transition: background-color 0.15s ease;
+  }
+
+  .scrollbar-clinical-primary::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.5 0.18 230 / 0.9); /* Darker primary on hover */
+  }
+
+  .scrollbar-clinical-primary::-webkit-scrollbar-thumb:active {
+    background: oklch(0.45 0.18 230);
+  }
+
+  .scrollbar-clinical-primary::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Thin scrollbar for compact spaces (6px track, 4px thumb) */
+  .scrollbar-clinical-thin {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.7 0.02 240 / 0.5) transparent;
+  }
+
+  .scrollbar-clinical-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-clinical-thin::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+  }
+
+  .scrollbar-clinical-thin::-webkit-scrollbar-thumb {
+    background: oklch(0.65 0.02 240 / 0.6);
+    border-radius: 3px;
+    border: 1.5px solid transparent;
+    background-clip: content-box;
+    transition: background-color 0.15s ease;
+  }
+
+  .scrollbar-clinical-thin::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.55 0.03 240 / 0.8);
+  }
+
+  .scrollbar-clinical-thin::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Dark mode adjustments */
+  .dark .scrollbar-clinical {
+    scrollbar-color: oklch(0.45 0.02 260 / 0.6) transparent;
+  }
+
+  .dark .scrollbar-clinical::-webkit-scrollbar-thumb {
+    background: oklch(0.5 0.02 260 / 0.7);
+  }
+
+  .dark .scrollbar-clinical::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.55 0.03 260 / 0.9);
+  }
+
+  .dark .scrollbar-clinical::-webkit-scrollbar-track:hover {
+    background: oklch(0.25 0.02 260 / 0.5);
+  }
+
+  .dark .scrollbar-clinical-primary {
+    scrollbar-color: oklch(0.65 0.18 230 / 0.7) transparent;
+  }
+
+  .dark .scrollbar-clinical-primary::-webkit-scrollbar-thumb {
+    background: oklch(0.65 0.18 230 / 0.7);
+  }
+
+  .dark .scrollbar-clinical-primary::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.7 0.18 230 / 0.9);
+  }
+
+  .dark .scrollbar-clinical-primary::-webkit-scrollbar-track:hover {
+    background: oklch(0.22 0.04 255 / 0.3);
+  }
+
+  .dark .scrollbar-clinical-thin {
+    scrollbar-color: oklch(0.45 0.02 260 / 0.5) transparent;
+  }
+
+  .dark .scrollbar-clinical-thin::-webkit-scrollbar-thumb {
+    background: oklch(0.5 0.02 260 / 0.6);
+  }
+
+  .dark .scrollbar-clinical-thin::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.55 0.03 260 / 0.8);
+  }
 }
 
 /* Tabular figures for medical/numeric data */

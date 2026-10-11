@@ -34,6 +34,8 @@ export class DoctorService {
   private mapToSearchResult(doctor: DoctorWithUser): DoctorSearchResult {
     return {
       ...doctor,
+      createdAt: doctor.user.createdAt,
+      updatedAt: doctor.user.updatedAt,
       fee:
         typeof doctor.fee === 'object' && doctor.fee !== null
           ? Number(doctor.fee)
@@ -51,6 +53,8 @@ export class DoctorService {
     }
     return {
       ...doctor,
+      createdAt: doctor.user.createdAt,
+      updatedAt: doctor.user.updatedAt,
       fee:
         typeof doctor.fee === 'object' && doctor.fee !== null
           ? Number(doctor.fee)
@@ -68,6 +72,8 @@ export class DoctorService {
     }
     return {
       ...doctor,
+      createdAt: doctor.user.createdAt,
+      updatedAt: doctor.user.updatedAt,
       fee:
         typeof doctor.fee === 'object' && doctor.fee !== null
           ? Number(doctor.fee)
@@ -102,11 +108,13 @@ export class DoctorService {
     const created = await this.doctorRepository.create(createData);
     return {
       ...created,
+      createdAt: created.user.createdAt,
+      updatedAt: created.user.updatedAt,
       fee:
         typeof created.fee === 'object' && created.fee !== null
           ? Number(created.fee)
           : Number(created.fee),
-    } as DoctorProfile;
+    };
   }
 
   /**
@@ -137,11 +145,13 @@ export class DoctorService {
     const updated = await this.doctorRepository.update(userId, updateData);
     return {
       ...updated,
+      createdAt: updated.user.createdAt,
+      updatedAt: updated.user.updatedAt,
       fee:
         typeof updated.fee === 'object' && updated.fee !== null
           ? Number(updated.fee)
           : Number(updated.fee),
-    } as DoctorProfile;
+    };
   }
 
   /**
@@ -234,6 +244,8 @@ export class DoctorService {
 
       return {
         ...doctor,
+        createdAt: doctor.user.createdAt,
+        updatedAt: doctor.user.updatedAt,
         fee:
           typeof doctor.fee === 'object' && doctor.fee !== null
             ? Number(doctor.fee)

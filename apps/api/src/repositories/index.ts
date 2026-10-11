@@ -8,6 +8,7 @@ export { DoctorRepository } from './doctorRepository';
 export { ScheduleRepository } from './scheduleRepository';
 export { AppointmentRepository } from './appointmentRepository';
 export { PrescriptionRepository } from './prescriptionRepository';
+export type { DoctorWithUser } from './doctorRepository';
 
 // Repository factory for dependency injection
 import type { PrismaClient } from '@prisma/client';

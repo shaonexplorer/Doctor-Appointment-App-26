@@ -13,6 +13,7 @@ import {
   type PaginatedAppointmentsResponse,
   type PatientDashboardStats,
   type MedicalTimelineResponse,
+  type AppointmentCreateInput,
 } from '@/lib/api';
 
 // Query keys for consistent caching
@@ -35,6 +36,7 @@ export type {
   PaginatedAppointmentsResponse,
   PatientDashboardStats,
   MedicalTimelineResponse,
+  AppointmentCreateInput,
 };
 
 /**
@@ -104,6 +106,24 @@ export function useAppointments(filters: AppointmentFilters) {
     gcTime: 5 * 60 * 1000,
     retry: 1,
     refetchOnWindowFocus: false,
+  });
+}
+
+/**
+ * Hook for booking a new appointment (Staff/Patient)
+ */
+export function useBookAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: AppointmentCreateInput) => appointmentApi.bookAppointment(input),
+    onSuccess: () => {
+      // Invalidate all appointment queries to refetch fresh data
+      void queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+    },
+    onError: (error) => {
+      console.error('Failed to book appointment:', error);
+    },
   });
 }
 

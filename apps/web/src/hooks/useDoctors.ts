@@ -26,7 +26,7 @@ export const doctorKeys = {
 };
 
 // Re-export types for consumers
-export type { DoctorSearchFilters };
+export type { DoctorSearchFilters, DoctorSearchResult, DoctorProfile };
 
 /**
  * Hook for fetching doctors with pagination (page-based)

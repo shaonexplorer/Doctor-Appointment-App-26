@@ -420,7 +420,60 @@ export const userApi = {
       body: JSON.stringify(data),
     });
   },
+
+  /**
+   * List users with pagination and search (Admin/Staff only)
+   * GET /api/users
+   */
+  listUsers: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    userType?: string;
+  }): Promise<PaginatedResponse<UserListItem>> => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, String(value));
+      }
+    });
+    return apiRequest<PaginatedResponse<UserListItem>>(`/api/users?${searchParams.toString()}`);
+  },
+
+  /**
+   * Get user by ID (Admin/Staff only)
+   * GET /api/users/:id
+   */
+  getUserById: async (id: string): Promise<UserProfile> => {
+    return apiRequest<UserProfile>(`/api/users/${id}`);
+  },
 };
+
+// User list item type (for search results)
+export interface UserListItem {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  userType: string;
+  emailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  doctorProfile?: {
+    specialty: string;
+    designation: string;
+    licenseNo: string;
+    fee: number;
+  } | null;
+  patientProfile?: {
+    id: string;
+    dob: string | null;
+    gender: string | null;
+    address: string | null;
+    emergencyContact: string | null;
+  } | null;
+}
 
 // Appointment API types
 export interface AppointmentCreateInput {
@@ -925,6 +978,22 @@ export const patientApi = {
       }
     });
     return apiRequest<DoctorPatientListResponse>(`/api/patients/doctor?${params.toString()}`);
+  },
+
+  /**
+   * Get all patients for staff (Staff Portal)
+   * GET /api/patients/staff
+   */
+  getStaffPatientList: async (
+    filters: DoctorPatientFilters
+  ): Promise<DoctorPatientListResponse> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    return apiRequest<DoctorPatientListResponse>(`/api/patients/staff?${params.toString()}`);
   },
 
   /**
