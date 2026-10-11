@@ -4,6 +4,7 @@ export { PatientTable } from './PatientTable';
 export { PatientCard } from './PatientCard';
 export { PatientDrawer } from './PatientDrawer';
 export { EmptyState } from './EmptyState';
+export { RegisterPatientDialog } from './RegisterPatientDialog';
 export type {
   StaffPatient,
   StaffPatientFilters,
@@ -12,4 +13,5 @@ export type {
   PatientCardProps,
   PatientDrawerProps,
   EmptyStateProps,
+  RegisterPatientDialogProps,
 } from './types';

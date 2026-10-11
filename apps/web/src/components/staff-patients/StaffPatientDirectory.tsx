@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { StaffPatient, StaffPatientFilters } from './types';
 import { Metric } from './Metric';
@@ -9,6 +9,7 @@ import { PatientTable } from './PatientTable';
 import { PatientCard } from './PatientCard';
 import { PatientDrawer } from './PatientDrawer';
 import { EmptyState } from './EmptyState';
+import { RegisterPatientDialog } from './RegisterPatientDialog';
 import { useStaffPatients } from '@/hooks/useStaffPatients';
 import type { DoctorPatientListItem } from '@/lib/api';
 
@@ -16,6 +17,7 @@ export function StaffPatientDirectory() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StaffPatientFilters['status']>('All statuses');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
   // Fetch staff patients from API
   const {
@@ -69,6 +71,19 @@ export function StaffPatientDirectory() {
   const handleViewFullRecord = (patient: StaffPatient) => {
     console.log('View full record for:', patient.name);
     handleCloseDrawer();
+  };
+
+  const handleRegisterPatient = () => {
+    setIsRegisterOpen(true);
+  };
+
+  const handleRegisterClose = () => {
+    setIsRegisterOpen(false);
+  };
+
+  const handleRegisterSuccess = () => {
+    // Refetch patients after successful registration
+    refetch();
   };
 
   // Get selected patient for drawer
@@ -136,7 +151,12 @@ export function StaffPatientDirectory() {
             <h2 className="text-lg font-black">Patient directory</h2>
             <p className="mt-1 text-sm text-muted-foreground">Search and manage patient records across the clinic.</p>
           </div>
-          <button className="rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground">
+          <button
+            type="button"
+            onClick={handleRegisterPatient}
+            className="rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-2"
+          >
+            <UserPlus className="size-3.5" />
             Register patient
           </button>
         </div>
@@ -192,6 +212,13 @@ export function StaffPatientDirectory() {
         onClose={handleCloseDrawer}
         onScheduleAppointment={handleScheduleAppointment}
         onViewFullRecord={handleViewFullRecord}
+      />
+
+      {/* Register Patient Dialog */}
+      <RegisterPatientDialog
+        isOpen={isRegisterOpen}
+        onClose={handleRegisterClose}
+        onSuccess={handleRegisterSuccess}
       />
     </div>
   );

@@ -47,3 +47,9 @@ export interface PatientDrawerProps {
 export interface EmptyStateProps {
   message?: string;
 }
+
+export interface RegisterPatientDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
