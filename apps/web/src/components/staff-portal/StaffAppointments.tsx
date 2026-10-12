@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { format } from 'date-fns';
 import {
   CalendarDays,
   CheckCircle2,
@@ -16,94 +17,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-
-interface Appointment {
-  id: string;
-  time: string;
-  patient: string;
-  age: string;
-  doctor: string;
-  specialty: string;
-  type: string;
-  status: 'Confirmed' | 'Checked in' | 'Waiting' | 'Cancelled';
-  payment: 'Paid' | 'Pending' | 'Refunded';
-}
-
-const mockAppointments: Appointment[] = [
-  {
-    id: 'APT-004932',
-    time: '09:00 AM',
-    patient: 'Sarah Johnson',
-    age: '34',
-    doctor: 'Dr. Emily Carter',
-    specialty: 'General Medicine',
-    type: 'Follow-up',
-    status: 'Confirmed',
-    payment: 'Paid',
-  },
-  {
-    id: 'APT-004933',
-    time: '09:30 AM',
-    patient: 'Michael Chen',
-    age: '42',
-    doctor: 'Dr. James Wilson',
-    specialty: 'Cardiology',
-    type: 'Consultation',
-    status: 'Checked in',
-    payment: 'Paid',
-  },
-  {
-    id: 'APT-004934',
-    time: '10:00 AM',
-    patient: 'Priya Sharma',
-    age: '29',
-    doctor: 'Dr. Emily Carter',
-    specialty: 'General Medicine',
-    type: 'New patient',
-    status: 'Waiting',
-    payment: 'Pending',
-  },
-  {
-    id: 'APT-004935',
-    time: '10:30 AM',
-    patient: 'Robert Williams',
-    age: '57',
-    doctor: 'Dr. Olivia Brown',
-    specialty: 'Orthopedics',
-    type: 'Follow-up',
-    status: 'Confirmed',
-    payment: 'Paid',
-  },
-  {
-    id: 'APT-004936',
-    time: '11:00 AM',
-    patient: 'Linda Davis',
-    age: '46',
-    doctor: 'Dr. James Wilson',
-    specialty: 'Cardiology',
-    type: 'Consultation',
-    status: 'Cancelled',
-    payment: 'Refunded',
-  },
-  {
-    id: 'APT-004937',
-    time: '11:30 AM',
-    patient: 'David Miller',
-    age: '51',
-    doctor: 'Dr. Olivia Brown',
-    specialty: 'Orthopedics',
-    type: 'Follow-up',
-    status: 'Confirmed',
-    payment: 'Pending',
-  },
-];
-
-const statCards = [
-  { label: 'Today', value: '24', icon: CalendarDays, tone: 'blue' },
-  { label: 'Confirmed', value: '16', icon: CheckCircle2, tone: 'green' },
-  { label: 'Waiting', value: '4', icon: Clock3, tone: 'amber' },
-  { label: 'Cancelled', value: '2', icon: XCircle, tone: 'red' },
-] as const;
+import { appointmentApi } from '@/lib/api';
+import { useStaffAppointments } from '@/hooks/useStaffAppointments';
+import { transformStaffAppointmentsToUI } from '@/hooks/useStaffAppointments';
+import { staffAppointmentKeys } from '@/hooks/useStaffAppointments';
 
 const toneStyles: Record<string, string> = {
   green: 'bg-emerald-50 text-emerald-600',
@@ -125,25 +42,106 @@ const paymentBadgeVariant: Record<string, 'success' | 'warning' | 'destructive'>
   Pending: 'warning',
 };
 
+// Map API status strings to UI status labels
+const statusLabelMap: Record<string, string> = {
+  SCHEDULED: 'Confirmed',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+  NO_SHOW: 'No-show',
+};
+
+// Map API payment status strings to UI payment labels
+const paymentLabelMap: Record<string, string> = {
+  PENDING: 'Pending',
+  PAID: 'Paid',
+  REFUNDED: 'Refunded',
+};
+
+// Map consultation type to readable format
+const consultationTypeMap: Record<string, string> = {
+  IN_PERSON: 'In-person',
+  VIDEO: 'Video',
+};
+
+interface FetchedAppointment {
+  id: string;
+  slotId: string;
+  patientId: string;
+  doctorId: string;
+  status: string;
+  symptoms: string | null;
+  notes: string | null;
+  paymentStatus: string;
+  consultationType: string;
+  createdAt: string;
+  updatedAt: string;
+  slot?: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    doctorId: string;
+  };
+  patient: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+  };
+  doctor: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+  };
+  doctorProfile?: {
+    specialty: string;
+    clinic?: string;
+    designation: string;
+    fee: number;
+  } | null;
+  prescriptions?: Array<{
+    id: string;
+    diagnosis: string;
+    createdAt: string;
+  }>;
+  // Transformed fields from TanStack Query
+  startTime: string; // ISO string (flattened from slot.startTime)
+  endTime: string; // ISO string
+  time: string; // Formatted time like "9:00 AM"
+  date: string; // Formatted date like "Sep 18, 2026"
+  initials: string;
+}
+
 export function StaffAppointments() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('All statuses');
   const [notice, setNotice] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<FetchedAppointment | null>(null);
 
   const router = useRouter();
 
+  // Use TanStack Query for fetching appointments with caching
+  const { data, isLoading, error } = useStaffAppointments({
+    status: ['SCHEDULED', 'COMPLETED', 'CANCELLED'],
+  });
+
+  // const appointments = data ? transformStaffAppointmentsToUI(data) : [];
+  const appointments = data || [];
+
   const filtered = useMemo(
     () =>
-      mockAppointments.filter(
+      appointments.filter(
         (item) =>
-          `${item.patient} ${item.doctor} ${item.id} ${item.specialty}`
+          `${item.patient?.firstName} ${item.patient?.lastName} ${item.doctor?.firstName} ${item.doctorProfile?.specialty}`
             .toLowerCase()
             .includes(query.toLowerCase()) &&
           (status === 'All statuses' || item.status === status)
       ),
-    [query, status]
+    [appointments, query, status]
   );
 
   const action = (message: string) => {
@@ -152,7 +150,7 @@ export function StaffAppointments() {
     router.push('/staff/booking');
   };
 
-  const openDrawer = (appointment: Appointment) => {
+  const openDrawer = (appointment: FetchedAppointment) => {
     setSelectedAppointment(appointment);
     setDrawerOpen(true);
   };
@@ -165,15 +163,29 @@ export function StaffAppointments() {
   return (
     <section className="mt-8 space-y-5" aria-label="Appointment management">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {statCards.map(({ label, value, icon: Icon, tone }) => (
+        {[
+          { label: 'Today', getCount: () => appointments.length },
+          {
+            label: 'Confirmed',
+            getCount: () => appointments.filter((a) => statusLabelMap[a.status]).length,
+          },
+          {
+            label: 'Waiting',
+            getCount: () => appointments.filter((a) => a.status === 'Waiting').length,
+          },
+          {
+            label: 'Cancelled',
+            getCount: () => appointments.filter((a) => a.status === 'Cancelled').length,
+          },
+        ].map(({ label, getCount }, i) => (
           <div key={label} className="border-border bg-card rounded-2xl border p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-sm">{label}</p>
-              <span className={`rounded-xl p-2 ${toneStyles[tone]}`}>
-                <Icon className="size-4" />
+              <span className="bg-muted/30 rounded-xl p-2">
+                <CalendarDays className="size-4" />
               </span>
             </div>
-            <p className="mt-3 text-2xl font-black tracking-tight">{value}</p>
+            <p className="mt-3 text-2xl font-black tracking-tight">{getCount()}</p>
           </div>
         ))}
       </div>
@@ -183,7 +195,7 @@ export function StaffAppointments() {
           <div>
             <h2 className="font-bold">Today&apos;s appointments</h2>
             <p className="text-muted-foreground mt-1 text-sm">
-              Monday, September 21, 2026 · 24 scheduled appointments
+              {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {appointments.length} scheduled appointments
             </p>
           </div>
           <Button onClick={() => action('Booking workspace opened')}>Book appointment</Button>
@@ -208,7 +220,6 @@ export function StaffAppointments() {
           >
             <option>All statuses</option>
             <option>Confirmed</option>
-            <option>Checked in</option>
             <option>Waiting</option>
             <option>Cancelled</option>
           </select>
@@ -232,58 +243,71 @@ export function StaffAppointments() {
               </tr>
             </thead>
             <tbody className="divide-border divide-y">
-              {filtered.map((item) => (
-                <tr key={item.id} className="hover:bg-muted/20">
-                  <td className="px-5 py-4 font-bold whitespace-nowrap">{item.time}</td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <span className="bg-primary/10 text-primary rounded-xl p-2">
-                        <UserRound className="size-4" />
-                      </span>
-                      <div>
-                        <p className="font-bold">{item.patient}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {item.age} years · {item.id}
-                        </p>
+              {filtered.map((item) => {
+                const patientName = `${item.patient?.firstName} ${item.patient?.lastName}`;
+                const doctorName = `${item.doctor?.firstName} ${item.doctor?.lastName}`;
+                const formattedTime = item.slot.startTime
+      ? format(new Date(item.slot.startTime), 'h:mm a')
+      : '—';
+                const statusLabel = statusLabelMap[item.status] || item.status;
+                const paymentLabel = paymentLabelMap[item.paymentStatus] || item.paymentStatus;
+                const consultationTypeLabel =
+                  consultationTypeMap[item.consultationType] || item.consultationType;
+                const specialty = item.doctorProfile?.specialty || 'Unknown';
+
+                return (
+                  <tr key={item.id} className="hover:bg-muted/20">
+                    <td className="px-5 py-4 font-bold whitespace-nowrap">{formattedTime}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <span className="bg-primary/10 text-primary rounded-xl p-2">
+                          <UserRound className="size-4" />
+                        </span>
+                        <div>
+                          <p className="font-bold">{patientName}</p>
+                          <p className="text-muted-foreground text-xs">{item.id}</p>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <p className="font-medium">{item.doctor}</p>
-                    <p className="text-muted-foreground text-xs">{item.specialty}</p>
-                  </td>
-                  <td className="text-muted-foreground px-5 py-4">{item.type}</td>
-                  <td className="px-5 py-4">
-                    <Badge variant={statusBadgeVariant[item.status]}>{item.status}</Badge>
-                  </td>
-                  <td className="px-5 py-4">
-                    <Badge variant={paymentBadgeVariant[item.payment]}>{item.payment}</Badge>
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    <button
-                      onClick={() => openDrawer(item)}
-                      aria-label={`View ${item.patient}`}
-                      className="mobile-touch-target text-muted-foreground hover:bg-muted rounded-lg p-2"
-                    >
-                      <Eye className="size-4" />
-                    </button>
-                    {/* <button
-                      onClick={() => action('Appointment actions opened')}
-                      aria-label={`More actions for ${item.patient}`}
-                      className="mobile-touch-target text-muted-foreground hover:bg-muted rounded-lg p-2"
-                    >
-                      <MoreHorizontal className="size-4" />
-                    </button> */}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-5 py-4">
+                      <p className="font-medium">{doctorName}</p>
+                      <p className="text-muted-foreground text-xs">{specialty}</p>
+                    </td>
+                    <td className="text-muted-foreground px-5 py-4">{consultationTypeLabel}</td>
+                    <td className="px-5 py-4">
+                      <Badge variant={statusBadgeVariant[statusLabel]}>{statusLabel}</Badge>
+                    </td>
+                    <td className="px-5 py-4">
+                      <Badge variant={paymentBadgeVariant[paymentLabel]}>{paymentLabel}</Badge>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <button
+                        onClick={() => openDrawer(item)}
+                        aria-label={`View ${patientName}`}
+                        className="mobile-touch-target text-muted-foreground hover:bg-muted rounded-lg p-2"
+                      >
+                        <Eye className="size-4" />
+                      </button>
+                      {/* <button
+                        onClick={() => action('Appointment actions opened')}
+                        aria-label={`More actions for ${patientName}`}
+                        className="mobile-touch-target text-muted-foreground hover:bg-muted rounded-lg p-2"
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </button> */}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         {filtered.length === 0 && (
           <div className="text-muted-foreground p-10 text-center text-sm">
-            No appointments match these filters.
+            {appointments.length === 0
+              ? 'No appointments found.'
+              : 'No appointments match these filters.'}
           </div>
         )}
       </div>
@@ -314,38 +338,82 @@ export function StaffAppointments() {
                   <p className="text-primary text-xs font-bold tracking-wider uppercase">
                     Appointment #{selectedAppointment.id}
                   </p>
-                  <h2 className="mt-1 text-2xl font-black">{selectedAppointment.patient}</h2>
+                  <h2 className="mt-1 text-2xl font-black">
+                    {selectedAppointment.patient?.firstName} {selectedAppointment.patient?.lastName}
+                  </h2>
                 </div>
-                {/* <Button variant="ghost" size="icon" onClick={closeDrawer} aria-label="Close drawer">
-                  <X className="size-5" />
-                </Button> */}
               </div>
 
               <div className="bg-muted/30 rounded-2xl p-4">
                 <p className="text-primary text-xs font-bold">Appointment</p>
                 <p className="mt-2 text-lg font-black">
-                  Monday, September 21, 2026 · {selectedAppointment.time}
+                  {selectedAppointment.startTime
+                    ? new Date(selectedAppointment.startTime).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : new Date().toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                 </p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  {selectedAppointment.type} · {selectedAppointment.specialty}
+                  {consultationTypeMap[selectedAppointment.consultationType] ||
+                    selectedAppointment.consultationType}{' '}
+                  · {selectedAppointment.doctorProfile?.specialty || 'Unknown'}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
-                <Info label="Patient" value={`${selectedAppointment.age} years`} />
-                <Info label="Doctor" value={selectedAppointment.doctor} />
-                <Info label="Specialty" value={selectedAppointment.specialty} />
+                <Info
+                  label="Patient"
+                  value={
+                    selectedAppointment?.patient
+                      ? `${selectedAppointment.patient.firstName} ${selectedAppointment.patient.lastName}`
+                      : ''
+                  }
+                />
+                <Info
+                  label="Doctor"
+                  value={
+                    selectedAppointment?.doctor
+                      ? `${selectedAppointment.doctor.firstName} ${selectedAppointment.doctor.lastName}`
+                      : ''
+                  }
+                />
+                <Info
+                  label="Specialty"
+                  value={selectedAppointment.doctorProfile?.specialty || 'Unknown'}
+                />
               </div>
 
               <div className="space-y-2">
                 <p className="text-sm font-bold">Status & Payment</p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={statusBadgeVariant[selectedAppointment.status]}>
-                    {selectedAppointment.status}
-                  </Badge>
-                  <Badge variant={paymentBadgeVariant[selectedAppointment.payment]}>
-                    {selectedAppointment.payment}
-                  </Badge>
+                  {selectedAppointment && (
+                    <>
+                      <Badge
+                        variant={
+                          statusBadgeVariant[
+                            statusLabelMap[selectedAppointment.status] || selectedAppointment.status
+                          ]
+                        }
+                      >
+                        {statusLabelMap[selectedAppointment.status] || selectedAppointment.status}
+                      </Badge>
+                      <Badge
+                        variant={
+                          paymentBadgeVariant[
+                            paymentLabelMap[selectedAppointment.paymentStatus] ||
+                              selectedAppointment.paymentStatus
+                          ]
+                        }
+                      >
+                        {paymentLabelMap[selectedAppointment.paymentStatus] ||
+                          selectedAppointment.paymentStatus}
+                      </Badge>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -369,7 +437,9 @@ export function StaffAppointments() {
                     className="flex-1"
                     onClick={() => {
                       closeDrawer();
-                      setNotice(`Checked in ${selectedAppointment.patient}`);
+                      setNotice(
+                        `Checked in ${selectedAppointment?.patient?.firstName} ${selectedAppointment?.patient?.lastName}`
+                      );
                     }}
                   >
                     Check in
@@ -379,7 +449,9 @@ export function StaffAppointments() {
                     className="flex-1"
                     onClick={() => {
                       closeDrawer();
-                      setNotice(`Rescheduling ${selectedAppointment.patient}`);
+                      setNotice(
+                        `Rescheduling ${selectedAppointment?.patient?.firstName} ${selectedAppointment?.patient?.lastName}`
+                      );
                     }}
                   >
                     Reschedule
@@ -389,7 +461,9 @@ export function StaffAppointments() {
                     className="flex-1"
                     onClick={() => {
                       closeDrawer();
-                      setNotice(`Cancelled ${selectedAppointment.patient}`);
+                      setNotice(
+                        `Cancelled ${selectedAppointment?.patient?.firstName} ${selectedAppointment?.patient?.lastName}`
+                      );
                     }}
                   >
                     Cancel

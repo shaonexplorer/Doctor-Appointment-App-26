@@ -269,6 +269,7 @@ export class AppointmentController {
         page: page || 1,
         limit: limit || 20,
         ...filters,
+        userType: req.user!.userType,
       });
       res.json(
         buildSuccessResponse(buildPaginatedResponse(result.data, validatedQuery, result.meta.total))

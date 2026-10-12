@@ -717,12 +717,27 @@ export class AppointmentService {
       dateTo?: string;
       sortBy?: string;
       sortOrder?: 'asc' | 'desc';
+      userType?: UserType;
     }
   ): Promise<{ data: Appointment[]; meta: { total: number; totalPages: number } }> {
-    const { page, limit, status, patientSearch, dateFrom, dateTo, sortBy, sortOrder } = filters;
+    const { page, limit, status, patientSearch, dateFrom, dateTo, sortBy, sortOrder, userType } = filters;
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = { doctorId };
+    const where: Record<string, unknown> = {};
+
+    // Apply user-based filtering similar to repository findMany
+    if (userType === UserType.PATIENT) {
+      where.patientId = doctorId;
+    } else if (userType === UserType.DOCTOR) {
+      where.doctorId = doctorId;
+    } else if (userType === UserType.ADMIN || userType === UserType.STAFF) {
+      // Admin/Staff can see all appointments; only filter by doctorId if explicitly needed
+      // doctorId here is the user's ID, not a doctor ID for staff, so we don't set where.doctorId
+    }
+    // Backward compatibility: if userType not specified, filter by doctorId
+    else {
+      where.doctorId = doctorId;
+    }
 
     if (status && status.length > 0) {
       where.status = { in: Array.isArray(status) ? status : [status] };
