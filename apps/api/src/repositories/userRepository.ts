@@ -143,20 +143,37 @@ export class UserRepository {
    * List users with pagination (Admin/Staff)
    */
   async findMany(params: PaginationParams): Promise<PaginatedResponse<UserWithProfiles>> {
-    const { page, limit, sortBy, sortOrder } = params;
+    const { page, limit, sortBy, sortOrder, search, userType } = params;
     const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = {};
+
+    // Filter by userType if provided
+    if (userType) {
+      where.userType = userType;
+    }
+
+    // Filter by search term if provided (searches firstName, lastName, email)
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         skip,
         take: limit,
         orderBy: sortBy ? { [sortBy]: sortOrder || 'asc' } : { createdAt: 'desc' },
+        where,
         include: {
           doctorProfile: true,
           patientProfile: true,
         },
       }),
-      this.prisma.user.count(),
+      this.prisma.user.count({ where }),
     ]);
 
     return {

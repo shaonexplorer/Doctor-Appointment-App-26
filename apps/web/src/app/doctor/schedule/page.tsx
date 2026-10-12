@@ -8,12 +8,13 @@ import { useDoctorProfile } from '@/hooks/useDoctorDashboard';
 
 export function DoctorSchedulePageContent() {
   const [weekStart, setWeekStart] = useState(() => {
-    // Get the start of the current week (Sunday)
+    // Get the start of the current week (Sunday) in UTC
+    // Use UTC to avoid timezone issues with backend date parsing
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0 = Sunday
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - dayOfWeek);
-    startOfWeek.setHours(0, 0, 0, 0);
+    const dayOfWeek = now.getUTCDay(); // 0 = Sunday (UTC)
+    const startOfWeek = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOfWeek)
+    );
     return startOfWeek.toISOString().split('T')[0];
   });
   const [view, setView] = useState<'Day' | 'Week' | 'Month'>('Week');

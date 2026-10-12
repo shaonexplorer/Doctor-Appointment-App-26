@@ -49,11 +49,15 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
   } = useDoctor(doctorId);
 
   // Fetch doctor schedule for the next 30 days
-  const startDate = useMemo(() => new Date(), []);
+  // Use UTC dates to match backend storage (Prisma/PostgreSQL stores timestamps in UTC)
+  const startDate = useMemo(() => {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  }, []);
   const endDate = useMemo(() => {
-    const date = new Date();
-    date.setDate(date.getDate() + 30);
-    return date;
+    const now = new Date();
+    const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 30));
+    return end;
   }, []);
   const { data: scheduleData, isLoading: isScheduleLoading } = useDoctorSchedule(
     doctorId,

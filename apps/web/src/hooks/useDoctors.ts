@@ -227,14 +227,14 @@ function getNextAvailableSlot(schedules?: DoctorSearchResult['schedules']): stri
 
   const nextSlot = availableSlots[0];
   const date = new Date(nextSlot.startTime);
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Use UTC dates for comparison to match backend storage
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-  if (date.toDateString() === today.toDateString()) {
+  if (date.toISOString().split('T')[0] === today.toISOString().split('T')[0]) {
     return `Today, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
   }
-  if (date.toDateString() === tomorrow.toDateString()) {
+  if (date.toISOString().split('T')[0] === tomorrow.toISOString().split('T')[0]) {
     return `Tomorrow, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
   }
 
@@ -247,10 +247,9 @@ function determineAvailability(schedules?: DoctorSearchResult['schedules']): str
   }
 
   const now = new Date();
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const endOfWeek = new Date(today);
-  endOfWeek.setDate(endOfWeek.getDate() + 7);
+  // Use UTC dates to match backend storage (Prisma/PostgreSQL stores timestamps in UTC)
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const endOfWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const hasAvailableToday = schedules.some(
     (s) =>

@@ -55,7 +55,7 @@ export default function DoctorProfilePage() {
   );
 
   // console.log('Doctor Data:', doctorData);
-  // console.log('Schedule Data:', scheduleData);
+  console.log('Schedule Data:', scheduleData);
 
   // Transform doctor data for components
   const doctor = useMemo(() => {
@@ -76,6 +76,7 @@ export default function DoctorProfilePage() {
       .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
       .forEach((slot) => {
         const date = new Date(slot.startTime);
+        console.log(date, slot.startTime);
         const dateKey = date.toISOString().split('T')[0];
         const hour = date.getHours();
 

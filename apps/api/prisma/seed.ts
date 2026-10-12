@@ -553,8 +553,8 @@ const doctorsData = [
   },
 ];
 
-// Helper to generate schedules for the next 7 days
-function generateSchedules(doctorId: string, startDate: Date, days: number = 7) {
+// Helper to generate schedules for the next 30 days
+function generateSchedules(doctorId: string, startDate: Date, days: number = 30) {
   const schedules = [];
   const currentDate = new Date(startDate);
   currentDate.setHours(0, 0, 0, 0);
@@ -579,8 +579,8 @@ function generateSchedules(doctorId: string, startDate: Date, days: number = 7) 
       // 80% available, 15% booked, 5% cancelled
       const rand = Math.random();
       let status = SlotStatus.AVAILABLE;
-      if (rand > 0.8) status = SlotStatus.BOOKED;
-      else if (rand > 0.95) status = SlotStatus.CANCELLED;
+      if (rand > 0.95) status = SlotStatus.CANCELLED;      // 5%
+      else if (rand > 0.8) status = SlotStatus.BOOKED;     // 15%
 
       schedules.push({
         doctorId,
@@ -601,8 +601,8 @@ function generateSchedules(doctorId: string, startDate: Date, days: number = 7) 
 
       const rand = Math.random();
       let status = SlotStatus.AVAILABLE;
-      if (rand > 0.8) status = SlotStatus.BOOKED;
-      else if (rand > 0.95) status = SlotStatus.CANCELLED;
+      if (rand > 0.95) status = SlotStatus.CANCELLED;      // 5%
+      else if (rand > 0.8) status = SlotStatus.BOOKED;     // 15%
 
       schedules.push({
         doctorId,

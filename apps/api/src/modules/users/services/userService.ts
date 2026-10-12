@@ -59,7 +59,7 @@ export class UserService {
 
     const { passwordHash: _passwordHash, ..._userWithoutPassword } = user;
     void _passwordHash;
-    return userWithoutPassword as UserProfile;
+    return _userWithoutPassword as UserProfile;
   }
 
   /**
@@ -117,7 +117,7 @@ export class UserService {
 
     const { passwordHash: _passwordHash, ..._userWithoutPassword } = user;
     void _passwordHash;
-    return userWithoutPassword as UserProfile;
+    return _userWithoutPassword as UserProfile;
   }
 
   /**

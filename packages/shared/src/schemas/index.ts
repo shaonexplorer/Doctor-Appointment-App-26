@@ -35,6 +35,8 @@ export const PaginationParamsSchema = z.object({
   limit: z.coerce.number().int().positive().max(1000).default(20),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
+  search: z.string().optional(),
+  userType: z.string().optional(),
 });
 
 export function PaginatedResponseSchema<T extends z.ZodTypeAny>(itemSchema: T) {

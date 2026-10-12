@@ -17,7 +17,7 @@ import {
 export const scheduleKeys = {
   all: ['schedules'] as const,
   weekly: (weekStart: string) => [...scheduleKeys.all, 'weekly', weekStart] as const,
-  slots: (doctorId: string, startDate?: Date, endDate?: Date) =>
+  slots: (doctorId: string, startDate?: string, endDate?: string) =>
     [...scheduleKeys.all, 'slots', doctorId, startDate, endDate] as const,
 };
 
@@ -42,8 +42,12 @@ export function useWeeklySchedule(weekStart: string) {
  * GET /api/schedules/doctor/:doctorId?startDate=&endDate=
  */
 export function useDoctorSlots(doctorId: string | undefined, startDate?: Date, endDate?: Date) {
+  // Convert dates to ISO strings for stable query keys
+  const startDateKey = startDate?.toISOString();
+  const endDateKey = endDate?.toISOString();
+
   return useQuery({
-    queryKey: scheduleKeys.slots(doctorId ?? '', startDate, endDate),
+    queryKey: scheduleKeys.slots(doctorId ?? '', startDateKey, endDateKey),
     queryFn: () => scheduleApi.getDoctorSlots(doctorId!, startDate, endDate),
     enabled: !!doctorId,
     staleTime: 60 * 1000,
@@ -119,12 +123,16 @@ export function useAvailableSlotsForReschedule(
   startDate?: Date,
   endDate?: Date
 ) {
+  // Convert dates to ISO strings for stable query keys
+  const startDateKey = startDate?.toISOString();
+  const endDateKey = endDate?.toISOString();
+
   return useQuery({
-    queryKey: [...scheduleKeys.all, 'available-slots', doctorId, startDate, endDate],
+    queryKey: [...scheduleKeys.all, 'available-slots', doctorId, startDateKey, endDateKey],
     queryFn: async () => {
       const slots = await scheduleApi.getDoctorSlots(doctorId!, startDate, endDate);
       // Filter to only AVAILABLE slots
-      return slots
+      const availableSlots = slots
         .filter((slot) => slot.status === 'AVAILABLE')
         .map((slot) => ({
           id: slot.id,
@@ -136,6 +144,14 @@ export function useAvailableSlotsForReschedule(
           startTime: slot.startTime,
           endTime: slot.endTime,
         }));
+      // Deduplicate by time - keep the first slot for each unique time
+      const seenTimes = new Set<string>();
+      return availableSlots.filter((slot) => {
+        const timeKey = slot.startTime; // Use ISO string as unique key
+        if (seenTimes.has(timeKey)) return false;
+        seenTimes.add(timeKey);
+        return true;
+      });
     },
     enabled: !!doctorId,
     staleTime: 60 * 1000,

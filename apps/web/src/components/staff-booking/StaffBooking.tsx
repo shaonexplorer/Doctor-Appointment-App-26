@@ -45,6 +45,7 @@ interface SelectedSlot {
 // Transformed doctor type for StaffBooking (similar to StaffBookingPatient)
 interface StaffBookingDoctor {
   id: string;
+  userId: string; // User ID - required for API calls (e.g., useDoctorSlots)
   name: string;
   specialty: string;
   designation: string;
@@ -59,6 +60,7 @@ interface StaffBookingDoctor {
 function transformDoctorToBookingDoctor(doctor: DoctorSearchResult): StaffBookingDoctor {
   return {
     id: doctor.id,
+    userId: doctor.userId,
     name: `Dr. ${doctor.user.firstName} ${doctor.user.lastName}`,
     specialty: doctor.specialty,
     designation: doctor.designation,
@@ -132,6 +134,8 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
     limit: 20,
   });
 
+  // console.log(patientsResponse?.data, 'Patients Response');
+
   const {
     data: doctorsResponse,
     isLoading: isDoctorsLoading,
@@ -153,14 +157,33 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
     return Array.from(uniqueSpecialties).sort();
   }, [doctorsResponse]);
 
-  const startDate = selectedSlot ? new Date(selectedSlot.date) : undefined;
-  const endDate = selectedSlot ? new Date(selectedSlot.date) : undefined;
+  // Default date range: today to 7 days from now when a doctor is selected
+  // This allows fetching slots before a specific date is chosen in Step 3
+  // IMPORTANT: Use UTC dates to match database storage (Prisma/PostgreSQL stores timestamps in UTC)
+  // This avoids timezone mismatch where local midnight != UTC midnight
+  const startDate = useMemo(() => {
+    if (!doctor) return undefined;
+    const today = new Date();
+    // Create UTC midnight for today
+    return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+  }, [doctor]);
+
+  const endDate = useMemo(() => {
+    if (!doctor) return undefined;
+    const today = new Date();
+    // Create UTC end of day for 7 days from now (23:59:59.999 UTC)
+    const end = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() + 7));
+    end.setUTCMinutes(59);
+    end.setUTCSeconds(59);
+    end.setUTCMilliseconds(999);
+    return end;
+  }, [doctor]);
 
   const {
     data: slotsData,
     isLoading: isSlotsLoading,
     isError: isSlotsError,
-  } = useDoctorSlots(doctor?.id, startDate, endDate);
+  } = useDoctorSlots(doctor?.userId, startDate, endDate);
 
   const bookAppointmentMutation = useBookAppointment();
 
@@ -228,14 +251,26 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
     return Array.from(dates).sort();
   }, [slots]);
 
-  // Get slots for selected date
+  // Get slots for selected date, deduplicated by time (in case of duplicate slots with same time but different IDs)
   const slotsForSelectedDate = useMemo(() => {
     if (!selectedSlot || !slots.length) return [];
-    return slots.filter((slot) => {
+    const filtered = slots.filter((slot) => {
       const slotDate = new Date(slot.startTime).toISOString().split('T')[0];
       return slotDate === selectedSlot.date;
     });
+    // Deduplicate by time - keep the first slot for each unique time
+    const seenTimes = new Set<string>();
+    return filtered.filter((slot) => {
+      const timeKey = new Date(slot.startTime).toISOString(); // Full ISO string as unique key
+      if (seenTimes.has(timeKey)) return false;
+      seenTimes.add(timeKey);
+      return true;
+    });
   }, [slots, selectedSlot]);
+
+  // console.log('Available slots:', slots);
+  console.log(doctor ? `Selected doctor: ${doctor.userId}` : 'No doctor selected');
+  console.log('Slots for selected date:', slotsForSelectedDate);
 
   // Handle next step
   const next = () => {
@@ -622,11 +657,12 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
                   <button
                     key={d}
                     onClick={() => {
-                      setSelectedSlot((prev) => ({
-                        ...prev!,
+                      setSelectedSlot({
+                        id: '',
+                        time: '',
                         date: d,
-                        time: '', // Reset time when date changes
-                      }));
+                        doctorId: doctor?.id || '',
+                      });
                     }}
                     className={`rounded-xl border px-4 py-3 text-xs font-bold ${
                       selectedSlot?.date === d
