@@ -155,7 +155,7 @@ export function StaffPatientDirectory() {
       </div>
 
       {/* Patient Directory Section */}
-      <section className="border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6">
+      <section className="border-border bg-card rounded-2xl p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-black">Patient directory</h2>
@@ -205,7 +205,7 @@ export function StaffPatientDirectory() {
       </section>
 
       {/* Patient Table/Card Section */}
-      <section className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm">
+      <section className="border-border bg-card overflow-hidden rounded-2xl p-5 shadow-sm sm:p-6">
         {filteredPatients.length ? (
           <>
             <PatientTable patients={filteredPatients} onViewPatient={handleViewPatient} />

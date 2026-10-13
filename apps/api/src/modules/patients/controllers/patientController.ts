@@ -8,6 +8,7 @@ import type { PatientService } from '../services/patientService';
 import { buildSuccessResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
 import type { TimelineQuery, DoctorPatientListQuery } from '../validators';
+import type { DoctorPatientListResponse } from '../types';
 
 export class PatientController {
   constructor(private patientService: PatientService) {}
@@ -108,6 +109,28 @@ export class PatientController {
     try {
       const detail = await this.patientService.getDoctorPatientDetail(req.user!.id, req.params.id);
       res.json(buildSuccessResponse(detail));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // ==================== STAFF PORTAL ENDPOINTS ====================
+
+  /**
+   * Get all patients for staff (Staff Portal)
+   * GET /api/patients/staff
+   */
+  getStaffPatientList = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const validatedQuery = req.validatedQuery as DoctorPatientListQuery;
+      const { page, limit, ...filters } = validatedQuery;
+
+      const result = await this.patientService.getStaffPatientList({
+        page: page || 1,
+        limit: limit || 50,
+        ...filters,
+      });
+      res.json(buildSuccessResponse(result));
     } catch (error) {
       next(error);
     }

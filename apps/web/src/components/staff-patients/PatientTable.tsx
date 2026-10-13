@@ -1,104 +1,125 @@
 'use client';
 
+import * as React from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
 import { cn } from '@/lib/utils';
-import type { PatientTableProps } from './types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { DataTable } from '@/components/staff-portal/data-table';
+import { type DataTableFeatures } from '@/components/staff-portal/data-table-features';
+import type { StaffPatient } from './types';
 
-export function PatientTable({ patients, onViewPatient }: PatientTableProps) {
-  return (
-    <div className="hidden overflow-x-auto md:block">
-      <table className="w-full min-w-[1040px] text-left text-sm">
-        <thead className="border-b border-border bg-secondary/60 text-[10px] uppercase tracking-wider text-muted-foreground">
-          <tr>
-            {['Patient', 'Contact', 'Last visit', 'Doctor', 'Next appointment', 'Payment', 'Status', 'Actions'].map(
-              (heading) => (
-                <th key={heading} className="px-5 py-4 font-bold">
-                  {heading}
-                </th>
-              )
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {patients.map((patient) => (
-            <PatientRow key={patient.id} patient={patient} onView={() => onViewPatient(patient)} />
-          ))}
-        </tbody>
-      </table>
-    </div>
+export function PatientTable({ patients, onViewPatient }: { patients: StaffPatient[]; onViewPatient: (patient: StaffPatient) => void }) {
+  const columns = React.useMemo<ColumnDef<DataTableFeatures, StaffPatient>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Patient',
+        cell: ({ row }) => {
+          const patient = row.original;
+          return (
+            <div className="flex items-center gap-3">
+              <div className="grid size-9 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold text-primary">
+                {patient.initials}
+              </div>
+              <div>
+                <p className="font-bold">{patient.name}</p>
+                <p className="text-[11px] text-muted-foreground">{patient.id} · {patient.age} years · {patient.gender}</p>
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'phone',
+        header: 'Contact',
+        cell: ({ row }) => {
+          const patient = row.original;
+          return (
+            <div className="text-xs text-muted-foreground">
+              <p>{patient.phone}</p>
+              <p className="mt-1">{patient.email}</p>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'lastVisit',
+        header: 'Last visit',
+        cell: ({ row }) => <span className="text-xs font-semibold">{row.original.lastVisit}</span>,
+      },
+      {
+        accessorKey: 'doctor',
+        header: 'Doctor',
+        cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.doctor}</span>,
+      },
+      {
+        accessorKey: 'nextAppointment',
+        header: 'Next appointment',
+        cell: ({ row }) => <span className="text-xs font-semibold text-primary">{row.original.nextAppointment}</span>,
+      },
+      {
+        accessorKey: 'payment',
+        header: 'Payment',
+        cell: ({ row }) => {
+          const payment = row.original.payment;
+          return (
+            <Badge
+              variant={payment === 'Paid' ? 'default' : 'secondary'}
+              className={cn(
+                'rounded-full px-2.5 py-1 text-[10px] font-bold',
+                payment === 'Paid' ? 'bg-[#e9f8f3] text-[#258c70]' : 'bg-[#fff3e7] text-[#d68b42]'
+              )}
+            >
+              {payment}
+            </Badge>
+          );
+        },
+        filterFn: 'includesString',
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => {
+          const status = row.original.status;
+          return (
+            <Badge
+              variant={status === 'Active' ? 'default' : 'secondary'}
+              className={cn(
+                'rounded-full px-2.5 py-1 text-[10px] font-bold',
+                status === 'Active' ? 'bg-[#e9f8f3] text-[#258c70]' : 'bg-secondary text-muted-foreground'
+              )}
+            >
+              {status}
+            </Badge>
+          );
+        },
+        filterFn: 'includesString',
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewPatient(row.original)}
+            className="w-full"
+          >
+            View patient
+          </Button>
+        ),
+      },
+    ],
+    []
   );
-}
-
-function PatientRow({
-  patient,
-  onView,
-}: {
-  patient: StaffPatient;
-  onView: () => void;
-}) {
-  const statusTone =
-    patient.status === 'Active'
-      ? 'bg-[#e9f8f3] text-[#258c70]'
-      : 'bg-secondary text-muted-foreground';
-  const paymentTone =
-    patient.payment === 'Paid'
-      ? 'bg-[#e9f8f3] text-[#258c70]'
-      : 'bg-[#fff3e7] text-[#d68b42]';
 
   return (
-    <tr className="border-b border-border last:border-0 hover:bg-secondary/30">
-      <td className="px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="grid size-9 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold text-primary">
-            {patient.initials}
-          </div>
-          <div>
-            <p className="font-bold">{patient.name}</p>
-            <p className="text-[11px] text-muted-foreground">{patient.id} · {patient.age} years</p>
-          </div>
-        </div>
-      </td>
-      <td className="px-5 py-4 text-xs text-muted-foreground">
-        <p>{patient.phone}</p>
-        <p className="mt-1">{patient.email}</p>
-      </td>
-      <td className="px-5 py-4 text-xs font-semibold">{patient.lastVisit}</td>
-      <td className="px-5 py-4 text-xs text-muted-foreground">{patient.doctor}</td>
-      <td className="px-5 py-4 text-xs font-semibold text-primary">{patient.nextAppointment}</td>
-      <td className="px-5 py-4">
-        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${paymentTone}`}>{patient.payment}</span>
-      </td>
-      <td className="px-5 py-4">
-        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${statusTone}`}>{patient.status}</span>
-      </td>
-      <td className="px-5 py-4">
-        <button
-          onClick={onView}
-          className={cn(
-            'border-border hover:bg-secondary rounded-lg border px-3 py-1.5 text-[10px] font-bold',
-            'transition-colors'
-          )}
-        >
-          View patient
-        </button>
-      </td>
-    </tr>
+    <DataTable
+      columns={columns}
+      data={patients}
+      searchPlaceholder="Search patients..."
+      searchKey="name"
+    />
   );
-}
-
-// Need to import the type
-interface StaffPatient {
-  id: string;
-  name: string;
-  initials: string;
-  phone: string;
-  email: string;
-  age: number;
-  gender: string;
-  lastVisit: string;
-  diagnosis: string;
-  nextAppointment: string;
-  doctor: string;
-  totalVisits: number;
-  status: 'Active' | 'Inactive';
-  payment: 'Paid' | 'Pending';
 }

@@ -59,5 +59,14 @@ export function createPatientRoutes(patientController: PatientController): Route
     asyncHandler(patientController.getDoctorPatientDetail)
   );
 
+  // Staff Portal endpoints (ADMIN, STAFF)
+  const adminStaffMiddleware = requireRole(UserType.ADMIN, UserType.STAFF);
+  router.get(
+    '/staff',
+    adminStaffMiddleware,
+    validateDoctorPatientListQuery,
+    asyncHandler(patientController.getStaffPatientList)
+  );
+
   return router;
 }

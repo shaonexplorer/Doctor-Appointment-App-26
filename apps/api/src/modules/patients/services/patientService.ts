@@ -557,6 +557,172 @@ export class PatientService {
       prescriptions: prescriptionHistory,
     };
   }
+
+  // ==================== STAFF PORTAL ENDPOINTS ====================
+
+  /**
+   * Get all patients for staff (Staff Portal)
+   * Returns all patients in the system with their medical info
+   */
+  async getStaffPatientList(
+    query: {
+      page: number;
+      limit: number;
+      search?: string;
+      condition?: string;
+      status?: 'all' | 'active' | 'inactive';
+      sortBy?: 'lastVisit' | 'nextAppointment' | 'name' | 'totalAppointments';
+      sortOrder?: 'asc' | 'desc';
+    }
+  ): Promise<DoctorPatientListResponse> {
+    const {
+      page,
+      limit,
+      search,
+      condition,
+      status,
+      sortBy = 'lastVisit',
+      sortOrder = 'desc',
+    } = query;
+
+    // Get all patients (users with PATIENT role)
+    const patientWhere: Record<string, unknown> = {
+      userType: 'PATIENT',
+    };
+
+    if (search) {
+      patientWhere.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Get patients with their profiles
+    const patients = await this.prisma.user.findMany({
+      where: patientWhere,
+      include: {
+        patientProfile: true,
+      },
+      // Only order by database fields (name/firstName), not computed fields
+      orderBy: sortBy === 'name' ? { firstName: sortOrder } : undefined,
+    });
+
+    // For each patient, get appointment stats and conditions across ALL doctors
+    const patientListItems: DoctorPatientListItem[] = [];
+
+    for (const patient of patients) {
+      // Get all appointments for this patient
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          patientId: patient.id,
+        },
+        include: {
+          slot: { select: { startTime: true } },
+          doctor: {
+            include: {
+              doctorProfile: { select: { specialty: true } },
+            },
+          },
+          prescriptions: {
+            select: {
+              diagnosis: true,
+              medications: true,
+            },
+          },
+        },
+        orderBy: { slot: { startTime: 'desc' } },
+      });
+
+      const completedAppointments = appointments.filter(
+        (a) => a.status === AppointmentStatus.COMPLETED
+      );
+      const upcomingAppointments = appointments.filter(
+        (a) => a.status === AppointmentStatus.SCHEDULED && a.slot.startTime > new Date()
+      );
+
+      // Extract conditions from prescriptions
+      const conditions = new Set<string>();
+      for (const appt of completedAppointments) {
+        for (const rx of appt.prescriptions) {
+          if (rx.diagnosis) {
+            conditions.add(rx.diagnosis);
+          }
+        }
+      }
+
+      const lastVisit = completedAppointments[0]?.slot.startTime || null;
+      const nextAppointment = upcomingAppointments[0]?.slot.startTime || null;
+
+      patientListItems.push({
+        id: patient.id,
+        email: patient.email,
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        phone: patient.phone,
+        dob: patient.patientProfile?.dob || null,
+        gender: patient.patientProfile?.gender || null,
+        address: patient.patientProfile?.address || null,
+        emergencyContact: patient.patientProfile?.emergencyContact || null,
+        lastVisit,
+        nextAppointment,
+        totalAppointments: appointments.length,
+        completedAppointments: completedAppointments.length,
+        conditions: Array.from(conditions),
+        avatarUrl: null,
+      });
+    }
+
+    // Sort by computed fields in memory
+    const sortFields: Record<string, (p: DoctorPatientListItem) => number | string> = {
+      lastVisit: (p) => (p.lastVisit ? new Date(p.lastVisit).getTime() : 0),
+      nextAppointment: (p) => (p.nextAppointment ? new Date(p.nextAppointment).getTime() : 0),
+      totalAppointments: (p) => p.totalAppointments,
+      name: (p) => `${p.firstName} ${p.lastName}`.toLowerCase(),
+    };
+
+    const sortField = sortFields[sortBy] || sortFields.lastVisit;
+    patientListItems.sort((a, b) => {
+      const aVal = sortField(a);
+      const bVal = sortField(b);
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return 0;
+    });
+
+    // Apply status filter
+    let filtered = patientListItems;
+    if (status === 'active') {
+      filtered = patientListItems.filter((p) => p.nextAppointment !== null);
+    } else if (status === 'inactive') {
+      filtered = patientListItems.filter((p) => p.nextAppointment === null);
+    }
+
+    // Apply condition filter
+    if (condition) {
+      filtered = filtered.filter((p) =>
+        p.conditions.some((c) => c.toLowerCase().includes(condition.toLowerCase()))
+      );
+    }
+
+    // Apply pagination after filtering and sorting
+    const totalPatients = filtered.length;
+    const paginatedData = filtered.slice((page - 1) * limit, page * limit);
+
+    return {
+      data: paginatedData,
+      meta: {
+        total: totalPatients,
+        page,
+        limit,
+        totalPages: Math.ceil(totalPatients / limit),
+      },
+    };
+  }
 }
 
 // Factory function for dependency injection
