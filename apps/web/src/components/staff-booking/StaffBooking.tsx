@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, type ReactNode } from 'react';
+import { useState, useMemo, useEffect, type ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   CalendarDays,
@@ -187,6 +188,26 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
 
   const bookAppointmentMutation = useBookAppointment();
 
+  // Read patientId from URL query params and auto-select patient
+  const searchParams = useSearchParams();
+  const urlPatientId = searchParams?.get('patientId');
+
+  useEffect(() => {
+    if (urlPatientId && patientsResponse?.data && !patient) {
+      // Transform the patients data
+      const transformedPatients = transformUsersToPatients(patientsResponse.data);
+      // Find the patient matching the URL patientId
+      const matchedPatient = transformedPatients.find((p) => p.patientId === urlPatientId);
+      if (matchedPatient) {
+        setPatient(matchedPatient);
+        // Auto-advance to step 2 if we're on step 1
+        if (step === 1) {
+          setStep(2);
+        }
+      }
+    }
+  }, [urlPatientId, patientsResponse, patient, step]);
+
   // Transform API data to UI format and filter by search query
   const patients = useMemo(() => {
     if (!patientsResponse?.data) return [];
@@ -269,8 +290,8 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
   }, [slots, selectedSlot]);
 
   // console.log('Available slots:', slots);
-  console.log(doctor ? `Selected doctor: ${doctor.userId}` : 'No doctor selected');
-  console.log('Slots for selected date:', slotsForSelectedDate);
+  // console.log(doctor ? `Selected doctor: ${doctor.userId}` : 'No doctor selected');
+  // console.log('Slots for selected date:', slotsForSelectedDate);
 
   // Handle next step
   const next = () => {
@@ -294,6 +315,13 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
   const handleSubmit = async () => {
     if (!patient || !selectedSlot || symptoms.trim().length < 5) return;
 
+    // Debug: log the patient ID being sent
+    console.log('Booking appointment with patient:', {
+      patientId: patient.patientId,
+      patientName: patient.name,
+      isCUID: /^c[a-z0-9]{24}$/.test(patient.patientId),
+    });
+
     setIsSubmitting(true);
     setError('');
 
@@ -302,6 +330,7 @@ export function StaffBooking({ onBack }: { onBack: () => void }) {
         slotId: selectedSlot.id,
         symptoms: symptoms.trim(),
         consultationType: 'IN_PERSON',
+        patientId: patient.patientId,
       });
 
       setBookingAppointmentId(result.id);

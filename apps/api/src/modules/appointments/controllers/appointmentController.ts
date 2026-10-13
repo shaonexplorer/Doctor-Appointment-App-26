@@ -7,6 +7,7 @@ import type { Response, NextFunction } from 'express';
 import type { AppointmentService } from '../services/appointmentService';
 import { buildSuccessResponse, buildPaginatedResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
+import { UserType } from '@doctor-appointment-app/shared';
 import type {
   AppointmentFilters,
   AppointmentCreateInput,
@@ -22,7 +23,7 @@ export class AppointmentController {
   constructor(private appointmentService: AppointmentService) {}
 
   /**
-   * Book an appointment (Patient only)
+   * Book an appointment (Patient, Staff, Admin)
    * POST /api/appointments
    */
   bookAppointment = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -30,8 +31,16 @@ export class AppointmentController {
       // Validation is handled by middleware
       const validatedData = req.validatedData as AppointmentCreateInput;
 
+      // Determine patient ID:
+      // - For STAFF/ADMIN: use provided patientId if available, otherwise fallback to authenticated user
+      // - For PATIENT/DOCTOR: always use authenticated user's ID (cannot book for others)
+      const isStaffOrAdmin = req.user!.userType === UserType.STAFF || req.user!.userType === UserType.ADMIN;
+      const patientId = isStaffOrAdmin && validatedData.patientId
+        ? validatedData.patientId
+        : req.user!.id;
+
       const appointment = await this.appointmentService.bookAppointment(
-        req.user!.id,
+        patientId,
         validatedData
       );
       res.status(201).json(buildSuccessResponse(appointment));

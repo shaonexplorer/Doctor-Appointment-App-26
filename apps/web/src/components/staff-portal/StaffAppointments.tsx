@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { CalendarDays } from 'lucide-react';
@@ -6,11 +6,30 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { useStaffAppointments, useCancelStaffAppointment, useCheckInStaffAppointment, useRescheduleStaffAppointment, transformStaffAppointmentsToUI } from '@/hooks/useStaffAppointments';
+import {
+  useStaffAppointments,
+  useCancelStaffAppointment,
+  useCheckInStaffAppointment,
+  useRescheduleStaffAppointment,
+  transformStaffAppointmentsToUI,
+} from '@/hooks/useStaffAppointments';
 import { useAvailableSlotsForReschedule } from '@/hooks/useSchedule';
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { DataTable } from './data-table';
 import { staffAppointmentsColumns, type StaffAppointment } from './staff-appointments-columns';
@@ -69,11 +88,16 @@ export function StaffAppointments() {
   // Use TanStack Query for fetching appointments with caching
   const { data, isLoading, error } = useStaffAppointments({
     status: ['SCHEDULED', 'COMPLETED', 'CANCELLED'],
+    // dateRange: 'today',
+    sortBy: 'slot.startTime',
+    sortOrder: 'desc',
   });
 
   // Fetch available slots for rescheduling when an appointment is selected
   // Use startTime as the start date, and 30 days from startTime as end date
-  const startDate = selectedAppointment?.startTime ? new Date(selectedAppointment.startTime) : undefined;
+  const startDate = selectedAppointment?.startTime
+    ? new Date(selectedAppointment.startTime)
+    : undefined;
   const endDate = startDate ? new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000) : undefined; // 30 days from appointment
 
   const { data: availableSlots, isLoading: slotsLoading } = useAvailableSlotsForReschedule(
@@ -84,6 +108,8 @@ export function StaffAppointments() {
 
   // Transform data for UI - matches the hook's output shape
   const appointments = data ? transformStaffAppointmentsToUI(data) : [];
+
+  console.log('Transformed appointments for UI:', data);
 
   // KPI counts
   const todayCount = appointments.length;
@@ -277,7 +303,11 @@ export function StaffAppointments() {
             <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
               Keep Appointment
             </Button>
-            <Button variant="destructive" onClick={confirmCancel} disabled={cancelMutation.isPending}>
+            <Button
+              variant="destructive"
+              onClick={confirmCancel}
+              disabled={cancelMutation.isPending}
+            >
               {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Appointment'}
             </Button>
           </DialogFooter>
@@ -295,7 +325,7 @@ export function StaffAppointments() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {slotsLoading ? (
-              <div className="text-center text-muted-foreground py-8">
+              <div className="text-muted-foreground py-8 text-center">
                 Loading available slots...
               </div>
             ) : availableSlots && availableSlots.length > 0 ? (
@@ -319,23 +349,34 @@ export function StaffAppointments() {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
-                        })} at {slot.time}
+                        })}{' '}
+                        at {slot.time}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             ) : (
-              <div className="text-center text-muted-foreground py-8">
+              <div className="text-muted-foreground py-8 text-center">
                 No available slots found for the next 30 days.
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setRescheduleDialogOpen(false); setSelectedSlotId(''); }} disabled={rescheduleMutation.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRescheduleDialogOpen(false);
+                setSelectedSlotId('');
+              }}
+              disabled={rescheduleMutation.isPending}
+            >
               Keep Current Time
             </Button>
-            <Button onClick={confirmReschedule} disabled={rescheduleMutation.isPending || !selectedSlotId}>
+            <Button
+              onClick={confirmReschedule}
+              disabled={rescheduleMutation.isPending || !selectedSlotId}
+            >
               {rescheduleMutation.isPending ? 'Rescheduling...' : 'Reschedule'}
             </Button>
           </DialogFooter>
@@ -365,13 +406,18 @@ export function StaffAppointments() {
                 rows={3}
                 disabled={checkInMutation.isPending}
               />
-              <p className="text-xs text-muted-foreground text-right">
-                {checkInNotes.length}/500
-              </p>
+              <p className="text-muted-foreground text-right text-xs">{checkInNotes.length}/500</p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setCheckInDialogOpen(false); setCheckInNotes(''); }} disabled={checkInMutation.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCheckInDialogOpen(false);
+                setCheckInNotes('');
+              }}
+              disabled={checkInMutation.isPending}
+            >
               Cancel
             </Button>
             <Button onClick={confirmCheckIn} disabled={checkInMutation.isPending}>
@@ -481,17 +527,28 @@ export function StaffAppointments() {
 
               <div className="border-t pt-4">
                 <div className="flex w-full flex-wrap gap-2">
-                  <Button className="flex-1" onClick={handleCheckIn} disabled={checkInMutation.isPending}>
+                  <Button
+                    className="flex-1"
+                    onClick={handleCheckIn}
+                    disabled={checkInMutation.isPending}
+                  >
                     {checkInMutation.isPending ? 'Checking in...' : 'Check in'}
                   </Button>
-                  <Button variant="outline" className="flex-1" onClick={handleReschedule} disabled={rescheduleMutation.isPending}>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleReschedule}
+                    disabled={rescheduleMutation.isPending}
+                  >
                     {rescheduleMutation.isPending ? 'Rescheduling...' : 'Reschedule'}
                   </Button>
                   <Button
                     variant="destructive"
                     className="flex-1"
                     onClick={handleCancel}
-                    disabled={cancelMutation.isPending || selectedAppointment?.status === 'Cancelled'}
+                    disabled={
+                      cancelMutation.isPending || selectedAppointment?.status === 'Cancelled'
+                    }
                   >
                     {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
                   </Button>

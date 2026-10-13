@@ -715,13 +715,42 @@ export class AppointmentService {
       patientSearch?: string;
       dateFrom?: string;
       dateTo?: string;
+      dateRange?: 'today' | 'week' | 'month' | 'custom';
       sortBy?: string;
       sortOrder?: 'asc' | 'desc';
       userType?: UserType;
     }
   ): Promise<{ data: Appointment[]; meta: { total: number; totalPages: number } }> {
-    const { page, limit, status, patientSearch, dateFrom, dateTo, sortBy, sortOrder, userType } = filters;
+    const { page, limit, status, patientSearch, dateFrom, dateTo, dateRange, sortBy, sortOrder, userType } = filters;
     const skip = (page - 1) * limit;
+
+    // Handle dateRange filter - convert to dateFrom/dateTo
+    let resolvedDateFrom = dateFrom;
+    let resolvedDateTo = dateTo;
+
+    if (dateRange && dateRange !== 'custom') {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      switch (dateRange) {
+        case 'today':
+          resolvedDateFrom = todayStart.toISOString();
+          resolvedDateTo = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000).toISOString();
+          break;
+        case 'week':
+          const weekStart = new Date(todayStart);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+          resolvedDateFrom = weekStart.toISOString();
+          resolvedDateTo = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          break;
+        case 'month':
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          resolvedDateFrom = monthStart.toISOString();
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          resolvedDateTo = monthEnd.toISOString();
+          break;
+      }
+    }
 
     const where: Record<string, unknown> = {};
 
@@ -753,12 +782,15 @@ export class AppointmentService {
       };
     }
 
-    if (dateFrom || dateTo) {
-      (where as Record<string, { gte?: Date; lte?: Date }>).createdAt = {};
-      if (dateFrom)
-        (where as Record<string, { gte?: Date; lte?: Date }>).createdAt.gte = new Date(dateFrom);
-      if (dateTo)
-        (where as Record<string, { gte?: Date; lte?: Date }>).createdAt.lte = new Date(dateTo);
+    // Filter by slot startTime (appointment date/time), not createdAt
+    if (resolvedDateFrom || resolvedDateTo) {
+      (where as Record<string, unknown>).slot = {
+        startTime: {},
+      };
+      if (resolvedDateFrom)
+        (where.slot as Record<string, { gte?: Date; lte?: Date }>).startTime.gte = new Date(resolvedDateFrom);
+      if (resolvedDateTo)
+        (where.slot as Record<string, { gte?: Date; lte?: Date }>).startTime.lte = new Date(resolvedDateTo);
     }
 
     const [appointments, total] = await Promise.all([

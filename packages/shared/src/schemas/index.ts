@@ -307,7 +307,7 @@ export const SlotUpdateSchema = z
 
 // Appointment schemas
 export const AppointmentCreateSchema = z.object({
-  slotId: z.string().cuid({ message: 'Invalid slot ID' }),
+  slotId: z.string().min(1, { message: 'Slot ID is required' }),
   symptoms: z
     .string()
     .max(VALIDATION.NOTES_MAX_LENGTH, { message: 'Symptoms are too long' })
@@ -319,6 +319,9 @@ export const AppointmentCreateSchema = z.object({
     .optional()
     .nullable(),
   consultationType: z.nativeEnum(ConsultationType).default(ConsultationType.IN_PERSON),
+  // Optional patientId for staff/admin booking on behalf of a patient
+  // If not provided, defaults to the authenticated user's ID (for patients booking themselves)
+  patientId: z.string().min(1, { message: 'Invalid patient ID' }).optional(),
 });
 
 export const AppointmentUpdateSchema = z.object({

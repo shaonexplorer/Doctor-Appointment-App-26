@@ -13,6 +13,7 @@ import {
   Activity,
 } from 'lucide-react';
 import type { PatientDrawerProps } from './types';
+import { useRouter } from 'next/navigation';
 
 const timelineIcons = {
   Appointment: CalendarDays,
@@ -29,6 +30,8 @@ export function PatientDrawer({
   onScheduleAppointment,
   onViewFullRecord,
 }: PatientDrawerProps) {
+  const router = useRouter();
+
   if (!patient) return null;
 
   // Build timeline items from patient data
@@ -151,10 +154,15 @@ export function PatientDrawer({
             <h3 className="font-bold">Recent activity</h3>
             <div className="mt-3 grid gap-3">
               {timelineItems.map((item, index) => (
-                <Timeline key={`${item.title}-${index}`} icon={item.icon} title={item.title} detail={item.text} />
+                <Timeline
+                  key={`${item.title}-${index}`}
+                  icon={item.icon}
+                  title={item.title}
+                  detail={item.text}
+                />
               ))}
               {timelineItems.length === 0 && (
-                <div className="rounded-xl border border-border p-4 text-center">
+                <div className="border-border rounded-xl border p-4 text-center">
                   <p className="text-primary text-xs font-bold">No timeline data</p>
                   <p className="text-muted-foreground mt-1 text-sm">
                     No recent activity available for this patient yet.
@@ -166,7 +174,7 @@ export function PatientDrawer({
         </section>
         <div className="mt-7 grid gap-3 sm:grid-cols-2">
           <button
-            onClick={() => onScheduleAppointment?.(patient)}
+            onClick={() => router.push('/staff/booking?patientId=' + patient.id)}
             className={cn(
               'bg-primary text-primary-foreground rounded-xl py-3 text-xs font-bold',
               'hover:bg-primary/90 transition-colors'
@@ -192,7 +200,9 @@ export function PatientDrawer({
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="border-border rounded-xl border p-3">
-      <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">{label}</p>
+      <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+        {label}
+      </p>
       <p className="mt-1 text-xs font-bold">{value}</p>
     </div>
   );
@@ -209,13 +219,13 @@ function Timeline({
 }) {
   const IconComponent = timelineIcons[icon];
   return (
-    <div className="flex gap-3 rounded-xl border border-border p-4">
-      <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#edf3ff] text-primary">
+    <div className="border-border flex gap-3 rounded-xl border p-4">
+      <div className="text-primary grid size-9 shrink-0 place-items-center rounded-full bg-[#edf3ff]">
         <IconComponent className="size-4" />
       </div>
       <div>
         <p className="text-sm font-bold">{title}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+        <p className="text-muted-foreground mt-1 text-xs">{detail}</p>
       </div>
     </div>
   );

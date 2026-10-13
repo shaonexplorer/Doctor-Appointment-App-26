@@ -481,6 +481,8 @@ export interface AppointmentCreateInput {
   symptoms?: string | null;
   notes?: string | null;
   consultationType?: 'IN_PERSON' | 'VIDEO';
+  // Optional patientId for staff/admin booking on behalf of a patient
+  patientId?: string;
 }
 
 export interface AppointmentFilters {
