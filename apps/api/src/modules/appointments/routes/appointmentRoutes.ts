@@ -128,31 +128,31 @@ export function createAppointmentRoutes(appointmentController: AppointmentContro
     asyncHandler(appointmentController.cancelAppointmentAlt)
   );
 
-  // Doctor-specific appointment actions (DOCTOR only - write operations)
+  // Doctor/Staff/Admin appointment actions (write operations)
   router.patch(
     '/doctor/:id/cancel',
-    doctorOnlyMiddleware,
+    doctorStaffAdminMiddleware,
     auditAppointmentDelete,
     validateDoctorCancelAppointment,
     asyncHandler(appointmentController.cancelAppointmentAsDoctor)
   );
   router.patch(
     '/doctor/:id/reschedule',
-    doctorOnlyMiddleware,
+    doctorStaffAdminMiddleware,
     auditAppointmentUpdate,
     validateDoctorRescheduleAppointment,
     asyncHandler(appointmentController.rescheduleAppointmentAsDoctor)
   );
   router.patch(
     '/doctor/:id/check-in',
-    doctorOnlyMiddleware,
+    doctorStaffAdminMiddleware,
     auditAppointmentUpdate,
     validateDoctorCheckIn,
     asyncHandler(appointmentController.checkInPatient)
   );
   router.patch(
     '/doctor/:id/complete',
-    doctorOnlyMiddleware,
+    doctorStaffAdminMiddleware,
     auditAppointmentUpdate,
     validateDoctorCompleteAppointment,
     asyncHandler(appointmentController.completeAppointmentAsDoctor)

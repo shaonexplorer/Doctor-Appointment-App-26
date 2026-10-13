@@ -374,6 +374,7 @@ export class AppointmentController {
       const appointment = await this.appointmentService.cancelAppointmentAsDoctor(
         req.params.id,
         req.user!.id,
+        req.user!.userType,
         validatedData
       );
       res.json(buildSuccessResponse(appointment));
@@ -396,6 +397,7 @@ export class AppointmentController {
       const appointment = await this.appointmentService.rescheduleAppointmentAsDoctor(
         req.params.id,
         req.user!.id,
+        req.user!.userType,
         validatedData.newSlotId
       );
       res.json(buildSuccessResponse(appointment));
@@ -414,6 +416,7 @@ export class AppointmentController {
       const appointment = await this.appointmentService.checkInPatient(
         req.params.id,
         req.user!.id,
+        req.user!.userType,
         validatedData.notes
       );
       res.json(buildSuccessResponse(appointment));
@@ -436,6 +439,7 @@ export class AppointmentController {
       const appointment = await this.appointmentService.completeAppointmentAsDoctor(
         req.params.id,
         req.user!.id,
+        req.user!.userType,
         validatedData
       );
       res.json(buildSuccessResponse(appointment));

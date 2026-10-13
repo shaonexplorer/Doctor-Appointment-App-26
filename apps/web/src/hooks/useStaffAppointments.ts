@@ -58,6 +58,69 @@ export function useStaffAppointmentDetail(appointmentId: string | undefined) {
 }
 
 /**
+ * Mutation hook for cancelling an appointment (Staff Portal)
+ * Invalidates the appointments list on success to refresh the data
+ */
+export function useCancelStaffAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (appointmentId: string) => appointmentApi.cancelAppointment(appointmentId),
+    onSuccess: () => {
+      // Invalidate all staff appointment lists to refresh the data
+      void queryClient.invalidateQueries({ queryKey: staffAppointmentKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Mutation hook for checking in a patient (Staff Portal)
+ */
+export function useCheckInStaffAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ appointmentId, notes }: { appointmentId: string; notes?: string }) =>
+      appointmentApi.checkInPatient(appointmentId, notes),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: staffAppointmentKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Mutation hook for completing an appointment (Staff Portal)
+ */
+export function useCompleteStaffAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (appointmentId: string) =>
+      appointmentApi.completeAppointmentAsDoctor(appointmentId, { notes: null, diagnosis: null }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: staffAppointmentKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Mutation hook for rescheduling an appointment (Staff Portal)
+ * Invalidates the appointments list on success to refresh the data
+ */
+export function useRescheduleStaffAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ appointmentId, newSlotId }: { appointmentId: string; newSlotId: string }) =>
+      appointmentApi.rescheduleAppointmentAsDoctor(appointmentId, { newSlotId }),
+    onSuccess: () => {
+      // Invalidate all staff appointment lists to refresh the data
+      void queryClient.invalidateQueries({ queryKey: staffAppointmentKeys.lists() });
+    },
+  });
+}
+
+/**
  * Transform backend DoctorAppointmentResponse to frontend StaffAppointment format
  * Maps API response to the UI component's expected data structure
  */

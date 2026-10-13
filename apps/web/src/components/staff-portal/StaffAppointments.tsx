@@ -1,32 +1,38 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
-import {
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Eye,
-  Search,
-  UserRound,
-  XCircle,
-  Phone,
-  MapPin,
-} from 'lucide-react';
+import { useState } from 'react';
+import { CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { appointmentApi } from '@/lib/api';
-import { useStaffAppointments } from '@/hooks/useStaffAppointments';
-import { transformStaffAppointmentsToUI } from '@/hooks/useStaffAppointments';
-import { staffAppointmentKeys } from '@/hooks/useStaffAppointments';
+import { useStaffAppointments, useCancelStaffAppointment, useCheckInStaffAppointment, useRescheduleStaffAppointment, transformStaffAppointmentsToUI } from '@/hooks/useStaffAppointments';
+import { useAvailableSlotsForReschedule } from '@/hooks/useSchedule';
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { DataTable } from './data-table';
+import { staffAppointmentsColumns, type StaffAppointment } from './staff-appointments-columns';
 
-const toneStyles: Record<string, string> = {
-  green: 'bg-emerald-50 text-emerald-600',
-  amber: 'bg-amber-50 text-amber-600',
-  red: 'bg-rose-50 text-rose-600',
-  blue: 'bg-blue-50 text-blue-600',
+const statusLabelMap: Record<string, string> = {
+  Confirmed: 'Confirmed',
+  'Checked in': 'Checked in',
+  Completed: 'Completed',
+  Cancelled: 'Cancelled',
+  NoShow: 'No Show',
+  Waiting: 'Waiting',
+};
+
+const paymentLabelMap: Record<string, string> = {
+  PENDING: 'Pending',
+  PAID: 'Paid',
+  REFUNDED: 'Refunded',
+};
+
+const consultationTypeMap: Record<string, string> = {
+  IN_PERSON: 'In-person',
+  VIDEO: 'Video',
 };
 
 const statusBadgeVariant: Record<string, 'success' | 'warning' | 'destructive' | 'default'> = {
@@ -34,6 +40,7 @@ const statusBadgeVariant: Record<string, 'success' | 'warning' | 'destructive' |
   Waiting: 'warning',
   'Checked in': 'default',
   Confirmed: 'success',
+  NoShow: 'destructive',
 };
 
 const paymentBadgeVariant: Record<string, 'success' | 'warning' | 'destructive'> = {
@@ -42,142 +49,172 @@ const paymentBadgeVariant: Record<string, 'success' | 'warning' | 'destructive'>
   Pending: 'warning',
 };
 
-// Map API status strings to UI status labels
-const statusLabelMap: Record<string, string> = {
-  SCHEDULED: 'Confirmed',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
-  NO_SHOW: 'No-show',
-};
-
-// Map API payment status strings to UI payment labels
-const paymentLabelMap: Record<string, string> = {
-  PENDING: 'Pending',
-  PAID: 'Paid',
-  REFUNDED: 'Refunded',
-};
-
-// Map consultation type to readable format
-const consultationTypeMap: Record<string, string> = {
-  IN_PERSON: 'In-person',
-  VIDEO: 'Video',
-};
-
-interface FetchedAppointment {
-  id: string;
-  slotId: string;
-  patientId: string;
-  doctorId: string;
-  status: string;
-  symptoms: string | null;
-  notes: string | null;
-  paymentStatus: string;
-  consultationType: string;
-  createdAt: string;
-  updatedAt: string;
-  slot?: {
-    id: string;
-    startTime: string;
-    endTime: string;
-    status: string;
-    doctorId: string;
-  };
-  patient: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    phone: string | null;
-  };
-  doctor: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    phone: string | null;
-  };
-  doctorProfile?: {
-    specialty: string;
-    clinic?: string;
-    designation: string;
-    fee: number;
-  } | null;
-  prescriptions?: Array<{
-    id: string;
-    diagnosis: string;
-    createdAt: string;
-  }>;
-  // Transformed fields from TanStack Query
-  startTime: string; // ISO string (flattened from slot.startTime)
-  endTime: string; // ISO string
-  time: string; // Formatted time like "9:00 AM"
-  date: string; // Formatted date like "Sep 18, 2026"
-  initials: string;
-}
-
 export function StaffAppointments() {
-  const [query, setQuery] = useState('');
-  const [status, setStatus] = useState('All statuses');
   const [notice, setNotice] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<FetchedAppointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<StaffAppointment | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
+  const [checkInNotes, setCheckInNotes] = useState('');
+  const [selectedSlotId, setSelectedSlotId] = useState<string>('');
 
   const router = useRouter();
+
+  // Mutations
+  const cancelMutation = useCancelStaffAppointment();
+  const checkInMutation = useCheckInStaffAppointment();
+  const rescheduleMutation = useRescheduleStaffAppointment();
 
   // Use TanStack Query for fetching appointments with caching
   const { data, isLoading, error } = useStaffAppointments({
     status: ['SCHEDULED', 'COMPLETED', 'CANCELLED'],
   });
 
-  // const appointments = data ? transformStaffAppointmentsToUI(data) : [];
-  const appointments = data || [];
+  // Fetch available slots for rescheduling when an appointment is selected
+  // Use startTime as the start date, and 30 days from startTime as end date
+  const startDate = selectedAppointment?.startTime ? new Date(selectedAppointment.startTime) : undefined;
+  const endDate = startDate ? new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000) : undefined; // 30 days from appointment
 
-  const filtered = useMemo(
-    () =>
-      appointments.filter(
-        (item) =>
-          `${item.patient?.firstName} ${item.patient?.lastName} ${item.doctor?.firstName} ${item.doctorProfile?.specialty}`
-            .toLowerCase()
-            .includes(query.toLowerCase()) &&
-          (status === 'All statuses' || item.status === status)
-      ),
-    [appointments, query, status]
+  const { data: availableSlots, isLoading: slotsLoading } = useAvailableSlotsForReschedule(
+    selectedAppointment?.doctorId,
+    startDate,
+    endDate
   );
 
+  // Transform data for UI - matches the hook's output shape
+  const appointments = data ? transformStaffAppointmentsToUI(data) : [];
+
+  // KPI counts
+  const todayCount = appointments.length;
+  const confirmedCount = appointments.filter((a) => a.status === 'Confirmed').length;
+  const completedCount = appointments.filter((a) => a.status === 'Completed').length;
+  const cancelledCount = appointments.filter((a) => a.status === 'Cancelled').length;
+
   const action = (message: string) => {
-    // console.log(message);
     setNotice(message);
     router.push('/staff/booking');
   };
 
-  const openDrawer = (appointment: FetchedAppointment) => {
+  const openDrawer = (appointment: StaffAppointment) => {
     setSelectedAppointment(appointment);
     setDrawerOpen(true);
+    setSelectedSlotId('');
   };
 
   const closeDrawer = () => {
     setDrawerOpen(false);
     setSelectedAppointment(null);
+    setSelectedSlotId('');
   };
+
+  const handleCheckIn = () => {
+    if (selectedAppointment) {
+      setCheckInNotes('');
+      setCheckInDialogOpen(true);
+    }
+  };
+
+  const confirmCheckIn = () => {
+    if (selectedAppointment) {
+      checkInMutation.mutate(
+        { appointmentId: selectedAppointment.id, notes: checkInNotes || undefined },
+        {
+          onSuccess: () => {
+            closeDrawer();
+            setCheckInDialogOpen(false);
+            setCheckInNotes('');
+            setNotice(`Checked in ${selectedAppointment.patient}`);
+          },
+          onError: (error: Error) => {
+            setCheckInDialogOpen(false);
+            setCheckInNotes('');
+            setNotice(`Failed to check in: ${error.message}`);
+          },
+        }
+      );
+    }
+  };
+
+  const handleReschedule = () => {
+    if (selectedAppointment) {
+      closeDrawer();
+      setRescheduleDialogOpen(true);
+    }
+  };
+
+  const handleCancel = () => {
+    if (selectedAppointment) {
+      setCancelDialogOpen(true);
+    }
+  };
+
+  const confirmCancel = () => {
+    if (selectedAppointment) {
+      cancelMutation.mutate(selectedAppointment.id, {
+        onSuccess: () => {
+          closeDrawer();
+          setCancelDialogOpen(false);
+          setNotice(`Cancelled ${selectedAppointment.patient}`);
+        },
+        onError: (error: Error) => {
+          setCancelDialogOpen(false);
+          setNotice(`Failed to cancel: ${error.message}`);
+        },
+      });
+    }
+  };
+
+  const confirmReschedule = () => {
+    if (selectedAppointment && selectedSlotId) {
+      rescheduleMutation.mutate(
+        { appointmentId: selectedAppointment.id, newSlotId: selectedSlotId },
+        {
+          onSuccess: () => {
+            setRescheduleDialogOpen(false);
+            setSelectedSlotId('');
+            setNotice(`Rescheduled ${selectedAppointment.patient}`);
+          },
+          onError: (error: Error) => {
+            setRescheduleDialogOpen(false);
+            setSelectedSlotId('');
+            setNotice(`Failed to reschedule: ${error.message}`);
+          },
+        }
+      );
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <section className="mt-8 space-y-5" aria-label="Appointment management">
+        <div className="border-border bg-card rounded-2xl border p-10 text-center shadow-sm">
+          <p className="text-muted-foreground">Loading appointments...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="mt-8 space-y-5" aria-label="Appointment management">
+        <div className="border-border bg-card rounded-2xl border p-10 text-center shadow-sm">
+          <p className="text-destructive">Failed to load appointments. Please try again.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mt-8 space-y-5" aria-label="Appointment management">
+      {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: 'Today', getCount: () => appointments.length },
-          {
-            label: 'Confirmed',
-            getCount: () => appointments.filter((a) => statusLabelMap[a.status]).length,
-          },
-          {
-            label: 'Waiting',
-            getCount: () => appointments.filter((a) => a.status === 'Waiting').length,
-          },
-          {
-            label: 'Cancelled',
-            getCount: () => appointments.filter((a) => a.status === 'Cancelled').length,
-          },
-        ].map(({ label, getCount }, i) => (
+          { label: 'Today', count: todayCount },
+          { label: 'Confirmed', count: confirmedCount },
+          { label: 'Completed', count: completedCount },
+          { label: 'Cancelled', count: cancelledCount },
+        ].map(({ label, count }) => (
           <div key={label} className="border-border bg-card rounded-2xl border p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-sm">{label}</p>
@@ -185,129 +222,34 @@ export function StaffAppointments() {
                 <CalendarDays className="size-4" />
               </span>
             </div>
-            <p className="mt-3 text-2xl font-black tracking-tight">{getCount()}</p>
+            <p className="mt-3 text-2xl font-black tracking-tight">{count}</p>
           </div>
         ))}
       </div>
 
-      <div className="border-border bg-card rounded-2xl border shadow-sm">
-        <div className="border-border flex flex-col gap-4 border-b p-5 lg:flex-row lg:items-center lg:justify-between">
+      {/* Data Table */}
+      <div className="border-border bg-card rounded-2xl border p-5 shadow-sm">
+        <div className="border-border mb-5 flex flex-col gap-4 border-b pb-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="font-bold">Today&apos;s appointments</h2>
+            <h2 className="font-bold">Today's appointments</h2>
             <p className="text-muted-foreground mt-1 text-sm">
-              {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {appointments.length} scheduled appointments
+              {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ·{' '}
+              {appointments.length} scheduled appointments
             </p>
           </div>
           <Button onClick={() => action('Booking workspace opened')}>Book appointment</Button>
         </div>
 
-        <div className="border-border flex flex-col gap-3 border-b p-4 sm:flex-row">
-          <label className="relative min-w-0 flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-            <input
-              aria-label="Search appointments"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search patient, doctor, appointment ID..."
-              className="border-border bg-background focus:border-primary focus:ring-primary/15 h-11 w-full rounded-xl border pr-3 pl-9 text-sm outline-none focus:ring-2"
-            />
-          </label>
-          <select
-            aria-label="Filter appointment status"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-            className="border-border bg-background h-11 rounded-xl border px-3 text-sm"
-          >
-            <option>All statuses</option>
-            <option>Confirmed</option>
-            <option>Waiting</option>
-            <option>Cancelled</option>
-          </select>
-          {/* <Button variant="outline" className="text-sm font-bold">
-            <Filter className="mr-2 inline size-4" />
-            More filters
-          </Button> */}
-        </div>
+        <DataTable
+          columns={staffAppointmentsColumns(openDrawer)}
+          data={appointments}
+          searchPlaceholder="Search patient, doctor, appointment ID..."
+          searchKey="patient"
+        />
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/40 text-muted-foreground text-xs tracking-wider uppercase">
-              <tr>
-                <th className="px-5 py-3">Time</th>
-                <th className="px-5 py-3">Patient</th>
-                <th className="px-5 py-3">Doctor</th>
-                <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Payment</th>
-                <th className="px-5 py-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-border divide-y">
-              {filtered.map((item) => {
-                const patientName = `${item.patient?.firstName} ${item.patient?.lastName}`;
-                const doctorName = `${item.doctor?.firstName} ${item.doctor?.lastName}`;
-                const formattedTime = item.slot.startTime
-      ? format(new Date(item.slot.startTime), 'h:mm a')
-      : '—';
-                const statusLabel = statusLabelMap[item.status] || item.status;
-                const paymentLabel = paymentLabelMap[item.paymentStatus] || item.paymentStatus;
-                const consultationTypeLabel =
-                  consultationTypeMap[item.consultationType] || item.consultationType;
-                const specialty = item.doctorProfile?.specialty || 'Unknown';
-
-                return (
-                  <tr key={item.id} className="hover:bg-muted/20">
-                    <td className="px-5 py-4 font-bold whitespace-nowrap">{formattedTime}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <span className="bg-primary/10 text-primary rounded-xl p-2">
-                          <UserRound className="size-4" />
-                        </span>
-                        <div>
-                          <p className="font-bold">{patientName}</p>
-                          <p className="text-muted-foreground text-xs">{item.id}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <p className="font-medium">{doctorName}</p>
-                      <p className="text-muted-foreground text-xs">{specialty}</p>
-                    </td>
-                    <td className="text-muted-foreground px-5 py-4">{consultationTypeLabel}</td>
-                    <td className="px-5 py-4">
-                      <Badge variant={statusBadgeVariant[statusLabel]}>{statusLabel}</Badge>
-                    </td>
-                    <td className="px-5 py-4">
-                      <Badge variant={paymentBadgeVariant[paymentLabel]}>{paymentLabel}</Badge>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <button
-                        onClick={() => openDrawer(item)}
-                        aria-label={`View ${patientName}`}
-                        className="mobile-touch-target text-muted-foreground hover:bg-muted rounded-lg p-2"
-                      >
-                        <Eye className="size-4" />
-                      </button>
-                      {/* <button
-                        onClick={() => action('Appointment actions opened')}
-                        aria-label={`More actions for ${patientName}`}
-                        className="mobile-touch-target text-muted-foreground hover:bg-muted rounded-lg p-2"
-                      >
-                        <MoreHorizontal className="size-4" />
-                      </button> */}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-muted-foreground p-10 text-center text-sm">
-            {appointments.length === 0
-              ? 'No appointments found.'
-              : 'No appointments match these filters.'}
+        {appointments.length === 0 && (
+          <div className="text-muted-foreground py-10 text-center text-sm">
+            No appointments found.
           </div>
         )}
       </div>
@@ -321,16 +263,127 @@ export function StaffAppointments() {
         </div>
       )}
 
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel Appointment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel the appointment for {selectedAppointment?.patient}?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+              Keep Appointment
+            </Button>
+            <Button variant="destructive" onClick={confirmCancel} disabled={cancelMutation.isPending}>
+              {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Appointment'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reschedule Appointment Dialog */}
+      <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reschedule Appointment</DialogTitle>
+            <DialogDescription>
+              Select a new time slot for {selectedAppointment?.patient}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {slotsLoading ? (
+              <div className="text-center text-muted-foreground py-8">
+                Loading available slots...
+              </div>
+            ) : availableSlots && availableSlots.length > 0 ? (
+              <div className="space-y-2">
+                <Label htmlFor="slot-select" className="text-sm font-medium">
+                  Available Time Slots
+                </Label>
+                <Select
+                  value={selectedSlotId}
+                  onValueChange={setSelectedSlotId}
+                  disabled={rescheduleMutation.isPending}
+                >
+                  <SelectTrigger id="slot-select">
+                    <SelectValue placeholder="Select a time slot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.map((slot) => (
+                      <SelectItem key={slot.id} value={slot.id}>
+                        {new Date(slot.startTime).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })} at {slot.time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                No available slots found for the next 30 days.
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRescheduleDialogOpen(false); setSelectedSlotId(''); }} disabled={rescheduleMutation.isPending}>
+              Keep Current Time
+            </Button>
+            <Button onClick={confirmReschedule} disabled={rescheduleMutation.isPending || !selectedSlotId}>
+              {rescheduleMutation.isPending ? 'Rescheduling...' : 'Reschedule'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Check In Confirmation Dialog */}
+      <Dialog open={checkInDialogOpen} onOpenChange={setCheckInDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Check In Patient</DialogTitle>
+            <DialogDescription>
+              Confirm check-in for {selectedAppointment?.patient}. You can optionally add notes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="check-in-notes" className="text-sm font-medium">
+                Notes (Optional)
+              </Label>
+              <Textarea
+                id="check-in-notes"
+                placeholder="Add any check-in notes (max 500 characters)..."
+                value={checkInNotes}
+                onChange={(e) => setCheckInNotes(e.target.value)}
+                maxLength={500}
+                rows={3}
+                disabled={checkInMutation.isPending}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {checkInNotes.length}/500
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCheckInDialogOpen(false); setCheckInNotes(''); }} disabled={checkInMutation.isPending}>
+              Cancel
+            </Button>
+            <Button onClick={confirmCheckIn} disabled={checkInMutation.isPending}>
+              {checkInMutation.isPending ? 'Checking in...' : 'Check In'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Appointment Detail Drawer */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent side="right" className="w-full max-w-xl">
-          {/* {!selectedAppointment && (
-            <SheetHeader>
-              <SheetTitle className="text-lg">Appointment Details</SheetTitle>
-              <SheetDescription>
-                View and manage appointment information for {selectedAppointment?.patient}
-              </SheetDescription>
-            </SheetHeader>
-          )} */}
           {selectedAppointment && (
             <div className="mt-4 flex h-screen flex-col space-y-6 px-4 pb-4 sm:px-6 sm:pb-6">
               <div className="flex items-start justify-between">
@@ -338,9 +391,7 @@ export function StaffAppointments() {
                   <p className="text-primary text-xs font-bold tracking-wider uppercase">
                     Appointment #{selectedAppointment.id}
                   </p>
-                  <h2 className="mt-1 text-2xl font-black">
-                    {selectedAppointment.patient?.firstName} {selectedAppointment.patient?.lastName}
-                  </h2>
+                  <h2 className="mt-1 text-2xl font-black">{selectedAppointment.patient}</h2>
                 </div>
               </div>
 
@@ -360,60 +411,37 @@ export function StaffAppointments() {
                 <p className="text-muted-foreground mt-1 text-sm">
                   {consultationTypeMap[selectedAppointment.consultationType] ||
                     selectedAppointment.consultationType}{' '}
-                  · {selectedAppointment.doctorProfile?.specialty || 'Unknown'}
+                  · {selectedAppointment.specialty}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
-                <Info
-                  label="Patient"
-                  value={
-                    selectedAppointment?.patient
-                      ? `${selectedAppointment.patient.firstName} ${selectedAppointment.patient.lastName}`
-                      : ''
-                  }
-                />
-                <Info
-                  label="Doctor"
-                  value={
-                    selectedAppointment?.doctor
-                      ? `${selectedAppointment.doctor.firstName} ${selectedAppointment.doctor.lastName}`
-                      : ''
-                  }
-                />
-                <Info
-                  label="Specialty"
-                  value={selectedAppointment.doctorProfile?.specialty || 'Unknown'}
-                />
+                <Info label="Patient" value={selectedAppointment.patient} />
+                <Info label="Doctor" value={selectedAppointment.specialty} />
+                <Info label="Specialty" value={selectedAppointment.specialty} />
               </div>
 
               <div className="space-y-2">
                 <p className="text-sm font-bold">Status & Payment</p>
                 <div className="flex flex-wrap items-center gap-2">
-                  {selectedAppointment && (
-                    <>
-                      <Badge
-                        variant={
-                          statusBadgeVariant[
-                            statusLabelMap[selectedAppointment.status] || selectedAppointment.status
-                          ]
-                        }
-                      >
-                        {statusLabelMap[selectedAppointment.status] || selectedAppointment.status}
-                      </Badge>
-                      <Badge
-                        variant={
-                          paymentBadgeVariant[
-                            paymentLabelMap[selectedAppointment.paymentStatus] ||
-                              selectedAppointment.paymentStatus
-                          ]
-                        }
-                      >
-                        {paymentLabelMap[selectedAppointment.paymentStatus] ||
-                          selectedAppointment.paymentStatus}
-                      </Badge>
-                    </>
-                  )}
+                  <Badge
+                    variant={
+                      statusBadgeVariant[
+                        statusLabelMap[selectedAppointment.status] || selectedAppointment.status
+                      ]
+                    }
+                  >
+                    {statusLabelMap[selectedAppointment.status] || selectedAppointment.status}
+                  </Badge>
+                  <Badge
+                    variant={
+                      paymentBadgeVariant[
+                        paymentLabelMap[selectedAppointment.payment] || selectedAppointment.payment
+                      ]
+                    }
+                  >
+                    {paymentLabelMap[selectedAppointment.payment] || selectedAppointment.payment}
+                  </Badge>
                 </div>
               </div>
 
@@ -421,11 +449,31 @@ export function StaffAppointments() {
                 <p className="text-sm font-bold">Contact & Location</p>
                 <div className="text-muted-foreground flex items-center gap-3 text-sm">
                   <div className="flex items-center gap-2">
-                    <Phone className="size-4" />
+                    <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                      />
+                    </svg>
                     <span>+1 (555) 000-0000</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <MapPin className="size-4" />
+                    <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
                     <span>Main Clinic, Room 204</span>
                   </div>
                 </div>
@@ -433,40 +481,19 @@ export function StaffAppointments() {
 
               <div className="border-t pt-4">
                 <div className="flex w-full flex-wrap gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      closeDrawer();
-                      setNotice(
-                        `Checked in ${selectedAppointment?.patient?.firstName} ${selectedAppointment?.patient?.lastName}`
-                      );
-                    }}
-                  >
-                    Check in
+                  <Button className="flex-1" onClick={handleCheckIn} disabled={checkInMutation.isPending}>
+                    {checkInMutation.isPending ? 'Checking in...' : 'Check in'}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      closeDrawer();
-                      setNotice(
-                        `Rescheduling ${selectedAppointment?.patient?.firstName} ${selectedAppointment?.patient?.lastName}`
-                      );
-                    }}
-                  >
-                    Reschedule
+                  <Button variant="outline" className="flex-1" onClick={handleReschedule} disabled={rescheduleMutation.isPending}>
+                    {rescheduleMutation.isPending ? 'Rescheduling...' : 'Reschedule'}
                   </Button>
                   <Button
                     variant="destructive"
                     className="flex-1"
-                    onClick={() => {
-                      closeDrawer();
-                      setNotice(
-                        `Cancelled ${selectedAppointment?.patient?.firstName} ${selectedAppointment?.patient?.lastName}`
-                      );
-                    }}
+                    onClick={handleCancel}
+                    disabled={cancelMutation.isPending || selectedAppointment?.status === 'Cancelled'}
                   >
-                    Cancel
+                    {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
                   </Button>
                 </div>
               </div>

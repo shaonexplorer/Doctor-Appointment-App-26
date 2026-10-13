@@ -1117,7 +1117,8 @@ export class AppointmentService {
    */
   async cancelAppointmentAsDoctor(
     appointmentId: string,
-    doctorId: string,
+    userId: string,
+    userType: UserType,
     _data: { reason: string; triggerRefund: boolean }
   ): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findById(appointmentId);
@@ -1125,8 +1126,11 @@ export class AppointmentService {
       throw new AppError('NOT_FOUND', 'Appointment not found', 404);
     }
 
-    // Check authorization - must be the doctor or admin/staff
-    if (appointment.doctorId !== doctorId) {
+    // Check authorization - must be the doctor, admin, or staff
+    const isDoctor = appointment.doctorId === userId;
+    const isAdminOrStaff = userType === UserType.ADMIN || userType === UserType.STAFF;
+
+    if (!isDoctor && !isAdminOrStaff) {
       throw new AppError('FORBIDDEN', 'Not authorized to cancel this appointment', 403);
     }
 
@@ -1167,7 +1171,8 @@ export class AppointmentService {
    */
   async rescheduleAppointmentAsDoctor(
     appointmentId: string,
-    doctorId: string,
+    userId: string,
+    userType: UserType,
     newSlotId: string
   ): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findById(appointmentId);
@@ -1175,8 +1180,11 @@ export class AppointmentService {
       throw new AppError('NOT_FOUND', 'Appointment not found', 404);
     }
 
-    // Check authorization - must be the doctor or admin/staff
-    if (appointment.doctorId !== doctorId) {
+    // Check authorization - must be the doctor, admin, or staff
+    const isDoctor = appointment.doctorId === userId;
+    const isAdminOrStaff = userType === UserType.ADMIN || userType === UserType.STAFF;
+
+    if (!isDoctor && !isAdminOrStaff) {
       throw new AppError('FORBIDDEN', 'Not authorized to reschedule this appointment', 403);
     }
 
@@ -1273,7 +1281,8 @@ export class AppointmentService {
    */
   async checkInPatient(
     appointmentId: string,
-    doctorId: string,
+    userId: string,
+    userType: UserType,
     notes?: string | null
   ): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findById(appointmentId);
@@ -1281,9 +1290,11 @@ export class AppointmentService {
       throw new AppError('NOT_FOUND', 'Appointment not found', 404);
     }
 
-    // Check authorization - must be the doctor or admin/staff
-    // Note: In a real system, staff might also check in patients
-    if (appointment.doctorId !== doctorId) {
+    // Check authorization - must be the doctor, admin, or staff
+    const isDoctor = appointment.doctorId === userId;
+    const isAdminOrStaff = userType === UserType.ADMIN || userType === UserType.STAFF;
+
+    if (!isDoctor && !isAdminOrStaff) {
       throw new AppError('FORBIDDEN', 'Not authorized to check in this patient', 403);
     }
 
@@ -1301,8 +1312,8 @@ export class AppointmentService {
       notes: notes ? `${appointment.notes || ''}\n[Check-in]: ${notes}`.trim() : appointment.notes,
     });
 
-    // Send check-in notification to patient
-    await this.sendCheckInNotification(appointment, doctorId);
+    // Send check-in notification to patient (use appointment's doctor)
+    await this.sendCheckInNotification(appointment);
 
     return updatedAppointment;
   }
@@ -1313,7 +1324,8 @@ export class AppointmentService {
    */
   async completeAppointmentAsDoctor(
     appointmentId: string,
-    doctorId: string,
+    userId: string,
+    userType: UserType,
     data: DoctorCompleteAppointmentInput
   ): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findById(appointmentId);
@@ -1321,8 +1333,11 @@ export class AppointmentService {
       throw new AppError('NOT_FOUND', 'Appointment not found', 404);
     }
 
-    // Check authorization - must be the doctor or admin/staff
-    if (appointment.doctorId !== doctorId) {
+    // Check authorization - must be the doctor, admin, or staff
+    const isDoctor = appointment.doctorId === userId;
+    const isAdminOrStaff = userType === UserType.ADMIN || userType === UserType.STAFF;
+
+    if (!isDoctor && !isAdminOrStaff) {
       throw new AppError('FORBIDDEN', 'Not authorized to complete this appointment', 403);
     }
 
@@ -1350,8 +1365,8 @@ export class AppointmentService {
       notes: completionNotes.join('\n'),
     });
 
-    // Send completion notification to patient
-    await this.sendCompletionNotification(appointment, doctorId, data);
+    // Send completion notification to patient (use appointment's doctor)
+    await this.sendCompletionNotification(appointment, data);
 
     return completedAppointment;
   }
@@ -1361,11 +1376,11 @@ export class AppointmentService {
    */
   private async sendCompletionNotification(
     appointment: Appointment,
-    doctorId: string,
     data: DoctorCompleteAppointmentInput
   ): Promise<void> {
+    // Use appointment's doctor for notification
     const doctor = await this.prisma.user.findUnique({
-      where: { id: doctorId },
+      where: { id: appointment.doctorId },
       select: { firstName: true, lastName: true },
     });
 
@@ -1444,9 +1459,10 @@ export class AppointmentService {
   /**
    * Send check-in notification
    */
-  private async sendCheckInNotification(appointment: Appointment, doctorId: string): Promise<void> {
+  private async sendCheckInNotification(appointment: Appointment): Promise<void> {
+    // Use appointment's doctor for notification
     const doctor = await this.prisma.user.findUnique({
-      where: { id: doctorId },
+      where: { id: appointment.doctorId },
       select: { firstName: true, lastName: true },
     });
 
