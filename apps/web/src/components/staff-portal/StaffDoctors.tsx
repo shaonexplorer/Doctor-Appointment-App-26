@@ -1,17 +1,17 @@
 'use client';
 
+import * as React from 'react';
 import { useMemo, useState } from 'react';
+import { createColumnHelper } from '@tanstack/react-table';
 import {
   Activity,
   CalendarDays,
   CheckCircle2,
   Clock3,
   Mail,
-  Search,
   Stethoscope,
   UserPlus,
   UserRound,
-  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { env } from '@/lib/env';
 import { SPECIALTIES, DESIGNATIONS, CLINICS } from '@doctor-appointment-app/shared';
+import { DataTable } from './data-table';
+import { type DataTableFeatures } from './data-table-features';
 
 interface Doctor {
   id: string;
@@ -167,35 +169,15 @@ const availabilityVariant: Record<string, 'success' | 'warning' | 'default' | 's
   'Off today': 'secondary',
 };
 
-// const statusBadgeVariant: Record<string, 'success' | 'default'> = {
-//   ACTIVE: 'success',
-//   OFFLINE: 'default',
-// };
+const doctorColumnHelper = createColumnHelper<DataTableFeatures, Doctor>();
 
 export function StaffDoctors() {
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('All doctors');
   const [selected, setSelected] = useState<Doctor | null>(null);
   const [notice, setNotice] = useState('');
   const [isAddDoctorOpen, setIsAddDoctorOpen] = useState(false);
   const [formData, setFormData] = useState<AddDoctorFormData>(INITIAL_FORM_DATA);
   const [formErrors, setFormErrors] = useState<Partial<AddDoctorFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const filtered = useMemo(
-    () =>
-      doctors.filter(
-        (doctor) =>
-          `${doctor.name} ${doctor.specialty} ${doctor.clinic}`
-            .toLowerCase()
-            .includes(query.toLowerCase()) &&
-          (filter === 'All doctors' ||
-            (filter === 'Available'
-              ? doctor.availability === 'Available'
-              : doctor.status === 'OFFLINE'))
-      ),
-    [query, filter]
-  );
 
   const action = (message: string) => {
     setNotice(message);
@@ -210,6 +192,89 @@ export function StaffDoctors() {
     setSelected(null);
   };
 
+  // Column definitions for TanStack Table
+  const doctorColumns = useMemo(
+    () =>
+      doctorColumnHelper.columns([
+        doctorColumnHelper.accessor('name', {
+          header: 'Doctor',
+          cell: ({ row }) => {
+            const doctor = row.original;
+            return (
+              <button
+                onClick={() => openDrawer(doctor)}
+                className="flex w-full items-center gap-3 text-left"
+              >
+                <Avatar initials={doctor.initials} />
+                <span className="font-bold">{doctor.name}</span>
+              </button>
+            );
+          },
+        }),
+        doctorColumnHelper.accessor('specialty', {
+          header: 'Specialty & clinic',
+          cell: ({ row }) => {
+            const doctor = row.original;
+            return (
+              <div>
+                <p className="font-semibold">{doctor.specialty}</p>
+                <p className="text-muted-foreground text-xs">{doctor.clinic}</p>
+              </div>
+            );
+          },
+        }),
+        doctorColumnHelper.accessor('today', {
+          header: 'Today',
+          cell: ({ getValue }) => (
+            <span className="text-xs font-semibold">{getValue()} appointments</span>
+          ),
+        }),
+        doctorColumnHelper.accessor('next', {
+          header: 'Next appointment',
+          cell: ({ getValue }) => <span className="text-xs font-semibold">{getValue()}</span>,
+        }),
+        doctorColumnHelper.accessor('availability', {
+          header: 'Availability',
+          cell: ({ getValue }) => <AvailabilityBadge value={getValue() as string} />,
+          filterFn: 'includesString',
+        }),
+        doctorColumnHelper.accessor('utilization', {
+          header: 'Utilization',
+          cell: ({ getValue }) => (
+            <div className="flex items-center gap-2">
+              <div className="bg-muted h-1.5 w-16 rounded-full">
+                <div
+                  className="bg-primary h-1.5 rounded-full"
+                  style={{ width: `${getValue()}%` }}
+                />
+              </div>
+              <span className="text-xs">{getValue()}%</span>
+            </div>
+          ),
+        }),
+        doctorColumnHelper.display({
+          id: 'actions',
+          header: 'Actions',
+          cell: ({ row }) => {
+            const doctor = row.original;
+            return (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openDrawer(doctor)}
+                aria-label={`View schedule for ${doctor.name}`}
+              >
+                Schedule
+              </Button>
+            );
+          },
+          enableSorting: false,
+          enableHiding: false,
+        }),
+      ]),
+    [openDrawer, action]
+  );
+
   const validateForm = (data: AddDoctorFormData): Partial<AddDoctorFormData> => {
     const errors: Partial<AddDoctorFormData> = {};
 
@@ -220,10 +285,14 @@ export function StaffDoctors() {
     if (!data.phone.trim()) errors.phone = 'Phone number is required';
     if (!data.password) errors.password = 'Password is required';
     else if (data.password.length < 8) errors.password = 'Password must be at least 8 characters';
-    else if (!/[A-Z]/.test(data.password)) errors.password = 'Password must contain at least one uppercase letter';
-    else if (!/[a-z]/.test(data.password)) errors.password = 'Password must contain at least one lowercase letter';
-    else if (!/[0-9]/.test(data.password)) errors.password = 'Password must contain at least one number';
-    else if (!/[^A-Za-z0-9]/.test(data.password)) errors.password = 'Password must contain at least one special character';
+    else if (!/[A-Z]/.test(data.password))
+      errors.password = 'Password must contain at least one uppercase letter';
+    else if (!/[a-z]/.test(data.password))
+      errors.password = 'Password must contain at least one lowercase letter';
+    else if (!/[0-9]/.test(data.password))
+      errors.password = 'Password must contain at least one number';
+    else if (!/[^A-Za-z0-9]/.test(data.password))
+      errors.password = 'Password must contain at least one special character';
     if (data.password !== data.confirmPassword) errors.confirmPassword = 'Passwords do not match';
     if (!data.specialty) errors.specialty = 'Specialty is required';
     if (!data.designation) errors.designation = 'Designation is required';
@@ -332,8 +401,8 @@ export function StaffDoctors() {
       </div>
 
       {/* Doctors Table */}
-      <Card className="overflow-hidden shadow-sm">
-        <div className="border-border flex flex-col gap-4 border-b p-5 lg:flex-row lg:items-center lg:justify-between">
+      <Card className="overflow-hidden p-5 shadow-sm">
+        <div className="border-border mb-5 flex flex-col gap-4 border-b pb-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-lg font-bold">Doctors on duty</h2>
             <p className="text-muted-foreground mt-1 text-sm">
@@ -348,74 +417,20 @@ export function StaffDoctors() {
           </div>
         </div>
 
-        <div className="border-border flex flex-col gap-3 border-b p-4 sm:flex-row">
-          <label className="relative min-w-0 flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-            <input
-              aria-label="Search doctors"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search doctors, specialties, or clinics..."
-              className="border-border bg-background focus:border-primary focus:ring-primary/15 h-11 w-full rounded-xl border pr-3 pl-9 text-sm outline-none focus:ring-2"
-            />
-          </label>
-          <select
-            aria-label="Filter doctors"
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            className="border-border bg-background h-11 rounded-xl border px-3 text-sm font-semibold"
-          >
-            <option>All doctors</option>
-            <option>Available</option>
-            <option>Offline</option>
-          </select>
-        </div>
-
-        {/* Desktop Table View */}
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="bg-muted/40 text-muted-foreground text-xs tracking-wider uppercase">
-              <tr>
-                {[
-                  'Doctor',
-                  'Specialty & clinic',
-                  'Today',
-                  'Next appointment',
-                  'Availability',
-                  'Utilization',
-                  'Actions',
-                ].map((heading) => (
-                  <th key={heading} className="px-5 py-3">
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-border divide-y">
-              {filtered.map((doctor) => (
-                <DoctorRow
-                  key={doctor.id}
-                  doctor={doctor}
-                  onView={() => openDrawer(doctor)}
-                  onAction={action}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* DataTable with TanStack Table - handles filtering, sorting, pagination */}
+        <DataTable
+          columns={doctorColumns}
+          data={doctors}
+          searchPlaceholder="Search doctors, specialties, or clinics..."
+          searchKey="name"
+        />
 
         {/* Mobile Card View */}
         <div className="grid gap-3 p-4 md:hidden">
-          {filtered.map((doctor) => (
+          {doctors.map((doctor) => (
             <DoctorCard key={doctor.id} doctor={doctor} onView={() => openDrawer(doctor)} />
           ))}
         </div>
-
-        {filtered.length === 0 && (
-          <div className="text-muted-foreground p-12 text-center text-sm">
-            No doctors match this search.
-          </div>
-        )}
       </Card>
 
       {/* Notification Toast */}
@@ -541,7 +556,9 @@ export function StaffDoctors() {
                   onChange={(e) => handleChange('confirmPassword', e.target.value)}
                   placeholder="••••••••"
                   aria-invalid={!!formErrors.confirmPassword}
-                  aria-describedby={formErrors.confirmPassword ? 'confirmPassword-error' : undefined}
+                  aria-describedby={
+                    formErrors.confirmPassword ? 'confirmPassword-error' : undefined
+                  }
                 />
                 {formErrors.confirmPassword && (
                   <p id="confirmPassword-error" className="text-destructive text-xs" role="alert">
@@ -719,56 +736,6 @@ export function StaffDoctors() {
   );
 }
 
-function DoctorRow({
-  doctor,
-  onView,
-  onAction,
-}: {
-  doctor: Doctor;
-  onView: () => void;
-  onAction: (message: string) => void;
-}) {
-  return (
-    <tr className="hover:bg-muted/20">
-      <td className="px-5 py-4">
-        <button onClick={onView} className="flex items-center gap-3 text-left">
-          <Avatar initials={doctor.initials} />
-          <span className="font-bold">{doctor.name}</span>
-        </button>
-      </td>
-      <td className="px-5 py-4">
-        <p className="font-semibold">{doctor.specialty}</p>
-        <p className="text-muted-foreground text-xs">{doctor.clinic}</p>
-      </td>
-      <td className="px-5 py-4 text-xs font-semibold">{doctor.today} appointments</td>
-      <td className="px-5 py-4 text-xs font-semibold">{doctor.next}</td>
-      <td className="px-5 py-4">
-        <AvailabilityBadge value={doctor.availability} />
-      </td>
-      <td className="px-5 py-4">
-        <div className="flex items-center gap-2">
-          <div className="bg-muted h-1.5 w-16 rounded-full">
-            <div
-              className="bg-primary h-1.5 rounded-full"
-              style={{ width: `${doctor.utilization}%` }}
-            />
-          </div>
-          <span className="text-xs">{doctor.utilization}%</span>
-        </div>
-      </td>
-      <td className="px-5 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onAction(`Schedule opened for ${doctor.name}`)}
-        >
-          Schedule
-        </Button>
-      </td>
-    </tr>
-  );
-}
-
 function DoctorCard({ doctor, onView }: { doctor: Doctor; onView: () => void }) {
   return (
     <div className="border-border rounded-xl border p-4">
@@ -814,9 +781,9 @@ function DoctorProfileDrawer({
             {doctor.specialty} · {doctor.clinic}
           </p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close doctor profile">
+        {/* <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close doctor profile">
           <X className="size-5" />
-        </Button>
+        </Button> */}
       </div>
       <div className="bg-muted/30 rounded-2xl p-4">
         <div className="flex items-center gap-3">
@@ -835,9 +802,9 @@ function DoctorProfileDrawer({
         <Info label="Slot utilization" value={`${doctor.utilization}%`} />
         <Info label="Current status" value={doctor.status} />
       </div>
-      <div className="space-y-2">
+      <div className="flex gap-3">
         <Button
-          className="flex items-center justify-start gap-2"
+          className="flex flex-1 items-center justify-start gap-2"
           onClick={() => onAction(`Schedule opened for ${doctor.name}`)}
         >
           <CalendarDays className="size-4" />
@@ -845,7 +812,7 @@ function DoctorProfileDrawer({
         </Button>
         <Button
           variant="outline"
-          className="flex items-center justify-start gap-2"
+          className="flex flex-1 items-center justify-start gap-2"
           onClick={() => onAction(`Message sent to ${doctor.name}`)}
         >
           <UserRound className="text-primary size-4" />

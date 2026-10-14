@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import * as React from 'react'
+import * as React from 'react';
 import {
   useTable,
   type ColumnDef,
@@ -8,17 +8,17 @@ import {
   type ColumnVisibilityState,
   type RowData,
   type SortingState,
-} from '@tanstack/react-table'
-import { cell_getContext } from '@tanstack/table-core/static-functions'
+} from '@tanstack/react-table';
+import { cell_getContext } from '@tanstack/table-core/static-functions';
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -26,17 +26,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 
-import { features, type DataTableFeatures } from './data-table-features'
+import { features, type DataTableFeatures } from './data-table-features';
 
 interface DataTableProps<TData extends RowData> {
-  columns: ColumnDef<DataTableFeatures, TData>[]
-  data: TData[]
+  columns: ColumnDef<DataTableFeatures, TData>[];
+  data: TData[];
   /** Optional search placeholder */
-  searchPlaceholder?: string
+  searchPlaceholder?: string;
   /** Optional search key - which column to filter by default */
-  searchKey?: string
+  searchKey?: string;
 }
 
 export function DataTable<TData extends RowData>({
@@ -45,10 +45,10 @@ export function DataTable<TData extends RowData>({
   searchPlaceholder = 'Search...',
   searchKey,
 }: DataTableProps<TData>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<ColumnVisibilityState>({})
-  const [globalFilter, setGlobalFilter] = React.useState('')
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<ColumnVisibilityState>({});
+  const [globalFilter, setGlobalFilter] = React.useState('');
 
   const table = useTable({
     features,
@@ -64,33 +64,31 @@ export function DataTable<TData extends RowData>({
       columnVisibility,
       globalFilter,
     },
-  })
+  });
 
   // Handle global search
   const handleGlobalFilterChange = (value: string) => {
-    setGlobalFilter(value)
-  }
+    setGlobalFilter(value);
+  };
 
   return (
     <div className="space-y-4">
       {/* Toolbar with search and column visibility */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex w-full gap-2 sm:w-auto">
           <Input
             placeholder={searchPlaceholder}
             value={globalFilter}
             onChange={(event) => handleGlobalFilterChange(event.target.value)}
-            className="max-w-sm w-full sm:w-64"
+            className="w-full max-w-sm sm:w-64"
             aria-label={searchPlaceholder}
           />
           {searchKey && (
             <Input
               placeholder={`Filter ${searchKey}...`}
               value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
-              onChange={(event) =>
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
-              }
-              className="max-w-sm w-full sm:w-64"
+              onChange={(event) => table.getColumn(searchKey)?.setFilterValue(event.target.value)}
+              className="w-full max-w-sm sm:w-64"
               aria-label={`Filter ${searchKey}`}
             />
           )}
@@ -129,32 +127,30 @@ export function DataTable<TData extends RowData>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : (
-                      header.column.getCanSort() ? (
-                        <button
-                          onClick={header.column.getToggleSortingHandler()}
-                          className="cursor-pointer select-none flex items-center gap-1 w-full"
-                        >
-                          {header.column.getIsSorted() ? (
-                            header.column.getIsSorted() === 'asc' ? (
-                              <span>▲</span>
-                            ) : (
-                              <span>▼</span>
-                            )
+                    {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                      <button
+                        onClick={header.column.getToggleSortingHandler()}
+                        className="flex w-full cursor-pointer items-center gap-1 select-none"
+                      >
+                        {header.column.getIsSorted() ? (
+                          header.column.getIsSorted() === 'asc' ? (
+                            <span>▲</span>
                           ) : (
-                            <span className="text-muted-foreground">⇅</span>
-                          )}
-                          {typeof header.column.columnDef.header === 'string'
-                            ? header.column.columnDef.header
-                            : header.column.columnDef.header?.({} as never)}
-                        </button>
-                      ) : (
-                        <span>
-                          {typeof header.column.columnDef.header === 'string'
-                            ? header.column.columnDef.header
-                            : header.column.columnDef.header?.({} as never)}
-                        </span>
-                      )
+                            <span>▼</span>
+                          )
+                        ) : (
+                          <span className="text-muted-foreground">⇅</span>
+                        )}
+                        {typeof header.column.columnDef.header === 'string'
+                          ? header.column.columnDef.header
+                          : header.column.columnDef.header?.({} as never)}
+                      </button>
+                    ) : (
+                      <span>
+                        {typeof header.column.columnDef.header === 'string'
+                          ? header.column.columnDef.header
+                          : header.column.columnDef.header?.({} as never)}
+                      </span>
                     )}
                   </TableHead>
                 ))}
@@ -182,7 +178,7 @@ export function DataTable<TData extends RowData>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
+                  className="text-muted-foreground h-24 text-center"
                 >
                   No results.
                 </TableCell>
@@ -194,17 +190,15 @@ export function DataTable<TData extends RowData>({
 
       {/* Pagination controls */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-muted-foreground text-sm">
           Showing{' '}
           <strong>
-            {table.state.pagination.pageIndex * table.state.pagination.pageSize + 1}{' '}
-            to{' '}
+            {table.state.pagination.pageIndex * table.state.pagination.pageSize + 1} to{' '}
             {Math.min(
               (table.state.pagination.pageIndex + 1) * table.state.pagination.pageSize,
               table.getFilteredRowModel().rows.length
             )}{' '}
-            of{' '}
-            <strong>{table.getFilteredRowModel().rows.length}</strong>
+            of <strong>{table.getFilteredRowModel().rows.length}</strong>
           </strong>
         </div>
         <div className="flex items-center gap-2">
@@ -229,5 +223,5 @@ export function DataTable<TData extends RowData>({
         </div>
       </div>
     </div>
-  )
+  );
 }
