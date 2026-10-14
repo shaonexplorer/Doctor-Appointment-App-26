@@ -168,7 +168,16 @@ export function DataTable<TData extends RowData>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {typeof cell.column.columnDef.cell === 'function'
-                        ? cell.column.columnDef.cell(cell_getContext(cell) as any)
+                        ? cell.column.columnDef.cell(
+                            cell_getContext(cell) as unknown as {
+                              cell: typeof cell;
+                              column: typeof cell.column;
+                              getValue: typeof cell.getValue;
+                              renderValue: typeof cell.renderValue;
+                              row: typeof cell.row;
+                              table: typeof cell.table;
+                            }
+                          )
                         : cell.getValue()}
                     </TableCell>
                   ))}
