@@ -14,6 +14,7 @@ import {
   FileText,
   LayoutDashboard,
   type LucideIcon,
+  LogOut,
   Menu,
   Settings,
   Stethoscope,
@@ -21,6 +22,14 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/context/AuthContext';
 
 const nav: readonly [string, LucideIcon][] = [
   ['Dashboard', LayoutDashboard],
@@ -67,6 +76,8 @@ export function StaffPortalShell({ children, active, className }: StaffPortalShe
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [formattedDate, setFormattedDate] = useState('');
+  const [profileOpen, setProfileOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const dateStr = new Intl.DateTimeFormat('en-US', {
@@ -88,6 +99,13 @@ export function StaffPortalShell({ children, active, className }: StaffPortalShe
   // Determine active from pathname if not provided
   const currentActive =
     active || Object.entries(routeMap).find(([, route]) => pathname === route)?.[0] || 'Dashboard';
+
+  const userInitials = user
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase()
+    : 'SD';
+  const userName = user?.firstName ? user.firstName : 'Staff';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
     <div className={cn('bg-background text-foreground min-h-screen overflow-x-hidden', className)}>
@@ -140,10 +158,10 @@ export function StaffPortalShell({ children, active, className }: StaffPortalShe
         <div className="bg-secondary m-3 mt-auto rounded-2xl p-3">
           <div className="flex items-center gap-3">
             <div className="text-primary grid size-9 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold">
-              JD
+              {userInitials}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-xs font-bold">Jordan Davis</p>
+              <p className="truncate text-xs font-bold">{userName}</p>
               <p className="text-muted-foreground truncate text-[11px]">Front Desk Coordinator</p>
             </div>
           </div>
@@ -181,9 +199,46 @@ export function StaffPortalShell({ children, active, className }: StaffPortalShe
             >
               <CircleHelp className="size-[18px]" />
             </button>
-            <div className="text-primary grid size-9 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold">
-              JD
-            </div>
+            <DropdownMenu open={profileOpen} onOpenChange={setProfileOpen}>
+              <DropdownMenuTrigger>
+                <div
+                  className="hover:bg-secondary flex items-center gap-2 rounded-xl p-1.5"
+                  aria-expanded={profileOpen}
+                >
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="text-primary bg-[#d9e8ff] text-xs font-bold">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-44" align="end">
+                <DropdownMenuItem
+                  className="hover:bg-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold"
+                  onClick={() => {
+                    handleNavigate('Settings');
+                    setProfileOpen(false);
+                  }}
+                >
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="hover:bg-secondary text-destructive focus:text-destructive flex items-center gap-2 rounded-lg px-3 py-2 text-left font-semibold"
+                  onClick={async () => {
+                    try {
+                      await logout();
+                      router.push('/login');
+                    } catch (error) {
+                      console.error('Failed to logout:', error);
+                    }
+                    setProfileOpen(false);
+                  }}
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         <main className="mx-auto max-w-[1440px] min-w-0 p-5 pb-24 sm:p-8 lg:p-10">
@@ -192,7 +247,7 @@ export function StaffPortalShell({ children, active, className }: StaffPortalShe
               {currentActive === 'Dashboard' ? formattedDate || 'Welcome' : 'Staff portal'}
             </p>
             <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-              {currentActive === 'Dashboard' ? `Good morning, Jordan` : currentActive}
+              {currentActive === 'Dashboard' ? `${greeting}, ${userName}` : currentActive}
             </h1>
             <p className="text-muted-foreground mt-2 max-w-xl text-sm">
               {currentActive === 'Dashboard'
