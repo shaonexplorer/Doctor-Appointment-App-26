@@ -17,94 +17,21 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { format, startOfWeek, addDays, addWeeks, subWeeks } from 'date-fns';
 
-interface DoctorOnDuty {
-  name: string;
-  specialty: string;
-  color: string;
-  slots: string;
-  initial: string;
-}
-
-interface ScheduleEvent {
-  time: string;
-  patient: string;
-  doctor: string;
-  status: 'Confirmed' | 'Checked in' | 'Pending' | 'Cancelled';
-  statusClass: string;
-}
-
-// interface ScheduleDay {
-//   label: string;
-//   appointments: string;
-//   slots: Array<{
-//     time: string;
-//     patient: string;
-//     doctorColor: string;
-//   }>;
-// }
-
-const doctors: DoctorOnDuty[] = [
-  {
-    name: 'Dr. Emily Carter',
-    specialty: 'Cardiology',
-    color: 'bg-blue-500',
-    slots: '8 / 10',
-    initial: 'EC',
-  },
-  {
-    name: 'Dr. Michael Chen',
-    specialty: 'Dermatology',
-    color: 'bg-violet-500',
-    slots: '6 / 8',
-    initial: 'MC',
-  },
-  {
-    name: 'Dr. Sarah Mitchell',
-    specialty: 'Neurology',
-    color: 'bg-emerald-500',
-    slots: '7 / 9',
-    initial: 'SM',
-  },
-  {
-    name: 'Dr. James Wilson',
-    specialty: 'General Medicine',
-    color: 'bg-amber-500',
-    slots: '5 / 8',
-    initial: 'JW',
-  },
-];
-
-const events: ScheduleEvent[] = [
-  {
-    time: '09:00',
-    patient: 'Sarah Johnson',
-    doctor: 'Dr. Emily Carter',
-    status: 'Confirmed',
-    statusClass: 'bg-blue-50 text-blue-700 border-blue-200',
-  },
-  {
-    time: '10:30',
-    patient: 'Robert Williams',
-    doctor: 'Dr. Michael Chen',
-    status: 'Checked in',
-    statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  },
-  {
-    time: '11:00',
-    patient: 'James Anderson',
-    doctor: 'Dr. Sarah Mitchell',
-    status: 'Pending',
-    statusClass: 'bg-amber-50 text-amber-700 border-amber-200',
-  },
-  {
-    time: '13:30',
-    patient: 'Maria Garcia',
-    doctor: 'Dr. James Wilson',
-    status: 'Confirmed',
-    statusClass: 'bg-blue-50 text-blue-700 border-blue-200',
-  },
-];
+import {
+  useStaffTodayAppointments,
+  useStaffWeeklyAppointments,
+  useStaffDoctors,
+  useStaffUtilizationStats,
+  useStaffWeeklySlots,
+  transformAppointmentsToScheduleEvents,
+  transformDoctorsToOnDuty,
+  buildWeekDaysData,
+  computeStatCards,
+  type ScheduleEvent,
+  type ScheduleSlot,
+} from '@/hooks/useStaffSchedule';
 
 const statusBadgeVariant: Record<string, 'success' | 'warning' | 'destructive' | 'default'> = {
   Cancelled: 'destructive',
@@ -113,56 +40,74 @@ const statusBadgeVariant: Record<string, 'success' | 'warning' | 'destructive' |
   Confirmed: 'success',
 };
 
-const statCards = [
-  { label: "Today's appointments", value: '26', detail: 'Across 4 doctors' },
-  { label: 'Available slots', value: '18', detail: 'Ready to book' },
-  { label: 'Doctors on duty', value: '4', detail: 'All clinics' },
-  { label: 'Blocked time', value: '2', detail: 'Today' },
-] as const;
-
-const weekDays = [
-  {
-    day: 'Mon 21',
-    isToday: true,
-    appointments: '26 appointments',
-    slots: [
-      { time: '09:00', patient: 'Sarah Johnson', doctorColor: 'bg-blue-500' },
-      { time: '10:30', patient: 'Robert Williams', doctorColor: 'bg-violet-500' },
-    ],
-  },
-  {
-    day: 'Tue 22',
-    isToday: false,
-    appointments: '18 appointments',
-    slots: [
-      { time: '09:00', patient: 'John Smith', doctorColor: 'bg-blue-500' },
-      { time: '10:30', patient: 'Jane Doe', doctorColor: 'bg-violet-500' },
-    ],
-  },
-  { day: 'Wed 23', isToday: false, appointments: '22 appointments', slots: [] },
-  { day: 'Thu 24', isToday: false, appointments: '24 appointments', slots: [] },
-  { day: 'Fri 25', isToday: false, appointments: '20 appointments', slots: [] },
-  { day: 'Sat 26', isToday: false, appointments: '8 appointments', slots: [] },
-  { day: 'Sun 27', isToday: false, appointments: 'Closed', slots: [] },
-];
-
 export function StaffSchedule() {
   const [view, setView] = useState<'Day' | 'Week' | 'Month'>('Week');
   const [query, setQuery] = useState('');
   const [notice, setNotice] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null);
+  const [weekStart, setWeekStart] = useState(() => {
+    const today = new Date();
+    return startOfWeek(today, { weekStartsOn: 1 }); // Monday as start of week
+  });
+  const [showAllDoctors, setShowAllDoctors] = useState(false);
 
   const router = useRouter();
 
+  // Fetch data using hooks
+  const {
+    data: todayAppointments = [],
+    isLoading: loadingTodayAppointments,
+    error: errorTodayAppointments,
+    refetch: refetchTodayAppointments,
+  } = useStaffTodayAppointments();
+
+  const { data: weeklyAppointments = [], isLoading: loadingWeeklyAppointments } =
+    useStaffWeeklyAppointments(format(weekStart, 'yyyy-MM-dd'));
+
+  const { data: doctors = [], isLoading: loadingDoctors } = useStaffDoctors();
+
+  const { data: utilizationStats, isLoading: loadingUtilization } = useStaffUtilizationStats();
+
+  const { data: weekSlots = [], isLoading: loadingWeekSlots } = useStaffWeeklySlots(
+    format(weekStart, 'yyyy-MM-dd')
+  );
+
+  // Transform data for UI
+  const scheduleEvents = useMemo(
+    () => transformAppointmentsToScheduleEvents(todayAppointments),
+    [todayAppointments]
+  );
+
+  const doctorsOnDuty = useMemo(
+    () => transformDoctorsToOnDuty(doctors, groupSlotsByDoctorId(weekSlots)),
+    [doctors, weekSlots]
+  );
+
+  const weekDays = useMemo(
+    () => buildWeekDaysData(weeklyAppointments, weekSlots, format(weekStart, 'yyyy-MM-dd')),
+    [weeklyAppointments, weekSlots, weekStart]
+  );
+
+  const statCards = useMemo(
+    () =>
+      computeStatCards(
+        todayAppointments,
+        utilizationStats || { booked: 0, available: 0, cancelled: 0, noShow: 0, total: 0 },
+        doctors,
+        weekSlots
+      ),
+    [todayAppointments, utilizationStats, doctors, weekSlots]
+  );
+
   const filtered = useMemo(
     () =>
-      events.filter((event) =>
+      scheduleEvents.filter((event) =>
         `${event.time} ${event.patient} ${event.doctor} ${event.status}`
           .toLowerCase()
           .includes(query.toLowerCase())
       ),
-    [query]
+    [query, scheduleEvents]
   );
 
   const handleAction = (message: string) => {
@@ -191,13 +136,76 @@ export function StaffSchedule() {
     );
 
   const getSlotClass = (color: string) => {
-    // Extract color name from 'bg-blue-500' -> 'blue'
     const colorName = color.replace('bg-', '').replace('-500', '');
     return cn(
       'rounded-lg p-2 text-xs',
       `bg-${colorName}-50 text-${colorName}-800 border border-${colorName}-200`
     );
   };
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    setWeekStart((prev) => (direction === 'next' ? addWeeks(prev, 1) : subWeeks(prev, 1)));
+  };
+
+  const isLoading =
+    loadingTodayAppointments ||
+    loadingWeeklyAppointments ||
+    loadingDoctors ||
+    loadingUtilization ||
+    loadingWeekSlots;
+
+  if (isLoading) {
+    return (
+      <section className="mt-8 space-y-6" aria-label="Schedule management">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse p-5 shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="bg-muted h-4 w-24 rounded" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="bg-muted h-8 w-16 rounded" />
+                <div className="bg-muted mt-1 h-3 w-20 rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card className="animate-pulse overflow-hidden shadow-sm">
+          <div className="min-w-[850px] p-5">
+            <div className="grid grid-cols-7 gap-2">
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <div
+                  key={i}
+                  className="bg-secondary h-10 rounded-xl p-3 text-center text-sm font-bold"
+                />
+              ))}
+            </div>
+            <div className="mt-3 grid grid-cols-7 gap-2">
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <div
+                  key={i}
+                  className="border-border bg-background min-h-48 rounded-xl border p-3"
+                />
+              ))}
+            </div>
+          </div>
+        </Card>
+      </section>
+    );
+  }
+
+  if (errorTodayAppointments) {
+    return (
+      <section className="mt-8 space-y-6" aria-label="Schedule management">
+        <div className="p-10 text-center">
+          <p className="text-destructive">Failed to load schedule data. Please try again.</p>
+          <Button onClick={() => refetchTodayAppointments()} className="mt-4">
+            Retry
+          </Button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mt-8 space-y-6" aria-label="Schedule management">
@@ -221,7 +229,9 @@ export function StaffSchedule() {
         <div className="flex flex-col gap-4 border-b p-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-lg font-bold">Schedule overview</h2>
-            <p className="text-muted-foreground mt-1 text-sm">September 21 – 27, 2026</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {format(weekStart, 'MMMM d')} – {format(addDays(weekStart, 6), 'MMMM d, yyyy')}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -229,6 +239,7 @@ export function StaffSchedule() {
               size="icon"
               aria-label="Previous week"
               className="mobile-touch-target"
+              onClick={() => navigateWeek('prev')}
             >
               <ChevronLeft className="size-4" />
             </Button>
@@ -237,6 +248,7 @@ export function StaffSchedule() {
               size="icon"
               aria-label="Next week"
               className="mobile-touch-target"
+              onClick={() => navigateWeek('next')}
             >
               <ChevronRight className="size-4" />
             </Button>
@@ -280,16 +292,19 @@ export function StaffSchedule() {
                   <p className="text-muted-foreground text-xs">{day.appointments}</p>
                   {day.slots.length > 0 && (
                     <div className="mt-4 space-y-2">
-                      {day.slots.map((slot, slotIndex) => (
-                        <div
-                          key={`${day.day}-${slotIndex}`}
-                          className={getSlotClass(slot.doctorColor)}
-                        >
-                          <b>{slot.time}</b>
-                          <br />
-                          {slot.patient}
-                        </div>
-                      ))}
+                      {day.slots.map((slot, slotIndex) => {
+                        // console.log(slot);
+                        return (
+                          <div
+                            key={`${day.day}-${slotIndex}`}
+                            className={getSlotClass(slot.doctorColor)}
+                          >
+                            <b>{slot.time}</b>
+                            <br />
+                            {slot.patient}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -306,7 +321,9 @@ export function StaffSchedule() {
           <div className="flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-bold">Today's appointment queue</h2>
-              <p className="text-muted-foreground mt-1 text-sm">Monday, September 21</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {format(new Date(), 'EEEE, MMMM d')}
+              </p>
             </div>
             <label className="relative">
               <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
@@ -333,7 +350,7 @@ export function StaffSchedule() {
               </thead>
               <tbody className="divide-border divide-y">
                 {filtered.map((event) => (
-                  <tr key={`${event.time}-${event.patient}`} className="hover:bg-muted/20">
+                  <tr key={event.id} className="hover:bg-muted/20">
                     <td className="px-5 py-4 font-semibold">
                       <span className="inline-flex items-center gap-2">
                         <Clock3 className="text-muted-foreground size-4" />
@@ -389,7 +406,7 @@ export function StaffSchedule() {
             <CalendarDays className="text-primary size-5" />
           </div>
           <div className="mt-5 space-y-4">
-            {doctors.map((doctor) => (
+            {doctorsOnDuty.slice(0, showAllDoctors ? doctorsOnDuty.length : 5).map((doctor) => (
               <div key={doctor.name} className="flex items-center gap-3">
                 <div
                   className={cn(
@@ -406,6 +423,27 @@ export function StaffSchedule() {
                 <span className="text-primary text-xs font-bold">{doctor.slots}</span>
               </div>
             ))}
+            {doctorsOnDuty.length > 5 && (
+              <div className="mt-4 border-t pt-4">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-primary hover:text-primary/80 w-full text-left"
+                  onClick={() => setShowAllDoctors(!showAllDoctors)}
+                >
+                  {showAllDoctors ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <ChevronLeft className="size-4" /> Show less
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      Show all {doctorsOnDuty.length} doctors
+                      <ChevronRight className="size-4" />
+                    </span>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
       </div>
@@ -437,7 +475,8 @@ export function StaffSchedule() {
               <div className="bg-muted/30 rounded-2xl p-4">
                 <p className="text-primary text-xs font-bold">Appointment</p>
                 <p className="mt-2 text-lg font-black">
-                  Monday, September 21, 2026 · {selectedEvent.time}
+                  {format(new Date(selectedEvent.startTime), 'EEEE, MMMM d, yyyy')} ·{' '}
+                  {selectedEvent.time}
                 </p>
                 <p className="text-muted-foreground mt-1 text-sm">{selectedEvent.doctor}</p>
               </div>
@@ -504,5 +543,19 @@ function Info({ label, value }: { label: string; value: string }) {
       </p>
       <p className="mt-1 text-sm font-bold">{value}</p>
     </div>
+  );
+}
+
+// Helper function to group slots by doctor ID
+function groupSlotsByDoctorId(slots: ScheduleSlot[]): Record<string, ScheduleSlot[]> {
+  return slots.reduce(
+    (acc, slot) => {
+      if (!acc[slot.doctorId]) {
+        acc[slot.doctorId] = [];
+      }
+      acc[slot.doctorId].push(slot);
+      return acc;
+    },
+    {} as Record<string, ScheduleSlot[]>
   );
 }
