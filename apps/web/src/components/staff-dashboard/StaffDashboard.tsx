@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CalendarDays, ClipboardCheck, CreditCard, Stethoscope, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,8 +62,17 @@ const statusTone: Record<string, string> = {
   'No-show': 'bg-[#fff0ef] text-[#b86f63]',
 };
 
-export function StaffDashboard({ onAction }: { onAction: (text: string) => void }) {
-  const [query, setQuery] = useState('');
+const actionRoutes: Record<string, string> = {
+  'Book appointment': '/staff/booking',
+  'Register patient': '/staff/patients',
+  'Check in patient': '/staff/checkin',
+  'Find doctor': '/staff/doctors',
+  'Collect payment': '/staff/billing',
+};
+
+export function StaffDashboard() {
+  const router = useRouter();
+  const [query] = useState('');
   const filtered = useMemo(
     () =>
       queue.filter((row) =>
@@ -70,6 +80,13 @@ export function StaffDashboard({ onAction }: { onAction: (text: string) => void 
       ),
     [query]
   );
+
+  const handleAction = (label: string) => {
+    const route = actionRoutes[label];
+    if (route) {
+      router.push(route);
+    }
+  };
 
   return (
     <div className="mt-8 flex flex-col gap-5">
@@ -88,7 +105,7 @@ export function StaffDashboard({ onAction }: { onAction: (text: string) => void 
               {filtered.length} appointments need attention today
             </p>
           </div>
-          <Button onClick={() => onAction('Booking workspace opened')}>Book appointment</Button>
+          <Button onClick={() => handleAction('Book appointment')}>Book appointment</Button>
         </div>
         {/* <div className="border-border flex flex-col gap-3 border-b p-4">
           <label className="relative min-w-[220px] flex-1">
@@ -116,7 +133,7 @@ export function StaffDashboard({ onAction }: { onAction: (text: string) => void 
             </thead>
             <tbody className="divide-border divide-y">
               {filtered.map((row) => (
-                <QueueRow key={row.patient} row={row} onAction={onAction} />
+                <QueueRow key={row.patient} row={row} onAction={handleAction} />
               ))}
             </tbody>
           </table>
@@ -153,7 +170,7 @@ export function StaffDashboard({ onAction }: { onAction: (text: string) => void 
               <Button
                 variant="outline"
                 className="mt-3 w-full"
-                onClick={() => onAction(`${row.patient} checked in`)}
+                onClick={() => handleAction(`${row.patient} checked in`)}
               >
                 {row.status === 'Checked In' ? 'Open patient' : 'Check in patient'}
               </Button>
@@ -169,11 +186,11 @@ export function StaffDashboard({ onAction }: { onAction: (text: string) => void 
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <Action label="Book appointment" icon={CalendarDays} onClick={onAction} />
-          <Action label="Register patient" icon={Users} onClick={onAction} />
-          <Action label="Check in patient" icon={ClipboardCheck} onClick={onAction} />
-          <Action label="Find doctor" icon={Stethoscope} onClick={onAction} />
-          <Action label="Collect payment" icon={CreditCard} onClick={onAction} />
+          <Action label="Book appointment" icon={CalendarDays} onClick={handleAction} />
+          <Action label="Register patient" icon={Users} onClick={handleAction} />
+          <Action label="Check in patient" icon={ClipboardCheck} onClick={handleAction} />
+          <Action label="Find doctor" icon={Stethoscope} onClick={handleAction} />
+          <Action label="Collect payment" icon={CreditCard} onClick={handleAction} />
         </div>
       </section>
     </div>
@@ -236,7 +253,7 @@ function Action({
   return (
     <Button
       variant="outline"
-      onClick={() => onClick(`${label} opened`)}
+      onClick={() => onClick(label)}
       className="flex items-center gap-3 rounded-xl p-4 text-left text-xs font-bold shadow-sm transition hover:-translate-y-0.5"
     >
       <Icon className="text-primary size-4" />
