@@ -422,7 +422,7 @@ export const userApi = {
   },
 
   /**
-   * List users with pagination and search (Admin/Staff only)
+   * List users with pagination, search, sorting, and filtering (Admin/Staff only)
    * GET /api/users
    */
   listUsers: async (params: {
@@ -430,6 +430,8 @@ export const userApi = {
     limit?: number;
     search?: string;
     userType?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }): Promise<PaginatedResponse<UserListItem>> => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {

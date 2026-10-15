@@ -1,66 +1,20 @@
 'use client';
 
 import { useMemo, useState, type ReactNode } from 'react';
-import { Check, Edit3, MoreHorizontal, Search, UserRound, X } from 'lucide-react';
+import { Check, Search, X, UserPlus } from 'lucide-react';
+import {
+  useUsers,
+  transformUsersToAdminFormat,
+  getStatusBadgeTone,
+  type AdminUserData,
+} from '@/hooks/useUsers';
+import { DataTable } from './data-table';
+import { createUserColumns } from './columns';
+import type { ColumnFiltersState } from '@tanstack/react-table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 
-const seed = [
-  {
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@example.com',
-    phone: '+1 (415) 555-0182',
-    role: 'PATIENT',
-    status: 'ACTIVE',
-    created: 'Sep 18, 2026',
-    activity: 'Today, 10:42 AM',
-  },
-  {
-    name: 'Dr. Michael Anderson',
-    email: 'm.anderson@medibook.com',
-    phone: '+1 (415) 555-0108',
-    role: 'DOCTOR',
-    status: 'ACTIVE',
-    created: 'Aug 12, 2026',
-    activity: 'Today, 9:18 AM',
-  },
-  {
-    name: 'Jordan Lee',
-    email: 'jordan.lee@medibook.com',
-    phone: '+1 (415) 555-0144',
-    role: 'STAFF',
-    status: 'ACTIVE',
-    created: 'Jul 29, 2026',
-    activity: 'Yesterday',
-  },
-  {
-    name: 'Robert Williams',
-    email: 'robert.williams@example.com',
-    phone: '+1 (415) 555-0197',
-    role: 'PATIENT',
-    status: 'PENDING',
-    created: 'Sep 20, 2026',
-    activity: 'Never',
-  },
-  {
-    name: 'Alex Morgan',
-    email: 'alex.morgan@medibook.com',
-    phone: '+1 (415) 555-0122',
-    role: 'ADMIN',
-    status: 'ACTIVE',
-    created: 'Jan 06, 2026',
-    activity: 'Today, 8:02 AM',
-  },
-  {
-    name: 'Dr. Priya Shah',
-    email: 'p.shah@medibook.com',
-    phone: '+1 (415) 555-0161',
-    role: 'DOCTOR',
-    status: 'SUSPENDED',
-    created: 'May 14, 2026',
-    activity: 'Sep 12, 2026',
-  },
-];
-
-const roles = ['ADMIN', 'STAFF', 'DOCTOR', 'PATIENT'];
+const roles = ['ADMIN', 'STAFF', 'DOCTOR', 'PATIENT'] as const;
 
 function Badge({ children, tone = 'blue' }: { children: ReactNode; tone?: string }) {
   return (
@@ -80,26 +34,52 @@ function Badge({ children, tone = 'blue' }: { children: ReactNode; tone?: string
   );
 }
 
+function UserAvatar({ initials }: { initials: string }) {
+  return (
+    <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full">
+      {initials}
+    </span>
+  );
+}
+
 export function AdminUsers() {
-  const [rows] = useState(seed);
-  const [tab, setTab] = useState('All Users');
-  const [query, setQuery] = useState('');
   const [role, setRole] = useState('All roles');
   const [selected, setSelected] = useState<string[]>([]);
-  const [drawer, setDrawer] = useState<(typeof seed)[number] | null>(null);
+  const [drawer, setDrawer] = useState<AdminUserData | null>(null);
   const [modal, setModal] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  const filtered = useMemo(
-    () =>
-      rows.filter(
-        (u) =>
-          (tab === 'All Users' || u.role === tab.slice(0, -1).toUpperCase()) &&
-          (role === 'All roles' || u.role === role) &&
-          `${u.name} ${u.email} ${u.phone}`.toLowerCase().includes(query.toLowerCase())
-      ),
-    [rows, tab, role, query]
-  );
+  // No tab filter - show all users
+  const userTypeFilter = undefined;
+
+  // Fetch users from API
+  const {
+    data: usersResponse,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useUsers({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    search: globalFilter,
+    userType: userTypeFilter,
+    sortBy: sorting[0]?.id,
+    sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
+    // Column filters are passed as individual query params
+    ...Object.fromEntries(columnFilters.map((f) => [f.id, f.value])),
+  });
+
+  const users = usersResponse?.data || [];
+  const totalUsers = usersResponse?.meta.total || 0;
+  const totalPages = usersResponse?.meta.totalPages || 1;
+
+  // Transform API data to admin format
+  const transformedUsers = useMemo(() => transformUsersToAdminFormat(users), [users]);
 
   const act = (message: string) => {
     setNotice(message);
@@ -110,54 +90,25 @@ export function AdminUsers() {
   const toggle = (name: string) =>
     setSelected((s) => (s.includes(name) ? s.filter((x) => x !== name) : [...s, name]));
 
+  const toggleSelectAll = () => {
+    if (selected.length === transformedUsers.length && transformedUsers.length > 0) {
+      setSelected([]);
+    } else {
+      setSelected(transformedUsers.map((u) => u.name));
+    }
+  };
+
+  // Column definitions with action handlers
+  const columns = createUserColumns(
+    (user) => setDrawer(user),           // onViewUser
+    (user) => setModal('edit'),           // onEditUser
+    (user) => setModal('role'),           // onChangeRole
+    (user) => setModal('confirm')         // onSuspendUser
+  );
+
   return (
     <div className="mt-8 space-y-5">
-      <div className="border-border flex flex-wrap gap-2 border-b">
-        {['All Users', 'Doctors', 'Staff', 'Patients'].map((item) => (
-          <button
-            key={item}
-            onClick={() => setTab(item)}
-            className={`border-b-2 px-4 py-3 text-xs font-bold ${
-              tab === item
-                ? 'border-primary text-primary'
-                : 'text-muted-foreground border-transparent'
-            }`}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
-
-      <div className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-4 shadow-sm sm:flex-row">
-        <label className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
-          <input
-            aria-label="Search users"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, email, or phone..."
-            className="border-border bg-accent focus:border-primary h-10 w-full rounded-xl border pr-3 pl-9 text-xs outline-none"
-          />
-        </label>
-        <select
-          aria-label="Filter by role"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          className="border-border bg-accent h-10 rounded-xl border px-3 text-xs font-semibold"
-        >
-          <option className="border-border border">All roles</option>
-          {roles.map((r) => (
-            <option key={r}>{r}</option>
-          ))}
-        </select>
-        <button
-          onClick={() => setModal('add')}
-          className="bg-primary rounded-xl px-4 py-2.5 text-xs font-bold text-white"
-        >
-          Add user
-        </button>
-      </div>
-
+      {/* Bulk Actions Bar */}
       {selected.length > 0 && (
         <div className="bg-primary/10 text-primary flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold">
           {selected.length} selected
@@ -170,114 +121,85 @@ export function AdminUsers() {
         </div>
       )}
 
+      {/* Users Table - Using TanStack Table v9 with shadcn/ui */}
       <div className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] text-left text-xs">
-            <thead className="bg-accent text-[10px] tracking-wider text-slate-400 uppercase">
-              <tr>
-                <th className="w-10 p-4">
-                  <input
-                    type="checkbox"
-                    aria-label="Select all users"
-                    checked={selected.length === filtered.length && filtered.length > 0}
-                    onChange={() =>
-                      setSelected(
-                        selected.length === filtered.length ? [] : filtered.map((u) => u.name)
-                      )
-                    }
-                  />
-                </th>
-                <th className="p-4">Name</th>
-                <th className="p-4">Email</th>
-                <th className="p-4">Phone</th>
-                <th className="p-4">Role</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Created date</th>
-                <th className="p-4">Last activity</th>
-                <th className="p-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-border divide-y">
-              {filtered.map((u) => (
-                <tr key={u.name} className="hover:bg-[var(--muted)]">
-                  <td className="p-4">
-                    <input
-                      type="checkbox"
-                      aria-label={`Select ${u.name}`}
-                      checked={selected.includes(u.name)}
-                      onChange={() => toggle(u.name)}
-                    />
-                  </td>
-                  <td className="p-4">
-                    <button
-                      onClick={() => setDrawer(u)}
-                      className="text-foreground hover:text-primary flex items-center gap-2 font-bold"
-                    >
-                      <span className="bg-primary/10 text-primary grid size-8 place-items-center rounded-full">
-                        <UserRound className="size-4" />
-                      </span>
-                      {u.name}
-                    </button>
-                  </td>
-                  <td className="p-4 text-slate-500">{u.email}</td>
-                  <td className="p-4 text-slate-500">{u.phone}</td>
-                  <td className="p-4">
-                    <Badge>{u.role}</Badge>
-                  </td>
-                  <td className="p-4">
-                    <Badge
-                      tone={
-                        u.status === 'ACTIVE' ? 'green' : u.status === 'SUSPENDED' ? 'red' : 'amber'
-                      }
-                    >
-                      {u.status}
-                    </Badge>
-                  </td>
-                  <td className="p-4 text-slate-500">{u.created}</td>
-                  <td className="p-4 text-slate-500">{u.activity}</td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setDrawer(u)}
-                        className="text-primary hover:bg-primary/10 rounded-lg px-2 py-1.5 font-bold"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => setModal('edit')}
-                        aria-label={`Edit ${u.name}`}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-                      >
-                        <Edit3 className="size-4" />
-                      </button>
-                      <button
-                        onClick={() => setModal('role')}
-                        aria-label={`Change role for ${u.name}`}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-                      >
-                        <MoreHorizontal className="size-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="border-border flex items-center justify-between border-t px-4 py-3 text-xs text-slate-500">
-          <span>
-            Showing {filtered.length} of {rows.length} users
-          </span>
-          <div className="flex gap-1">
-            <button className="rounded-lg border px-3 py-1.5">Previous</button>
-            <button className="bg-primary rounded-lg px-3 py-1.5 font-bold text-white">1</button>
-            <button className="rounded-lg border px-3 py-1.5">2</button>
-            <button className="rounded-lg border px-3 py-1.5">Next</button>
+        <DataTable
+          columns={columns}
+          data={transformedUsers}
+          rowCount={totalUsers}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+          globalFilter={globalFilter}
+          onGlobalFilterChange={setGlobalFilter}
+          isLoading={isLoading && users.length === 0}
+          showColumnVisibility={true}
+          showGlobalFilter={true}
+          globalFilterPlaceholder="Search by name, email, or phone..."
+          toolbarLeading={
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full sm:w-auto">
+              <label className="relative flex-1 min-w-[200px]">
+                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  aria-label="Search users"
+                  value={globalFilter}
+                  onChange={(e) => {
+                    setGlobalFilter(e.target.value);
+                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                    setSelected([]);
+                  }}
+                  placeholder="Search by name, email, or phone..."
+                  className="bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring h-10 w-full rounded-lg border px-4 py-2 text-sm pl-9 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </label>
+              <Select
+                aria-label="Filter by role"
+                value={role}
+                onValueChange={(value) => {
+                  setRole(value);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                  setSelected([]);
+                }}
+              >
+                <SelectTrigger className="h-10 w-[160px] min-w-[160px]">
+                  <SelectValue placeholder="All roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All roles">All roles</SelectItem>
+                  {roles.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          toolbarTrailing={
+            <Button onClick={() => setModal('add')} className="flex items-center gap-2">
+              <UserPlus className="size-4" />
+              Add user
+            </Button>
+          }
+          className="p-4"
+        />
+
+        {/* Error state */}
+        {isError && users.length === 0 && (
+          <div className="flex items-center justify-center p-12 text-destructive">
+            <p>Failed to load users: {error instanceof Error ? error.message : 'Unknown error'}</p>
+            <button
+              onClick={() => refetch()}
+              className="ml-3 text-primary hover:underline text-sm"
+            >
+              Retry
+            </button>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Conditional overlays */}
+      {/* User Detail Drawer */}
       {drawer && (
         <div className="fixed inset-0 z-50">
           <div className="bg-card/30 absolute inset-0" onClick={() => setDrawer(null)} />
@@ -291,26 +213,13 @@ export function AdminUsers() {
             </button>
             <div className="mt-8">
               <div className="bg-primary/10 text-primary grid size-16 place-items-center rounded-2xl text-xl font-black">
-                {drawer.name
-                  .split(' ')
-                  .map((x) => x[0])
-                  .join('')}
+                {drawer.initials}
               </div>
               <h2 className="mt-4 text-xl font-black">{drawer.name}</h2>
               <p className="mt-1 text-sm text-slate-500">{drawer.email}</p>
               <div className="mt-4 flex gap-2">
                 <Badge>{drawer.role}</Badge>
-                <Badge
-                  tone={
-                    drawer.status === 'ACTIVE'
-                      ? 'green'
-                      : drawer.status === 'SUSPENDED'
-                        ? 'red'
-                        : 'amber'
-                  }
-                >
-                  {drawer.status}
-                </Badge>
+                <Badge tone={getStatusBadgeTone(drawer.status)}>{drawer.status}</Badge>
               </div>
               <div className="bg-muted mt-8 space-y-4 rounded-2xl p-4 text-sm">
                 <p>
@@ -327,6 +236,11 @@ export function AdminUsers() {
                   <strong>Last activity</strong>
                   <br />
                   <span className="text-slate-500">{drawer.activity}</span>
+                </p>
+                <p>
+                  <strong>Email Verified</strong>
+                  <br />
+                  <span className="text-slate-500">{drawer.raw.emailVerified ? 'Yes' : 'No'}</span>
                 </p>
               </div>
               <div className="mt-6 grid gap-2">
@@ -348,6 +262,7 @@ export function AdminUsers() {
         </div>
       )}
 
+      {/* Modals */}
       {modal && (
         <div className="bg-card/30 fixed inset-0 z-[60] grid place-items-center p-4">
           <div className="bg-muted w-full max-w-md rounded-2xl p-6 shadow-2xl">
@@ -421,6 +336,7 @@ export function AdminUsers() {
         </div>
       )}
 
+      {/* Toast Notification */}
       {notice && (
         <div
           role="status"
