@@ -11,6 +11,7 @@ import {
   type UserListItem,
   type PaginatedResponse,
   type UserProfile,
+  type CreateUserInput,
 } from '@/lib/api';
 
 // Query keys for consistent caching
@@ -23,7 +24,7 @@ export const userKeys = {
 };
 
 // Re-export types for consumers
-export type { UserListItem, UserProfile, PaginatedResponse };
+export type { UserListItem, UserProfile, PaginatedResponse, CreateUserInput };
 
 /**
  * Hook for fetching users with pagination, filters, sorting
@@ -217,4 +218,22 @@ export function getRoleLabel(role: AdminUserData['role']): string {
     PATIENT: 'Patient',
   };
   return labels[role];
+}
+
+/**
+ * Mutation hook for creating a new user (Admin only)
+ * Invalidates the users list on success to refresh the data
+ */
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateUserInput) => {
+      return userApi.createUser(data);
+    },
+    onSuccess: () => {
+      // Invalidate all user lists to refresh the data
+      void queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+    },
+  });
 }

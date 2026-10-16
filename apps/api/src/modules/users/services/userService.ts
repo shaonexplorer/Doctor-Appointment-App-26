@@ -8,12 +8,14 @@ import type { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { UserType } from '@doctor-appointment-app/shared';
 import { AppError } from '../../../shared/middleware/errorHandler';
+import * as bcrypt from 'bcrypt';
 import type {
   UpdateProfileInput,
   PaginationParams,
   UserProfile,
   UserListItem,
   UserStats,
+  CreateUserInput,
 } from '../types';
 
 export class UserService {
@@ -363,6 +365,98 @@ export class UserService {
 
     // Return updated profile with stats
     return this.getDoctorProfile(userId);
+  }
+
+  /**
+   * Create a new user (Admin only)
+   * POST /api/users
+   */
+  async createUser(data: CreateUserInput): Promise<UserProfile> {
+    // Check if email already exists
+    const emailExists = await this.userRepository.emailExists(data.email);
+    if (emailExists) {
+      throw new AppError('CONFLICT', 'Email already registered', 409);
+    }
+
+    // Check license number uniqueness for doctors
+    if (data.userType === UserType.DOCTOR && data.licenseNo) {
+      const licenseExists = await this.prisma.doctorProfile.findUnique({
+        where: { licenseNo: data.licenseNo },
+      });
+      if (licenseExists) {
+        throw new AppError('CONFLICT', 'License number already registered', 409);
+      }
+    }
+
+    // Hash password if provided
+    let passwordHash: string | undefined;
+    if (data.password && data.password.length > 0) {
+      passwordHash = await bcrypt.hash(data.password, 12);
+    }
+
+    // Prepare user data
+    const userData = {
+      email: data.email.toLowerCase(),
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone ?? null,
+      userType: data.userType,
+      emailVerified: false, // Admin-created users need to verify email
+      passwordHash: passwordHash ?? '', // Will be empty if no password provided
+    };
+
+    // Create user with appropriate profile in a transaction
+    const createdUser = await this.prisma.$transaction(async (tx) => {
+      // Create the user
+      const user = await tx.user.create({
+        data: userData,
+      });
+
+      // Create doctor profile if needed
+      if (data.userType === UserType.DOCTOR) {
+        await tx.doctorProfile.create({
+          data: {
+            userId: user.id,
+            specialty: data.specialty!,
+            designation: data.designation!,
+            licenseNo: data.licenseNo!,
+            bio: data.bio ?? null,
+            fee: new Prisma.Decimal(data.fee!),
+            isVerified: false,
+          },
+        });
+      }
+
+      // Create patient profile if needed
+      if (data.userType === UserType.PATIENT) {
+        await tx.patientProfile.create({
+          data: {
+            userId: user.id,
+            dob: data.dob ? new Date(data.dob) : null,
+            gender: data.gender ?? null,
+            address: data.address ?? null,
+            emergencyContact: data.emergencyContact ?? null,
+          },
+        });
+      }
+
+      // Return user with profiles
+      return tx.user.findUnique({
+        where: { id: user.id },
+        include: {
+          doctorProfile: true,
+          patientProfile: true,
+        },
+      });
+    });
+
+    if (!createdUser) {
+      throw new AppError('INTERNAL_ERROR', 'Failed to create user', 500);
+    }
+
+    const { passwordHash: _passwordHash, ...userWithoutPassword } = createdUser;
+    void _passwordHash;
+    return userWithoutPassword as UserProfile;
   }
 }
 

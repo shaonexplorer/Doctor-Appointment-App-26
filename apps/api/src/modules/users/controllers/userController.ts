@@ -9,7 +9,7 @@ import { requireRole } from '../../../shared/middleware/auth';
 import { UserType } from '@doctor-appointment-app/shared';
 import { buildSuccessResponse, buildPaginatedResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
-import type { UpdateProfileInput, PaginationParams, DoctorProfileUpdateInput } from '../validators';
+import type { UpdateProfileInput, PaginationParams, DoctorProfileUpdateInput, CreateUserInput } from '../validators';
 
 export class UserController {
   constructor(private userService: UserService) {}
@@ -115,6 +115,27 @@ export class UserController {
     try {
       const result = await this.userService.deleteUser(req.params.id, req.user!.id);
       res.json(buildSuccessResponse(result));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Create user (Admin only)
+   * POST /api/users
+   */
+  createUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const validatedData = req.validatedData as CreateUserInput;
+
+      // Clean up empty password
+      const dataToCreate = {
+        ...validatedData,
+        password: validatedData.password && validatedData.password.length > 0 ? validatedData.password : undefined,
+      };
+
+      const user = await this.userService.createUser(dataToCreate);
+      res.status(201).json(buildSuccessResponse(user));
     } catch (error) {
       next(error);
     }

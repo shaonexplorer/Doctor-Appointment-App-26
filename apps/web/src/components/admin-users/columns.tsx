@@ -3,7 +3,6 @@
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { MoreHorizontal } from 'lucide-react';
 import { type DataTableFeatures } from './data-table-features';
 import { transformUsersToAdminFormat, type AdminUserData } from '@/hooks/useUsers';

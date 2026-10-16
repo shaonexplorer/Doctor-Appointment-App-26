@@ -7,6 +7,7 @@ import type {
   UserType,
   UpdateProfileInput,
   PaginationParams,
+  CreateUserInput,
 } from '@doctor-appointment-app/shared';
 
 export interface UserProfile {
@@ -54,4 +55,4 @@ export interface UserStats {
   byType: Record<UserType, number>;
 }
 
-export type { UpdateProfileInput, PaginationParams };
+export type { UpdateProfileInput, PaginationParams, CreateUserInput };

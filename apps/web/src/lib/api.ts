@@ -381,6 +381,26 @@ export interface UpdateProfileInput {
   fee?: number;
 }
 
+export interface CreateUserInput {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+  userType: 'ADMIN' | 'STAFF' | 'DOCTOR' | 'PATIENT';
+  password?: string;
+  // Doctor fields
+  specialty?: string;
+  designation?: string;
+  licenseNo?: string;
+  bio?: string | null;
+  fee?: number;
+  // Patient fields
+  dob?: string | null;
+  gender?: string | null;
+  address?: string | null;
+  emergencyContact?: string | null;
+}
+
 // User Profile API functions
 export const userApi = {
   /**
@@ -448,6 +468,22 @@ export const userApi = {
    */
   getUserById: async (id: string): Promise<UserProfile> => {
     return apiRequest<UserProfile>(`/api/users/${id}`);
+  },
+
+  /**
+   * Create a new user (Admin only)
+   * POST /api/users
+   */
+  createUser: async (data: CreateUserInput): Promise<UserProfile> => {
+    // Clean up empty password
+    const cleanedData = {
+      ...data,
+      password: data.password && data.password.length > 0 ? data.password : undefined,
+    };
+    return apiRequest<UserProfile>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(cleanedData),
+    });
   },
 };
 

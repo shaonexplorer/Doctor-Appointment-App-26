@@ -123,6 +123,65 @@ export const RegisterSchema = UserBaseSchema.extend({
   }
 );
 
+/**
+ * Admin Create User Schema
+ * Used by admins to create users without requiring a password upfront
+ * Password is optional - if not provided, an invitation email will be sent
+ */
+export const CreateUserSchema = UserBaseSchema.extend({
+  // Password is optional for admin-created users
+  password: z
+    .string()
+    .min(VALIDATION.PASSWORD_MIN_LENGTH, {
+      message: `Password must be at least ${VALIDATION.PASSWORD_MIN_LENGTH} characters`,
+    })
+    .max(VALIDATION.PASSWORD_MAX_LENGTH, { message: 'Password is too long' })
+    .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+    .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
+    .regex(/[0-9]/, { message: 'Password must contain at least one number' })
+    .regex(/[^A-Za-z0-9]/, { message: 'Password must contain at least one special character' })
+    .optional()
+    .or(z.literal('')),
+  // Doctor-specific fields
+  specialty: z.string().optional(),
+  designation: z.string().optional(),
+  licenseNo: z.string().optional(),
+  bio: z
+    .string()
+    .max(VALIDATION.BIO_MAX_LENGTH, { message: 'Bio is too long' })
+    .optional()
+    .nullable(),
+  fee: z.number().positive().optional(),
+  // Patient-specific fields
+  // Transform empty strings to undefined to allow optional date fields for non-patient roles
+  dob: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().date().optional().nullable()
+  ),
+  gender: z.nativeEnum(Gender).optional().nullable(),
+  address: z
+    .string()
+    .max(VALIDATION.ADDRESS_MAX_LENGTH, { message: 'Address is too long' })
+    .optional()
+    .nullable(),
+  emergencyContact: z
+    .string()
+    .max(VALIDATION.PHONE_MAX_LENGTH, { message: 'Emergency contact is too long' })
+    .optional()
+    .nullable(),
+}).refine(
+  (data) => {
+    if (data.userType === UserType.DOCTOR) {
+      return data.specialty && data.designation && data.licenseNo && data.fee !== undefined;
+    }
+    return true;
+  },
+  {
+    message: 'Doctor creation requires specialty, designation, license number, and fee',
+    path: ['specialty'],
+  }
+);
+
 export const LoginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }).toLowerCase(),
   password: z.string().min(1, { message: 'Password is required' }),
@@ -488,6 +547,7 @@ export const ChangePasswordSchema = z
 
 // Type exports (inferred from schemas)
 export type RegisterInput = z.infer<typeof RegisterSchema>;
+export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
