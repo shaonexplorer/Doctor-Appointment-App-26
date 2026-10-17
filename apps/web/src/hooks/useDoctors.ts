@@ -5,7 +5,7 @@
  * Provides caching, pagination, and search functionality
  */
 
-import { useQuery, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useQueryClient, keepPreviousData, useMutation } from '@tanstack/react-query';
 import {
   doctorApi,
   type DoctorSearchFilters,
@@ -308,4 +308,143 @@ function extractSymptoms(specialty: string): string[] {
     Gastroenterology: ['Digestive issues', 'Acid reflux', 'IBS', 'Liver health'],
   };
   return specialtySymptoms[specialty] || ['General consultation'];
+}
+
+/**
+ * Transform backend DoctorSearchResult to frontend AdminDoctor format
+ * Maps API response to the UI component's expected data structure
+ */
+export function transformDoctorToAdminFormat(doctor: DoctorSearchResult): AdminDoctorData {
+  // Format created date
+  const createdDate = new Date(doctor.createdAt);
+  const formattedCreated = isNaN(createdDate.getTime())
+    ? 'Unknown'
+    : createdDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+
+  // Format last activity - use updatedAt as fallback for "last activity"
+  const updatedDate = new Date(doctor.updatedAt);
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+
+  let formattedActivity: string;
+  if (isNaN(updatedDate.getTime())) {
+    formattedActivity = 'Last activity unknown';
+  } else if (updatedDate.toISOString().split('T')[0] === today.toISOString().split('T')[0]) {
+    formattedActivity = `Today, ${updatedDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })}`;
+  } else if (updatedDate.toISOString().split('T')[0] === yesterday.toISOString().split('T')[0]) {
+    formattedActivity = 'Yesterday';
+  } else {
+    formattedActivity = updatedDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+
+  // Get full name with Dr. prefix
+  const name = `Dr. ${doctor.user.firstName} ${doctor.user.lastName}`;
+
+  // Get initials
+  const initials = `${doctor.user.firstName.charAt(0)}${doctor.user.lastName.charAt(0)}`.toUpperCase();
+
+  // Format fee
+  const fee = `$${doctor.fee}`;
+
+  // Format clinic - use bio or default
+  const clinic = doctor.bio || 'Clinic not specified';
+
+  // Calculate experience from createdAt
+  const experienceYears = calculateExperience(doctor.createdAt);
+  const experience = `${experienceYears} years`;
+
+  // Get next available slot from schedules
+  const nextAvailable = getNextAvailableSlot(doctor.schedules);
+
+  // Determine availability text
+  const availability = determineAvailability(doctor.schedules);
+
+  // Generate color based on specialty
+  const color = getSpecialtyColor(doctor.specialty);
+
+  // Default rating and reviews (would come from reviews API)
+  const rating = 4.9;
+  const reviews = 0;
+
+  return {
+    id: doctor.id,
+    name,
+    initials,
+    specialty: doctor.specialty,
+    designation: doctor.designation,
+    clinic,
+    fee,
+    appointments: doctor.appointments || 0,
+    utilization: doctor.utilization || 0,
+    status: doctor.status,
+    next: nextAvailable,
+    availability,
+    color,
+    experience,
+    qualifications: doctor.licenseNo,
+    rating,
+    reviews,
+    // Raw data for drawer
+    raw: doctor,
+  };
+}
+
+/**
+ * Transform array of doctors to admin format
+ */
+export function transformDoctorsToAdminFormat(doctors: DoctorSearchResult[]): AdminDoctorData[] {
+  return doctors.map(transformDoctorToAdminFormat);
+}
+
+// Type for the transformed admin doctor data (matches the AdminDoctorData interface)
+export interface AdminDoctorData {
+  id: string;
+  name: string;
+  initials: string;
+  specialty: string;
+  designation: string;
+  clinic: string;
+  fee: string;
+  appointments: number;
+  utilization: number;
+  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+  next: string;
+  availability: string;
+  color: string;
+  experience: string;
+  qualifications: string;
+  rating: number;
+  reviews: number;
+  raw: DoctorSearchResult;
+}
+
+/**
+ * Mutation hook for creating a new doctor (Admin only)
+ * Invalidates the doctors list on success to refresh the data
+ */
+export function useCreateDoctor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateDoctorInput) => {
+      return doctorApi.createDoctor(data);
+    },
+    onSuccess: () => {
+      // Invalidate all doctor lists to refresh the data
+      void queryClient.invalidateQueries({ queryKey: doctorKeys.lists() });
+    },
+  });
 }

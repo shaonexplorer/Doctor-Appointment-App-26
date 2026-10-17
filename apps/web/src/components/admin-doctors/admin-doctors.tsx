@@ -1,106 +1,40 @@
 'use client';
 
 import { useMemo, useState, type ReactNode } from 'react';
+import { Search, UserPlus, X } from 'lucide-react';
 import {
-  Activity,
-  CalendarDays,
-  Check,
-  Clock3,
-  Edit3,
-  MoreHorizontal,
-  Search,
-  ShieldCheck,
-  Stethoscope,
-  X,
-} from 'lucide-react';
+  useDoctors,
+  transformDoctorsToAdminFormat,
+  type AdminDoctorData,
+} from '@/hooks/useDoctors';
+import { DataTable } from '@/components/admin-users/data-table';
+import { createDoctorColumns } from './columns';
+import { AddDoctorDialog } from './AddDoctorDialog';
+import type { ColumnFiltersState } from '@tanstack/react-table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Toaster } from '@/components/ui/toast';
 
-const seed = [
-  {
-    name: 'Dr. Michael Anderson',
-    specialty: 'Cardiology',
-    designation: 'Senior Consultant',
-    clinic: 'MediBook Downtown',
-    fee: '$180',
-    appointments: 248,
-    utilization: 88,
-    status: 'ACTIVE',
-    review: 'Approved',
-    bio: 'Board-certified cardiologist focused on preventive heart care and patient education.',
-    qualifications: 'MD, FACC',
-    symptoms: 'Chest pain, hypertension, palpitations',
-    availability: 'Mon–Fri · 9:00 AM–5:00 PM',
-    revenue: '$44,640',
-  },
-  {
-    name: 'Dr. Priya Shah',
-    specialty: 'Dermatology',
-    designation: 'Consultant Dermatologist',
-    clinic: 'MediBook Westside',
-    fee: '$145',
-    appointments: 196,
-    utilization: 82,
-    status: 'ACTIVE',
-    review: 'Approved',
-    bio: 'Specialist in clinical and cosmetic dermatology with a patient-first approach.',
-    qualifications: 'MD, FAAD',
-    symptoms: 'Acne, eczema, skin lesions',
-    availability: 'Mon, Wed, Fri · 10:00 AM–4:00 PM',
-    revenue: '$28,420',
-  },
-  {
-    name: 'Dr. James Wilson',
-    specialty: 'Neurology',
-    designation: 'Neurologist',
-    clinic: 'MediBook Downtown',
-    fee: '$210',
-    appointments: 84,
-    utilization: 54,
-    status: 'PENDING',
-    review: 'Needs review',
-    bio: 'Neurologist specializing in migraine care and neurological diagnostics.',
-    qualifications: 'MD, PhD',
-    symptoms: 'Migraines, dizziness, neuropathy',
-    availability: 'Tue–Thu · 8:30 AM–3:30 PM',
-    revenue: '$17,640',
-  },
-  {
-    name: 'Dr. Emily Chen',
-    specialty: 'Pediatrics',
-    designation: 'Pediatrician',
-    clinic: 'MediBook North',
-    fee: '$120',
-    appointments: 220,
-    utilization: 76,
-    status: 'ACTIVE',
-    review: 'Approved',
-    bio: 'Pediatrician supporting children and families through every stage of development.',
-    qualifications: 'MD, FAAP',
-    symptoms: 'Fever, cough, wellness checks',
-    availability: 'Mon–Sat · 8:00 AM–2:00 PM',
-    revenue: '$26,400',
-  },
-  {
-    name: 'Dr. Robert Kim',
-    specialty: 'Orthopedics',
-    designation: 'Orthopedic Surgeon',
-    clinic: 'MediBook East',
-    fee: '$240',
-    appointments: 68,
-    utilization: 42,
-    status: 'SUSPENDED',
-    review: 'Approved',
-    bio: 'Orthopedic surgeon specializing in sports injuries and mobility restoration.',
-    qualifications: 'MD, FAAOS',
-    symptoms: 'Joint pain, fractures, sports injuries',
-    availability: 'Mon, Thu · 9:00 AM–1:00 PM',
-    revenue: '$16,320',
-  },
-];
+const statuses = ['All statuses', 'ACTIVE', 'PENDING', 'SUSPENDED'] as const;
 
 function Badge({ children, tone = 'blue' }: { children: ReactNode; tone?: string }) {
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black tracking-wide ${tone === 'green' ? 'bg-success/40 text-success' : tone === 'red' ? 'bg-destructive/40 text-destructive-foreground' : tone === 'amber' ? 'bg-warning/40 text-warning-foreground' : tone === 'purple' ? 'bg-primary/30 text-primary' : 'bg-primary/30 text-primary'}`}
+      className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black tracking-wide ${
+        tone === 'green'
+          ? 'bg-primary/30 text-primary'
+          : tone === 'red'
+            ? 'bg-destructive/50 text-destructive-foreground'
+            : tone === 'amber'
+              ? 'bg-warning/50 text-warning-foreground'
+              : 'bg-primary/30 text-primary'
+      }`}
     >
       {children}
     </span>
@@ -108,402 +42,275 @@ function Badge({ children, tone = 'blue' }: { children: ReactNode; tone?: string
 }
 
 export function AdminDoctors() {
-  const [rows, setRows] = useState(seed);
-  const [query, setQuery] = useState('');
-  const [status, setStatus] = useState('All statuses');
-  const [drawer, setDrawer] = useState<(typeof seed)[number] | null>(null);
-  const [modal, setModal] = useState<string | null>(null);
-  const [notice, setNotice] = useState('');
-  const filtered = useMemo(
-    () =>
-      rows.filter(
-        (d) =>
-          `${d.name} ${d.specialty} ${d.clinic}`.toLowerCase().includes(query.toLowerCase()) &&
-          (status === 'All statuses' || d.status === status)
-      ),
-    [rows, query, status]
+  const [status, setStatus] = useState<typeof statuses[number]>(statuses[0]); // 'All statuses'
+  const [selected, setSelected] = useState<string[]>([]);
+  const [drawer, setDrawer] = useState<AdminDoctorData | null>(null);
+  const [addDoctorDialogOpen, setAddDoctorDialogOpen] = useState(false);
+  const [_modal, _setModal] = useState<'edit' | 'confirm' | null>(null);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  // Fetch doctors from API
+  const {
+    data: doctorsResponse,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useDoctors({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    search: globalFilter,
+    // Status filter would be handled via column filters or additional params
+    // For now, we'll handle status via client-side filtering of the transformed data
+    // In a production app, you'd want to handle this server-side too
+    sortBy: sorting[0]?.id,
+    sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
+    // Column filters are passed as individual query params
+    ...Object.fromEntries(columnFilters.map((f) => [f.id, f.value])),
+  });
+
+  const doctors = doctorsResponse?.data || [];
+  const totalDoctors = doctorsResponse?.meta.total || 0;
+
+  // Transform API data to admin format
+  const transformedDoctors = useMemo(() => transformDoctorsToAdminFormat(doctors), [doctors]);
+
+  // Apply status filter client-side (in a production app, this would be server-side)
+  const filteredDoctors = useMemo(() => {
+    if (status === 'All statuses') return transformedDoctors;
+    return transformedDoctors.filter((doctor) => doctor.status === status);
+  }, [transformedDoctors, status]);
+
+  // Column definitions with action handlers
+  const columns = createDoctorColumns(
+    (doctor) => setDrawer(doctor), // onViewDoctor
+    (doctor) => setDrawer(doctor), // onEditDoctor (will use drawer edit button)
+    (doctor) => {
+      // Toggle status
+      const newStatus = doctor.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
+      setDrawer({
+        ...doctor,
+        status: newStatus,
+      });
+      // In a real app, you'd call an API here to update the status
+      // For now, we'll just update the local state and refetch
+      setDrawer(null);
+      refetch();
+    } // onToggleStatus
   );
-  const act = (message: string) => {
-    setNotice(message);
-    setModal(null);
-    window.setTimeout(() => setNotice(''), 2800);
-  };
-  const update = (next: (typeof seed)[number]) => {
-    setRows((items) => items.map((item) => (item.name === next.name ? next : item)));
-    setDrawer(next);
-  };
+
   return (
     <div className="mt-8 space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric title="Total doctors" value="486" icon={Stethoscope} tone="amber" />
-        <Metric title="Active" value="462" icon={ShieldCheck} tone="green" />
-        <Metric title="Pending review" value="12" icon={Clock3} tone="amber" />
-        <Metric title="Avg utilization" value="74.8%" icon={Activity} tone="purple" />
-      </div>
-      <div className="bg-card flex flex-col gap-3 rounded-2xl border border-none p-4 shadow-sm sm:flex-row">
-        <label className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
-          <input
-            aria-label="Search doctors"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search doctors, specialties, or clinics..."
-            className="border-border bg-accent focus:border-primary h-10 w-full rounded-xl border pr-3 pl-9 text-xs outline-none"
-          />
-        </label>
-        <select
-          aria-label="Filter doctor status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="border-border bg-accent h-10 rounded-xl border px-3 text-xs font-semibold"
-        >
-          <option>All statuses</option>
-          <option>ACTIVE</option>
-          <option>PENDING</option>
-          <option>SUSPENDED</option>
-        </select>
-        <button
-          onClick={() => setModal('add')}
-          className="bg-primary rounded-xl px-4 py-2.5 text-xs font-bold text-white"
-        >
-          Add doctor
-        </button>
-      </div>
+      {/* Bulk Actions Bar */}
+      {selected.length > 0 && (
+        <div className="bg-primary/10 text-primary flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold">
+          {selected.length} selected
+          <button
+            onClick={() => alert(`Bulk action applied to ${selected.length} doctors`)}
+            className="ml-auto rounded-lg bg-white px-3 py-2"
+          >
+            Change status
+          </button>
+        </div>
+      )}
+
+      {/* Doctors Table - Using TanStack Table v9 with shadcn/ui */}
       <div className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-left text-xs">
-            <thead className="bg-accent text-[10px] tracking-wider text-slate-400 uppercase">
-              <tr>
-                {[
-                  'Doctor',
-                  'Specialty',
-                  'Designation',
-                  'Clinic',
-                  'Consultation fee',
-                  'Appointments',
-                  'Slot utilization',
-                  'Status',
-                  'Actions',
-                ].map((h) => (
-                  <th key={h} className="p-4">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-border divide-y">
-              {filtered.map((doctor) => (
-                <tr key={doctor.name} className="hover:bg-[var(--muted)]">
-                  <td className="p-4">
-                    <button
-                      onClick={() => setDrawer(doctor)}
-                      className="flex items-center gap-3 text-left"
-                    >
-                      <span className="bg-primary/10 text-primary grid size-9 place-items-center rounded-full">
-                        {doctor.name
-                          .replace('Dr. ', '')
-                          .split(' ')
-                          .map((x) => x[0])
-                          .join('')}
-                      </span>
-                      <span>
-                        <strong className="text-foreground block">{doctor.name}</strong>
-                        <span className="text-[11px] text-slate-400">{doctor.review}</span>
-                      </span>
-                    </button>
-                  </td>
-                  <td className="p-4 font-semibold">{doctor.specialty}</td>
-                  <td className="p-4 text-slate-500">{doctor.designation}</td>
-                  <td className="p-4 text-slate-500">{doctor.clinic}</td>
-                  <td className="p-4 font-bold">{doctor.fee}</td>
-                  <td className="p-4 font-semibold">{doctor.appointments}</td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-muted h-2 w-20 rounded-full">
-                        <div
-                          className="bg-primary h-2 rounded-full"
-                          style={{ width: `${doctor.utilization}%` }}
-                        />
-                      </div>
-                      <span className="font-bold">{doctor.utilization}%</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <Badge
-                      tone={
-                        doctor.status === 'ACTIVE'
-                          ? 'green'
-                          : doctor.status === 'PENDING'
-                            ? 'amber'
-                            : 'red'
-                      }
-                    >
-                      {doctor.status}
-                    </Badge>
-                  </td>
-                  <td className="p-4">
-                    <button
-                      onClick={() => setDrawer(doctor)}
-                      aria-label={`Open ${doctor.name}`}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"
-                    >
-                      <MoreHorizontal className="size-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {drawer && (
-        <Drawer
-          doctor={drawer}
-          onClose={() => setDrawer(null)}
-          onEdit={() => setModal('edit')}
-          onAvailability={() => act(`Availability opened for ${drawer.name}`)}
-          onToggle={() => {
-            const next = {
-              ...drawer,
-              status: drawer.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED',
-            };
-            update(next);
-            act(`${next.name} is now ${next.status.toLowerCase()}`);
-          }}
-          onReview={() => act(`${drawer.name} approved successfully`)}
-        />
-      )}
-      {modal && (
-        <Modal
-          title={modal === 'add' ? 'Add doctor' : 'Edit doctor profile'}
-          onClose={() => setModal(null)}
-          onSave={() => act(modal === 'add' ? 'Doctor invitation sent' : 'Doctor profile updated')}
-        />
-      )}
-      {notice && (
-        <div
-          role="status"
-          className="border-border bg-card fixed right-5 bottom-6 z-50 rounded-xl px-4 py-3 text-sm font-semibold shadow-lg"
-        >
-          <Check className="mr-2 inline size-4 text-[#43ae91]" />
-          {notice}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Metric({
-  title,
-  value,
-  icon: Icon,
-  tone,
-}: {
-  title: string;
-  value: string;
-  icon: typeof Activity;
-  tone: string;
-}) {
-  return (
-    <div className="border-border bg-card rounded-2xl p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-semibold">{title}</span>
-        <span
-          className={`grid size-8 place-items-center rounded-lg ${tone === 'green' ? 'bg-secondary-foreground/5 text-secondary-foreground' : tone === 'amber' ? 'bg-primary/5 text-primary' : tone === 'purple' ? 'bg-primary/5 text-primary' : 'bg-secondary/5 text-secondary'}`}
-        >
-          <Icon className="size-4" />
-        </span>
-      </div>
-      <p className="mt-3 text-2xl font-black">{value}</p>
-    </div>
-  );
-}
-
-function Drawer({
-  doctor,
-  onClose,
-  onEdit,
-  onAvailability,
-  onToggle,
-  onReview,
-}: {
-  doctor: (typeof seed)[number];
-  onClose: () => void;
-  onEdit: () => void;
-  onAvailability: () => void;
-  onToggle: () => void;
-  onReview: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-[var(--foreground)]/30">
-      <div className="bg-card h-full w-full max-w-xl overflow-y-auto p-6 shadow-2xl sm:p-8">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs font-bold tracking-[0.16em] text-[#6b8bd6] uppercase">
-              Doctor profile
-            </p>
-            <h2 className="mt-2 text-2xl font-black">{doctor.name}</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {doctor.specialty} · {doctor.designation}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close doctor profile"
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-        <div className="mt-6 flex flex-wrap gap-2">
-          <Badge
-            tone={
-              doctor.status === 'ACTIVE' ? 'green' : doctor.status === 'PENDING' ? 'amber' : 'red'
-            }
-          >
-            {doctor.status}
-          </Badge>
-          <Badge tone={doctor.review === 'Approved' ? 'green' : 'amber'}>{doctor.review}</Badge>
-        </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <Info label="Qualifications" value={doctor.qualifications} />
-          <Info label="Clinic" value={doctor.clinic} />
-          <Info label="Consultation fee" value={doctor.fee} />
-          <Info label="Availability" value={doctor.availability} />
-          <Info label="Appointments" value={`${doctor.appointments} this month`} />
-          <Info label="Revenue" value={doctor.revenue} />
-        </div>
-        <section className="bg-muted mt-6 rounded-2xl p-4">
-          <h3 className="text-sm font-bold">Personal information</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{doctor.bio}</p>
-          <p className="mt-3 text-xs font-semibold text-slate-500">
-            <span className="text-foreground">Symptoms handled:</span> {doctor.symptoms}
-          </p>
-        </section>
-        <section className="mt-5 rounded-2xl border border-[var(--border)] p-4">
-          <div className="flex items-center gap-2">
-            <Activity className="size-4 text-[#5d83d8]" />
-            <h3 className="text-sm font-bold">Performance analytics</h3>
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-            <div>
-              <p className="text-lg font-black">{doctor.utilization}%</p>
-              <p className="text-[10px] text-slate-400">Utilization</p>
+        <DataTable
+          columns={columns}
+          data={filteredDoctors}
+          rowCount={totalDoctors}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+          globalFilter={globalFilter}
+          onGlobalFilterChange={setGlobalFilter}
+          isLoading={isLoading && doctors.length === 0}
+          showColumnVisibility={true}
+          showGlobalFilter={true}
+          globalFilterPlaceholder="Search by name, specialty, or clinic..."
+          toolbarLeading={
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+              <label className="relative min-w-[200px] flex-1">
+                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  aria-label="Search doctors"
+                  value={globalFilter}
+                  onChange={(e) => {
+                    setGlobalFilter(e.target.value);
+                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                    setSelected([]);
+                  }}
+                  placeholder="Search by name, specialty, or clinic..."
+                  className="bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring h-10 w-full rounded-lg border px-4 py-2 pl-9 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </label>
+              <Select
+                aria-label="Filter by status"
+                value={status}
+                onValueChange={(value) => {
+                  setStatus(value);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                  setSelected([]);
+                }}
+              >
+                <SelectTrigger className="h-10 w-[160px] min-w-[160px]">
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statuses.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <p className="text-lg font-black">4.9</p>
-              <p className="text-[10px] text-slate-400">Rating</p>
-            </div>
-            <div>
-              <p className="text-lg font-black">91%</p>
-              <p className="text-[10px] text-slate-400">Completion</p>
-            </div>
-          </div>
-        </section>
-        <div className="mt-6 grid gap-2 sm:grid-cols-2">
-          <button
-            onClick={onEdit}
-            className="bg-primary rounded-xl px-4 py-3 text-xs font-bold text-white"
-          >
-            <Edit3 className="mr-2 inline size-4" />
-            Edit doctor
-          </button>
-          <button
-            onClick={onAvailability}
-            className="rounded-xl border border-[var(--border)] px-4 py-3 text-xs font-bold"
-          >
-            <CalendarDays className="mr-2 inline size-4" />
-            Manage availability
-          </button>
-          <button
-            onClick={onToggle}
-            className="rounded-xl border border-[#f1caca] px-4 py-3 text-xs font-bold text-[#be6467]"
-          >
-            {doctor.status === 'SUSPENDED' ? 'Activate' : 'Suspend'}
-          </button>
-          {doctor.review !== 'Approved' && (
-            <button
-              onClick={onReview}
-              className="rounded-xl border border-[#c7eadb] px-4 py-3 text-xs font-bold text-[#2e9675]"
+          }
+          toolbarTrailing={
+            <Button
+              onClick={() => setAddDoctorDialogOpen(true)}
+              className="flex items-center gap-2"
             >
-              Approve doctor
+              <UserPlus className="size-4" />
+              Add doctor
+            </Button>
+          }
+          className="p-4"
+        />
+
+        {/* Error state */}
+        {isError && doctors.length === 0 && (
+          <div className="text-destructive flex items-center justify-center p-12">
+            <p>Failed to load doctors: {error instanceof Error ? error.message : 'Unknown error'}</p>
+            <button onClick={() => refetch()} className="text-primary ml-3 text-sm hover:underline">
+              Retry
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Doctor Detail Drawer */}
+      {drawer && (
+        <div className="fixed inset-0 z-50">
+          <div className="bg-card/30 absolute inset-0" onClick={() => setDrawer(null)} />
+          <aside className="bg-card absolute top-0 right-0 h-full w-full max-w-md overflow-y-auto p-6 shadow-2xl">
+            <button
+              onClick={() => setDrawer(null)}
+              aria-label="Close doctor details"
+              className="float-right rounded-lg p-2 text-slate-400 hover:bg-slate-100"
+            >
+              <X className="size-5" />
+            </button>
+            <div className="mt-8">
+              <div className="bg-primary/10 text-primary grid size-16 place-items-center rounded-2xl text-xl font-black">
+                {drawer.initials}
+              </div>
+              <h2 className="mt-4 text-xl font-black">{drawer.name}</h2>
+              <p className="mt-1 text-sm text-slate-500">{drawer.specialty}</p>
+              <div className="mt-4 flex gap-2">
+                <Badge>{drawer.status}</Badge>
+                <Badge tone={drawer.status === 'ACTIVE' ? 'green' : drawer.status === 'PENDING' ? 'amber' : 'red'}>
+                  {drawer.status === 'ACTIVE' ? 'Active' : drawer.status === 'PENDING' ? 'Pending review' : 'Suspended'}
+                </Badge>
+              </div>
+              <div className="bg-muted mt-8 space-y-4 rounded-2xl p-4 text-sm">
+                <p>
+                  <strong>Qualifications</strong>
+                  <br />
+                  <span className="text-slate-500">{drawer.qualifications}</span>
+                </p>
+                <p>
+                  <strong>Clinic</strong>
+                  <br />
+                  <span className="text-slate-500">{drawer.clinic}</span>
+                </p>
+                <p>
+                  <strong>Consultation fee</strong>
+                  <br />
+                  <span className="text-slate-500">{drawer.fee}</span>
+                </p>
+                <p>
+                  <strong>Availability</strong>
+                  <br />
+                  <span className="text-slate-500">{drawer.availability}</span>
+                </p>
+                <p>
+                  <strong>Appointments</strong>
+                  <br />
+                  <span className="text-slate-500">{drawer.appointments} this month</span>
+                </p>
+                <p>
+                  <strong>Revenue</strong>
+                  <br />
+                  <span className="text-slate-500">${drawer.appointments * Number(drawer.fee.replace('$', ''))}</span>
+                </p>
+              </div>
+              <div className="mt-6 grid gap-2">
+                <button
+                  onClick={() => _setModal('edit')}
+                  className="rounded-xl border px-4 py-3 text-sm font-bold"
+                >
+                  Edit doctor
+                </button>
+                <button
+                  onClick={() => {
+                    // Toggle status
+                    const newStatus = drawer.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
+                    setDrawer({
+                      ...drawer,
+                      status: newStatus,
+                    });
+                    // In a real app, you'd call an API here to update the status
+                    // For now, we'll just update the local state and refetch
+                    _setModal(null);
+                    refetch();
+                  }}
+                  className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+                    drawer.status === 'SUSPENDED' ? 'border-[#c7eadb] text-[2e9675]' : 'border-[#f1caca] text-[be6467]'
+                  }`}
+                >
+                  {drawer.status === 'SUSPENDED' ? 'Activate doctor' : 'Suspend doctor'}
+                </button>
+                {drawer.status !== 'ACTIVE' && (
+                  <button
+                    onClick={() => {
+                      setDrawer(null);
+                      // In a real app, you'd call an API here to approve the doctor
+                      // For now, we'll just update the local state and refetch
+                      refetch();
+                    }}
+                    className="rounded-xl border border-[#c7eadb] px-4 py-3 text-sm font-bold text-[2e9675]"
+                  >
+                    Approve doctor
+                  </button>
+                )}
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Add Doctor Dialog */}
+      <AddDoctorDialog
+        open={addDoctorDialogOpen}
+        onOpenChange={setAddDoctorDialogOpen}
+        onSuccess={() => {
+          // The useCreateDoctor hook would invalidate queries, so just close the dialog
+          // We could add a toast here if needed
+        }}
+      />
+
+      {/* Toaster for notifications */}
+      <Toaster />
     </div>
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] p-3">
-      <p className="text-[10px] font-bold tracking-wide text-slate-400 uppercase">{label}</p>
-      <p className="mt-1 text-sm font-semibold">{value}</p>
-    </div>
-  );
-}
-
-function Modal({
-  title,
-  onClose,
-  onSave,
-}: {
-  title: string;
-  onClose: () => void;
-  onSave: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-[60] grid place-items-center bg-[var(--foreground)]/30 p-4">
-      <div className="bg-card w-full max-w-lg rounded-2xl p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black">{title}</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="rounded-lg p-2 text-slate-400"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <input
-            aria-label="Doctor name"
-            placeholder="Doctor name"
-            className="h-11 rounded-xl border border-[var(--border)] px-3 text-sm"
-          />
-          <input
-            aria-label="Specialty"
-            placeholder="Specialty"
-            className="h-11 rounded-xl border border-[var(--border)] px-3 text-sm"
-          />
-          <input
-            aria-label="Clinic"
-            placeholder="Clinic"
-            className="h-11 rounded-xl border border-[var(--border)] px-3 text-sm"
-          />
-          <input
-            aria-label="Consultation fee"
-            placeholder="Consultation fee"
-            className="h-11 rounded-xl border border-[var(--border)] px-3 text-sm"
-          />
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-xl border border-[var(--border)] px-4 py-2.5 text-xs font-bold"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onSave}
-            className="bg-primary rounded-xl px-4 py-2.5 text-xs font-bold text-white"
-          >
-            Save doctor
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 export default AdminDoctors;

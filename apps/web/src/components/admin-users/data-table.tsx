@@ -107,6 +107,7 @@ export function DataTable<TData extends RowData>({
   toolbarTrailing,
   className,
 }: DataTableProps<TData>) {
+  const [localVisibility, setLocalVisibility] = React.useState<ColumnVisibilityState>({});
   const table = useTable({
     features,
     data,
@@ -115,7 +116,7 @@ export function DataTable<TData extends RowData>({
     state: {
       sorting: sorting ?? [],
       columnFilters: columnFilters ?? [],
-      columnVisibility: columnVisibility ?? {},
+      columnVisibility: columnVisibility ?? localVisibility,
       rowSelection: rowSelection ?? {},
       pagination: pagination ?? { pageIndex: 0, pageSize: 10 },
     },
@@ -130,7 +131,14 @@ export function DataTable<TData extends RowData>({
       onColumnFiltersChange?.(newFilters);
       onPaginationChange?.((prev) => ({ ...prev, pageIndex: 0 }));
     },
-    onColumnVisibilityChange,
+    onColumnVisibilityChange: (updater: Updater<ColumnVisibilityState>) => {
+      const newVisibility = typeof updater === 'function' ? updater(columnVisibility ?? localVisibility) : updater;
+      if (onColumnVisibilityChange) {
+        onColumnVisibilityChange(newVisibility);
+      } else {
+        setLocalVisibility(newVisibility);
+      }
+    },
     onRowSelectionChange,
     onPaginationChange,
     // Enable manual (server-side) operations

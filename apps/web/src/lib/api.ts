@@ -113,6 +113,21 @@ export interface DoctorSearchResult {
   }>;
 }
 
+/**
+ * Input for creating a doctor
+ */
+export interface CreateDoctorInput {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  specialty: string;
+  designation: string;
+  licenseNo: string;
+  bio: string | null;
+  fee: number;
+}
+
 export interface DoctorProfile {
   id: string;
   userId: string;
@@ -266,6 +281,17 @@ export const doctorApi = {
     return apiRequest<DoctorProfile['schedules']>(
       `/api/doctors/${id}/schedule?${params.toString()}`
     );
+  },
+
+  /**
+   * Create a new doctor (Admin only)
+   * POST /api/doctors
+   */
+  createDoctor: async (data: CreateDoctorInput): Promise<DoctorProfile> => {
+    return apiRequest<DoctorProfile>('/api/doctors', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 };
 
