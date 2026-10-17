@@ -5,7 +5,12 @@
  * Provides caching, pagination, and filtering functionality
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import {
   appointmentApi,
   type AppointmentFilters,
@@ -102,6 +107,7 @@ export function useAppointments(filters: AppointmentFilters) {
   return useQuery({
     queryKey: appointmentKeys.list(filters),
     queryFn: () => appointmentApi.listAppointments(filters),
+    placeholderData: keepPreviousData,
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
     retry: 1,
@@ -247,6 +253,99 @@ export function transformAppointmentToUI(appointment: AppointmentResponse): Appo
  */
 export function transformAppointmentsToUI(appointments: AppointmentResponse[]): AppointmentUI[] {
   return appointments.map(transformAppointmentToUI);
+}
+
+/**
+ * Transform backend AppointmentResponse to frontend AdminAppointment format
+ * Maps API response to the admin appointments workspace UI data structure
+ */
+export function transformAppointmentToAdminFormat(
+  appointment: AppointmentResponse
+): AdminAppointmentData {
+  const startTime = new Date(appointment.slot.startTime);
+  const createdAt = new Date(appointment.createdAt);
+
+  // Format date as "Thu, Sep 24, 2026"
+  const formattedDate = startTime.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  // Format time as "10:30 AM"
+  const formattedTime = startTime.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  // Get full names and initials
+  const patientName = `${appointment.patient.firstName} ${appointment.patient.lastName}`;
+  const patientInitials = `${appointment.patient.firstName.charAt(0)}${appointment.patient.lastName.charAt(0)}`.toUpperCase();
+  const doctorName = `Dr. ${appointment.doctor.firstName} ${appointment.doctor.lastName}`;
+
+  // Get clinic from doctor profile or use default
+  const clinic = appointment.doctorProfile?.clinic || 'Clinic not specified';
+
+  return {
+    id: appointment.id,
+    patientId: appointment.patientId,
+    patientName,
+    patientInitials,
+    patientEmail: appointment.patient.email,
+    patientPhone: appointment.patient.phone || 'N/A',
+    doctorId: appointment.doctorId,
+    doctorName,
+    specialty: appointment.doctorProfile?.specialty || 'General Medicine',
+    date: formattedDate,
+    time: formattedTime,
+    status: appointment.status,
+    paymentStatus: appointment.paymentStatus,
+    consultationType: appointment.consultationType,
+    symptoms: appointment.symptoms || 'No symptoms recorded',
+    notes: appointment.notes,
+    clinic,
+    created: createdAt.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+    // Raw data for drawer
+    raw: appointment,
+  };
+}
+
+/**
+ * Transform array of appointments to admin format
+ */
+export function transformAppointmentsToAdminFormat(
+  appointments: AppointmentResponse[]
+): AdminAppointmentData[] {
+  return appointments.map(transformAppointmentToAdminFormat);
+}
+
+// Type for the transformed admin appointment data (matches the AdminPatientData/AdminUserData pattern)
+export interface AdminAppointmentData {
+  id: string;
+  patientId: string;
+  patientName: string;
+  patientInitials: string;
+  patientEmail: string;
+  patientPhone: string;
+  doctorId: string;
+  doctorName: string;
+  specialty: string;
+  date: string;
+  time: string;
+  status: string;
+  paymentStatus: string;
+  consultationType: string;
+  symptoms: string;
+  notes: string | null;
+  clinic: string;
+  created: string;
+  raw: AppointmentResponse;
 }
 
 // Type for the transformed UI data (matches the Appointment interface in the page)

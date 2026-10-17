@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminUsers } from '@/components/admin-users';
 import { AdminDoctors } from '@/components/admin-doctors';
 import { AdminFacilities } from '@/components/admin-facilities';
@@ -36,6 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/context/AuthContext';
 
 type StatCardProps = {
   title: string;
@@ -78,6 +79,11 @@ import {
 } from 'recharts';
 import { cn } from 'cn';
 import { Button } from '../ui/button';
+import { AdminPatients } from '../admin-patients';
+import { AdminStaff } from '@/components/admin-staff';
+import { AdminAppointments } from '@/components/admin-appointments';
+import AdminPayments from '../admin-payments';
+import { AdminReports } from '@/components/admin-reports';
 
 const growth = [
   { name: 'Apr', users: 820 },
@@ -139,6 +145,26 @@ export function AdminDashboard() {
   const [active, setActive] = useState('Dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [_notice, setNotice] = useState('');
+  const { user } = useAuth();
+  const [formattedDate, setFormattedDate] = useState('');
+
+  useEffect(() => {
+    const dateStr = new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date());
+    setFormattedDate(dateStr);
+  }, []);
+
+  const adminName = user?.firstName || 'Admin';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const initials = user
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'AM'
+    : 'AM';
+
   const go = (item: string) => {
     setActive(item);
     setMobileOpen(false);
@@ -190,11 +216,17 @@ export function AdminDashboard() {
         <div className="bg-card m-3 mt-auto rounded-2xl p-3">
           <div className="flex items-center gap-3">
             <div className="bg-primary/10 text-primary grid size-9 place-items-center rounded-full text-xs font-bold">
-              AM
+              {initials}
             </div>
             <div>
-              <p className="text-xs font-bold">Alex Morgan</p>
-              <p className="text-[11px] text-slate-500">System Administrator</p>
+              <p className="text-xs font-bold">
+                {user ? `${user.firstName} ${user.lastName}` : 'Admin User'}
+              </p>
+              <p className="text-[11px] text-slate-500">
+                {user?.userType === 'ADMIN'
+                  ? 'System Administrator'
+                  : user?.userType || 'System Administrator'}
+              </p>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger>
@@ -254,18 +286,18 @@ export function AdminDashboard() {
               <CircleHelp className="size-[18px]" />
             </button>
             <div className="bg-primary/10 text-primary grid size-9 place-items-center rounded-full text-xs font-bold">
-              AM
+              {initials}
             </div>
           </div>
         </header>
         <main className="mx-auto max-w-[1500px] p-5 pb-24 sm:p-8 lg:p-10">
           <p className="text-muted-foreground mb-2 text-xs font-bold tracking-[0.16em] uppercase">
-            Monday, September 21, 2026
+            {formattedDate}
           </p>
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
               <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-                {active === 'Dashboard' ? 'Good morning, Alex' : active}
+                {active === 'Dashboard' ? `${greeting}, ${adminName}` : active}
               </h1>
               <p className="mt-2 text-sm text-slate-500">
                 {active === 'Dashboard'
@@ -286,12 +318,22 @@ export function AdminDashboard() {
             <AdminUsers />
           ) : active === 'Doctors' ? (
             <AdminDoctors />
+          ) : active === 'Patients' ? (
+            <AdminPatients />
+          ) : active === 'Staff' ? (
+            <AdminStaff />
+          ) : active === 'Appointments' ? (
+            <AdminAppointments />
+          ) : active === 'Payments' ? (
+            <AdminPayments />
           ) : active === 'Clinics' ? (
             <AdminFacilities kind="Clinics" />
           ) : active === 'Departments' ? (
             <AdminFacilities kind="Departments" />
           ) : active === 'Analytics' ? (
             <AdminAnalytics />
+          ) : active === 'Reports' ? (
+            <AdminReports />
           ) : active === 'Notifications' ? (
             <NotificationCenter role="admin" />
           ) : active === 'Settings' ? (
