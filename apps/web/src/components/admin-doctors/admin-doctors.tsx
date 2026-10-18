@@ -155,7 +155,7 @@ export function AdminDoctors() {
                 aria-label="Filter by status"
                 value={status}
                 onValueChange={(value) => {
-                  setStatus(value);
+                  setStatus(value as typeof statuses[number]);
                   setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                   setSelected([]);
                 }}

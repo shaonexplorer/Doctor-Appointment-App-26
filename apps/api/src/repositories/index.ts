@@ -8,6 +8,7 @@ export { DoctorRepository } from './doctorRepository';
 export { ScheduleRepository } from './scheduleRepository';
 export { AppointmentRepository } from './appointmentRepository';
 export { PrescriptionRepository } from './prescriptionRepository';
+export { ClinicRepository } from './clinicRepository';
 export type { DoctorWithUser } from './doctorRepository';
 
 // Repository factory for dependency injection
@@ -17,6 +18,7 @@ import { DoctorRepository } from './doctorRepository';
 import { ScheduleRepository } from './scheduleRepository';
 import { AppointmentRepository } from './appointmentRepository';
 import { PrescriptionRepository } from './prescriptionRepository';
+import { ClinicRepository } from './clinicRepository';
 
 export interface Repositories {
   user: UserRepository;
@@ -24,6 +26,7 @@ export interface Repositories {
   schedule: ScheduleRepository;
   appointment: AppointmentRepository;
   prescription: PrescriptionRepository;
+  clinic: ClinicRepository;
 }
 
 export function createRepositories(prisma: PrismaClient): Repositories {
@@ -33,5 +36,6 @@ export function createRepositories(prisma: PrismaClient): Repositories {
     schedule: new ScheduleRepository(prisma),
     appointment: new AppointmentRepository(prisma),
     prescription: new PrescriptionRepository(prisma),
+    clinic: new ClinicRepository(prisma),
   };
 }

@@ -99,6 +99,14 @@
   /* Radius scale from design.md (8px base = 0.5rem) */
   --radius: 0.5rem; /* 8px - Base radius (rounded-md) */
 
+  /* Scrollbar tokens — Clinical Precision (track/thumb derived from muted & border tokens) */
+  --scrollbar-width: 8px;
+  --scrollbar-track: transparent;
+  --scrollbar-track-hover: oklch(0.9 0.015 240 / 0.5); /* subtle surface tint on hover */
+  --scrollbar-thumb: oklch(0.65 0.02 240 / 0.7); /* muted slate thumb */
+  --scrollbar-thumb-hover: oklch(0.55 0.03 240 / 0.9);
+  --scrollbar-thumb-active: oklch(0.5 0.03 240); /* dragged state */
+
   /* Sidebar colors */
   --sidebar: oklch(0.985 0.002 240);
   --sidebar-foreground: oklch(0.15 0.02 260);
@@ -165,6 +173,14 @@
   --sidebar-accent-foreground: oklch(0.98 0.005 240);
   --sidebar-border: oklch(0.28 0.02 260);
   --sidebar-ring: oklch(0.65 0.18 230);
+
+  /* Scrollbar tokens (dark) */
+  --scrollbar-width: 8px;
+  --scrollbar-track: transparent;
+  --scrollbar-track-hover: oklch(0.25 0.02 260 / 0.5);
+  --scrollbar-thumb: oklch(0.5 0.02 260 / 0.7);
+  --scrollbar-thumb-hover: oklch(0.55 0.03 260 / 0.9);
+  --scrollbar-thumb-active: oklch(0.55 0.03 260);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -206,6 +222,14 @@
     --sidebar-accent-foreground: oklch(0.98 0.005 240);
     --sidebar-border: oklch(0.28 0.02 260);
     --sidebar-ring: oklch(0.65 0.18 230);
+
+    /* Scrollbar tokens (dark, system preference) */
+    --scrollbar-width: 8px;
+    --scrollbar-track: transparent;
+    --scrollbar-track-hover: oklch(0.25 0.02 260 / 0.5);
+    --scrollbar-thumb: oklch(0.5 0.02 260 / 0.7);
+    --scrollbar-thumb-hover: oklch(0.55 0.03 260 / 0.9);
+    --scrollbar-thumb-active: oklch(0.55 0.03 260);
   }
 }
 
@@ -427,6 +451,59 @@
   .dark .scrollbar-clinical-thin::-webkit-scrollbar-thumb:hover {
     background: oklch(0.55 0.03 260 / 0.8);
   }
+
+  /* Global clinical scrollbars — applied to every scrollable element so all
+     scrollbars across the project follow the Clinical Precision design tokens
+     (muted slate thumb, transparent track, 8px width, 4px radius).
+     Opt-in variants remain available: .scrollbar-clinical,
+     .scrollbar-clinical-primary, .scrollbar-clinical-thin. */
+  ::-webkit-scrollbar {
+    width: var(--scrollbar-width);
+    height: var(--scrollbar-width);
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: calc(var(--radius) * 0.5);
+  }
+
+  ::-webkit-scrollbar-track:hover {
+    background: var(--scrollbar-track-hover);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: calc(var(--radius) * 0.5);
+    border: 2px solid transparent;
+    background-clip: content-box;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+    border-color: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: var(--scrollbar-thumb-active);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Dark mode adjustments for global scrollbars */
+  .dark ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
+  .dark ::-webkit-scrollbar-track:hover {
+    background: var(--scrollbar-track-hover);
+  }
 }
 
 /* Tabular figures for medical/numeric data */
@@ -462,6 +539,17 @@
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  html,
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  html {
+    scrollbar-gutter: stable;
+    -ms-overflow-style: auto;
   }
 
   /* Headlines use Plus Jakarta Sans */

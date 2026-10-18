@@ -91,6 +91,7 @@ app.use('/api/schedules', modules.schedules.routes);
 app.use('/api/appointments', modules.appointments.routes);
 app.use('/api/prescriptions', modules.prescriptions.routes);
 app.use('/api/patients', modules.patients.routes);
+app.use('/api/clinics', modules.clinics.routes);
 
 // 404 handler
 app.use(notFoundHandler);

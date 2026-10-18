@@ -69,7 +69,7 @@ export function AddDoctorDialog({ open, onOpenChange, onSuccess }: AddDoctorDial
         specialty: data.specialty,
         designation: data.designation,
         licenseNo: data.licenseNo,
-        bio: data.bio || undefined,
+        bio: data.bio || null,
         fee: data.fee,
       };
 
@@ -103,7 +103,7 @@ export function AddDoctorDialog({ open, onOpenChange, onSuccess }: AddDoctorDial
         </SheetHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-6">
-          <div className="space-y-4 border-t pt-6">
+          <div className="space-y-4">
             <h3 className="text-foreground text-lg font-semibold">Doctor Information</h3>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -118,7 +118,9 @@ export function AddDoctorDialog({ open, onOpenChange, onSuccess }: AddDoctorDial
                   aria-invalid={!!form.formState.errors.firstName}
                 />
                 {form.formState.errors.firstName && (
-                  <p className="text-destructive text-sm">{form.formState.errors.firstName.message}</p>
+                  <p className="text-destructive text-sm">
+                    {form.formState.errors.firstName.message}
+                  </p>
                 )}
               </div>
 
@@ -133,7 +135,9 @@ export function AddDoctorDialog({ open, onOpenChange, onSuccess }: AddDoctorDial
                   aria-invalid={!!form.formState.errors.lastName}
                 />
                 {form.formState.errors.lastName && (
-                  <p className="text-destructive text-sm">{form.formState.errors.lastName.message}</p>
+                  <p className="text-destructive text-sm">
+                    {form.formState.errors.lastName.message}
+                  </p>
                 )}
               </div>
             </div>

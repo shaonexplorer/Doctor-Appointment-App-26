@@ -355,6 +355,52 @@ export const scheduleApi = {
   },
 };
 
+// Clinic API types
+export interface Clinic {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  departments: number;
+  doctors: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClinicFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: 'ACTIVE' | 'INACTIVE';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface ClinicCreateInput {
+  name: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  status?: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface ClinicUpdateInput {
+  name?: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  departments?: number;
+  doctors?: number;
+  status?: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface ClinicStats {
+  total: number;
+  byStatus: Record<'ACTIVE' | 'INACTIVE', number>;
+}
+
 // User Profile API types
 export interface UserProfile {
   id: string;
@@ -510,6 +556,76 @@ export const userApi = {
       method: 'POST',
       body: JSON.stringify(cleanedData),
     });
+  },
+};
+
+// Clinic API functions
+export const clinicApi = {
+  /**
+   * List clinics with pagination, search, sorting, and filtering (Admin/Staff only)
+   * GET /api/clinics
+   */
+  listClinics: async (
+    filters: ClinicFilters
+  ): Promise<PaginatedResponse<Clinic>> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    return apiRequest<PaginatedResponse<Clinic>>(`/api/clinics?${params.toString()}`);
+  },
+
+  /**
+   * Get clinic by ID (Admin/Staff only)
+   * GET /api/clinics/:id
+   */
+  getClinic: async (id: string): Promise<Clinic> => {
+    return apiRequest<Clinic>(`/api/clinics/${id}`);
+  },
+
+  /**
+   * Create a new clinic (Admin only)
+   * POST /api/clinics
+   */
+  createClinic: async (data: ClinicCreateInput): Promise<Clinic> => {
+    return apiRequest<Clinic>('/api/clinics', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Update a clinic (Admin only)
+   * PATCH /api/clinics/:id
+   */
+  updateClinic: async (
+    id: string,
+    data: ClinicUpdateInput
+  ): Promise<Clinic> => {
+    return apiRequest<Clinic>(`/api/clinics/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete a clinic (Admin only)
+   * DELETE /api/clinics/:id
+   */
+  deleteClinic: async (id: string): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>(`/api/clinics/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Get clinic statistics (Admin/Staff only)
+   * GET /api/clinics/stats
+   */
+  getClinicStats: async (): Promise<ClinicStats> => {
+    return apiRequest<ClinicStats>('/api/clinics/stats');
   },
 };
 

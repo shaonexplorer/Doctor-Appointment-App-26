@@ -8,6 +8,7 @@
 import { useQuery, useInfiniteQuery, useQueryClient, keepPreviousData, useMutation } from '@tanstack/react-query';
 import {
   doctorApi,
+  type CreateDoctorInput,
   type DoctorSearchFilters,
   type DoctorSearchResult,
   type DoctorProfile,
@@ -26,7 +27,12 @@ export const doctorKeys = {
 };
 
 // Re-export types for consumers
-export type { DoctorSearchFilters, DoctorSearchResult, DoctorProfile };
+export type {
+  CreateDoctorInput,
+  DoctorSearchFilters,
+  DoctorSearchResult,
+  DoctorProfile,
+};
 
 /**
  * Hook for fetching doctors with pagination (page-based)
@@ -387,9 +393,11 @@ export function transformDoctorToAdminFormat(doctor: DoctorSearchResult): AdminD
     designation: doctor.designation,
     clinic,
     fee,
-    appointments: doctor.appointments || 0,
-    utilization: doctor.utilization || 0,
-    status: doctor.status,
+    // The doctor search endpoint does not return appointment counts,
+    // utilization, or account status — default them until a stats API exists.
+    appointments: 0,
+    utilization: 0,
+    status: 'ACTIVE',
     next: nextAvailable,
     availability,
     color,

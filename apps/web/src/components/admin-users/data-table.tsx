@@ -132,7 +132,8 @@ export function DataTable<TData extends RowData>({
       onPaginationChange?.((prev) => ({ ...prev, pageIndex: 0 }));
     },
     onColumnVisibilityChange: (updater: Updater<ColumnVisibilityState>) => {
-      const newVisibility = typeof updater === 'function' ? updater(columnVisibility ?? localVisibility) : updater;
+      const newVisibility =
+        typeof updater === 'function' ? updater(columnVisibility ?? localVisibility) : updater;
       if (onColumnVisibilityChange) {
         onColumnVisibilityChange(newVisibility);
       } else {
@@ -183,7 +184,7 @@ export function DataTable<TData extends RowData>({
             {showColumnVisibility && (
               <DropdownMenu>
                 <DropdownMenuTrigger className="ml-auto">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="default">
                     Columns <MoreHorizontal className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

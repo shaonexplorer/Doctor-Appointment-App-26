@@ -115,7 +115,7 @@ export function AddPatientDialog({ open, onOpenChange, onSuccess }: AddPatientDi
         </SheetHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-6">
-          <div className="space-y-4 border-t pt-6">
+          <div className="space-y-4">
             <h3 className="text-foreground text-lg font-semibold">Patient Information</h3>
 
             <div className="grid gap-4 sm:grid-cols-2">

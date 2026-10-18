@@ -1,1 +1,1 @@
-export { AdminFacilities } from './admin-facilities';
+export { default as AdminFacilities } from './admin-facilities';

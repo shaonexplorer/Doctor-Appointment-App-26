@@ -195,6 +195,31 @@ export {
 } from './patients/controllers/patientController';
 export { createPatientRoutes } from './patients/routes/patientRoutes';
 
+// Clinics module exports
+export type {
+  Clinic,
+  ClinicListItem,
+  ClinicStats,
+  ClinicCreateInput,
+  ClinicUpdateInput,
+  ClinicFilters,
+} from './clinics/types';
+
+export {
+  ClinicCreateSchema,
+  ClinicUpdateSchema,
+  ClinicFiltersSchema,
+  createValidationMiddleware as createClinicValidationMiddleware,
+  createQueryValidationMiddleware as createClinicQueryValidationMiddleware,
+  validateClinicCreate,
+  validateClinicUpdate,
+  validateClinicFilters,
+} from './clinics/validators';
+
+export { ClinicService, createClinicService } from './clinics/services/clinicService';
+export { ClinicController, createClinicController } from './clinics/controllers/clinicController';
+export { createClinicRoutes } from './clinics/routes/clinicRoutes';
+
 // Prescriptions module exports
 export type {
   Prescription,
@@ -233,6 +258,7 @@ import { createSchedulesModule } from './schedules';
 import { createAppointmentsModule } from './appointments';
 import { createPrescriptionsModule } from './prescriptions';
 import { createPatientsModule } from './patients';
+import { createClinicsModule } from './clinics';
 
 export interface AllModules {
   auth: ReturnType<typeof createAuthModule>;
@@ -242,6 +268,7 @@ export interface AllModules {
   appointments: ReturnType<typeof createAppointmentsModule>;
   prescriptions: ReturnType<typeof createPrescriptionsModule>;
   patients: ReturnType<typeof createPatientsModule>;
+  clinics: ReturnType<typeof createClinicsModule>;
 }
 
 export function createAllModules(repositories: Repositories, prisma: PrismaClient): AllModules {
@@ -257,5 +284,6 @@ export function createAllModules(repositories: Repositories, prisma: PrismaClien
       prisma
     ),
     patients: createPatientsModule(repositories.appointment, repositories.prescription, prisma),
+    clinics: createClinicsModule(repositories.clinic, prisma),
   };
 }
