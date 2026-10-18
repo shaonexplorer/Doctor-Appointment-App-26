@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { UserType } from '@doctor-appointment-app/shared';
 import { PatientPortalShell } from '@/components/patient-portal';
+import { cn } from '@/lib/utils';
 import {
   CalendarDays,
   Check,
@@ -28,113 +30,286 @@ import {
   Action,
   SpecialtyPieChart,
   MonthlyExpensesBarChart,
+  EmptyDashboardState,
+  DashboardErrorState,
 } from '@/components/patient-dashboard';
+import { AppointmentDrawer, CancelModal, RescheduleFlow } from '@/components/appointments';
+import {
+  useDashboardStats,
+  useUpcomingAppointments,
+  useCompletedAppointments,
+  useCancelAppointment,
+  useRescheduleAppointment,
+  transformAppointmentToUI,
+  type AppointmentUI,
+} from '@/hooks/useAppointments';
+import { prescriptionApi } from '@/lib/api';
 
-const specialtyData = [
-  { name: 'Cardiology', value: 42, color: '#4f6ef7' },
-  { name: 'Dermatology', value: 25, color: '#67c7b6' },
-  { name: 'Internal Medicine', value: 20, color: '#f4b36a' },
-  { name: 'Pediatrics', value: 13, color: '#b596ef' },
-];
+const drawerStatusMap: Record<string, AppointmentUI['status']> = {
+  SCHEDULED: 'Scheduled',
+  CONFIRMED: 'Confirmed',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+  NO_SHOW: 'Cancelled',
+};
 
-const expenseData = [
-  { month: 'Apr', amount: 280 },
-  { month: 'May', amount: 420 },
-  { month: 'Jun', amount: 360 },
-  { month: 'Jul', amount: 580 },
-  { month: 'Aug', amount: 440 },
-  { month: 'Sep', amount: 690 },
-];
+const consultationTypeMap: Record<string, AppointmentUI['consultationType']> = {
+  IN_PERSON: 'IN_PERSON',
+  VIDEO: 'VIDEO',
+  PHONE: 'PHONE',
+};
 
-const timeline = [
-  {
-    date: 'Sep 24',
-    title: 'Cardiology follow-up',
-    doctor: 'Dr. Michael Anderson',
-    status: 'Upcoming',
-    icon: <CalendarDays />,
-  },
-  {
-    date: 'Sep 12',
-    title: 'Annual skin screening',
-    doctor: 'Dr. Olivia Bennett',
-    status: 'Completed',
-    icon: <Check />,
-  },
-  {
-    date: 'Aug 28',
-    title: 'Primary care visit',
-    doctor: 'Dr. James Wilson',
-    status: 'Completed',
-    icon: <Stethoscope />,
-  },
-];
+const pieColors = ['#0284c7', '#0d9488', '#2563eb', '#16a34a', '#d97706', '#dc2626'];
 
-const prescriptions = [
-  {
-    name: 'Atorvastatin 20mg',
-    doctor: 'Dr. Michael Anderson',
-    date: 'Sep 12, 2026',
-    status: 'Active',
-  },
-  { name: 'Lisinopril 10mg', doctor: 'Dr. James Wilson', date: 'Aug 28, 2026', status: 'Active' },
-  {
-    name: 'Vitamin D3 1000 IU',
-    doctor: 'Dr. Olivia Bennett',
-    date: 'Aug 14, 2026',
-    status: 'Refill due',
-  },
-];
+function formatTime(isoString: string): string {
+  return new Date(isoString).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
 
-const quickActions = [
-  { icon: <Stethoscope />, label: 'Find a doctor' },
-  { icon: <Plus />, label: 'Book appointment' },
-  { icon: <Pill />, label: 'View prescriptions' },
-  { icon: <FileText />, label: 'Medical records' },
-];
+function formatShortDate(isoString: string): string {
+  return new Date(isoString).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function daysUntil(isoString: string): number {
+  const start = new Date(isoString).getTime();
+  const now = new Date().getTime();
+  return Math.ceil((start - now) / (1000 * 60 * 60 * 24));
+}
+
+function initialsFromName(name?: string | null): string {
+  if (!name || !name.trim()) return '??';
+  return name
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function statusColor(status: string): string {
+  switch (status) {
+    case 'Upcoming':
+      return 'bg-primary/10 text-primary';
+    case 'Completed':
+      return 'bg-[#e6f7ef] text-[#278e70]';
+    case 'Cancelled':
+      return 'bg-[#fff2ef] text-[#b86f63]';
+    default:
+      return 'bg-secondary text-muted-foreground';
+  }
+}
 
 export default function PatientDashboardPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerAppointment, setDrawerAppointment] = useState<AppointmentUI | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelAppointment, setCancelAppointment] = useState<AppointmentUI | null>(null);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleAppointment, setRescheduleAppointment] = useState<AppointmentUI | null>(null);
+  const [downloadLoading, setDownloadLoading] = useState<string | null>(null);
 
-  const reload = () => {
-    setLoading(true);
-    setNotice('');
-    window.setTimeout(() => setLoading(false), 650);
+  const statsQuery = useDashboardStats();
+  const upcomingQuery = useUpcomingAppointments(5);
+  const completedQuery = useCompletedAppointments(5);
+  const cancelMutation = useCancelAppointment();
+  const rescheduleMutation = useRescheduleAppointment();
+
+  const stats = statsQuery.data;
+  const isLoading = statsQuery.isPending || upcomingQuery.isPending || completedQuery.isPending;
+  const statsError = statsQuery.error;
+  const nextAppointment = stats?.nextAppointment ?? null;
+
+  const upcomingAppointments: AppointmentUI[] = (upcomingQuery.data ?? []).map(
+    transformAppointmentToUI
+  );
+  const completedAppointments: AppointmentUI[] = (completedQuery.data ?? []).map(
+    transformAppointmentToUI
+  );
+
+  const allAppointments = [...upcomingAppointments, ...completedAppointments].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  const upcomingCount = stats?.upcomingAppointments ?? 0;
+  const completedCount = stats?.appointmentsByStatus?.COMPLETED ?? 0;
+  const activePrescriptions = completedAppointments.filter((a) => Boolean(a.prescription)).length;
+  const totalExpenses = stats?.totalExpenses ?? 0;
+
+  const refreshAll = useCallback(async () => {
+    await statsQuery.refetch();
+    await upcomingQuery.refetch();
+    await completedQuery.refetch();
+    setNotice('Overview refreshed.');
+  }, [statsQuery, upcomingQuery, completedQuery]);
+
+  const dismissNotice = () => setNotice('');
+
+  const handleViewAppointment = (appt: AppointmentUI) => {
+    setDrawerAppointment(appt);
+    setDrawerOpen(true);
   };
 
-  const action = (label: string) => {
-    switch (label) {
-      case 'Find a doctor':
-        router.push('/doctors/search');
-        break;
-      case 'Book appointment':
-        router.push('/doctors/search');
-        break;
-      case 'View prescriptions':
-        router.push('/patient/records');
-        break;
-      case 'Medical records':
-        router.push('/patient/records');
-        break;
-      default:
-        setNotice(`${label} is ready to open.`);
-        break;
+  const handleCancel = (appt: AppointmentUI) => {
+    setCancelAppointment(appt);
+    setCancelOpen(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelAppointment) return;
+    try {
+      await cancelMutation.mutateAsync(cancelAppointment.id);
+      setCancelOpen(false);
+      setCancelAppointment(null);
+      setNotice('Appointment cancelled.');
+      await refreshAll();
+    } catch {
+      setNotice('Failed to cancel appointment. Please try again.');
     }
   };
 
-  if (loading) {
+  const handleReschedule = (appt: AppointmentUI) => {
+    setRescheduleAppointment(appt);
+    setRescheduleOpen(true);
+  };
+
+  const handleConfirmReschedule = () => {
+    setRescheduleOpen(false);
+    setRescheduleAppointment(null);
+    setNotice('Appointment rescheduled.');
+    void refreshAll();
+  };
+
+  const handleDownloadPrescription = async (prescriptionId: string, name: string) => {
+    setDownloadLoading(prescriptionId);
+    try {
+      const blob = await prescriptionApi.downloadPrescriptionPDF(prescriptionId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setNotice(`Downloaded ${name}.pdf`);
+    } catch {
+      setNotice('Failed to download prescription. Please try again.');
+    } finally {
+      setDownloadLoading(null);
+    }
+  };
+
+  const nextAppointmentUI: AppointmentUI | null = nextAppointment
+    ? (upcomingAppointments.find((a) => a.id === nextAppointment.id) ?? {
+        id: nextAppointment.id,
+        doctor: nextAppointment.doctorName,
+        specialty: nextAppointment.doctorSpecialty,
+        date: formatShortDate(nextAppointment.startTime),
+        time: formatTime(nextAppointment.startTime),
+        clinic: nextAppointment.clinic,
+        status: drawerStatusMap[nextAppointment.status] ?? 'Scheduled',
+        payment: 'Pending',
+        symptoms: 'No symptoms recorded',
+        consultationType: consultationTypeMap[nextAppointment.consultationType] ?? 'IN_PERSON',
+        tab: 'Upcoming',
+        slotId: '',
+        doctorId: '',
+        notes: null,
+        createdAt: nextAppointment.startTime,
+      })
+    : null;
+
+  // console.log(nextAppointment);
+
+  const specialtyTotal =
+    stats?.appointmentsBySpecialty?.reduce((sum, item) => sum + item.count, 0) ?? 0;
+  const pieDataWithColors =
+    stats?.appointmentsBySpecialty?.map((item, i) => ({
+      name: item.specialty,
+      value: specialtyTotal > 0 ? Math.round((item.count / specialtyTotal) * 100) : 0,
+      color: pieColors[i % pieColors.length],
+    })) ?? [];
+
+  const reminders: Array<{ icon: ReactNode; title: string; detail: string }> = [];
+  if (nextAppointment) {
+    if (nextAppointment.consultationType === 'VIDEO') {
+      reminders.push({
+        icon: <Video className="size-5" aria-hidden="true" />,
+        title: 'Prepare for your video visit',
+        detail: 'Check your camera and connection before the appointment.',
+      });
+    } else {
+      reminders.push({
+        icon: <CalendarDays className="size-5" aria-hidden="true" />,
+        title: 'Prepare for your visit',
+        detail: `Your appointment with ${nextAppointment.doctorName} is coming up.`,
+      });
+    }
+  }
+  const latestPrescription = completedAppointments.find((a) => Boolean(a.prescription));
+  if (latestPrescription) {
+    reminders.push({
+      icon: <FileText className="size-5" aria-hidden="true" />,
+      title: 'Review your latest prescription',
+      detail: `Prescription from ${latestPrescription.doctor} is available.`,
+    });
+  }
+  if (completedAppointments.length > 0) {
+    reminders.push({
+      icon: <Stethoscope className="size-5" aria-hidden="true" />,
+      title: 'Review recent visit results',
+      detail: `${completedAppointments.length} completed visit(s) on record.`,
+    });
+  }
+  if (reminders.length === 0) {
+    reminders.push({
+      icon: <Check className="size-5" aria-hidden="true" />,
+      title: 'All caught up',
+      detail: 'No pending actions at the moment.',
+    });
+  }
+
+  const prescriptionList = completedAppointments
+    .filter((a) => Boolean(a.prescription))
+    .map((a) => ({
+      id: a.id,
+      name: `Prescription_${a.id}.pdf`,
+      doctor: a.doctor,
+      date: a.date,
+      prescriptionId: a.id,
+    }));
+
+  if (isLoading) {
     return (
       <ProtectedRoute allowedRoles={[UserType.PATIENT]}>
         <div className="grid gap-5 lg:grid-cols-2">
-          {[1, 2, 3, 4].map((item) => (
+          {[1, 2, 3, 4, 5, 6].map((item) => (
             <div
               key={item}
               className="border-border bg-card h-44 animate-pulse rounded-2xl border"
             />
           ))}
         </div>
+      </ProtectedRoute>
+    );
+  }
+
+  if (statsError) {
+    return (
+      <ProtectedRoute allowedRoles={[UserType.PATIENT]}>
+        <DashboardErrorState message="We couldn't load your health overview. Please check your connection and try again." />
       </ProtectedRoute>
     );
   }
@@ -149,7 +324,7 @@ export default function PatientDashboardPage() {
               className="border-primary/20 bg-primary/5 text-primary flex items-center justify-between rounded-xl border px-4 py-3 text-sm font-semibold"
             >
               <span>{notice}</span>
-              <button onClick={() => setNotice('')} aria-label="Dismiss notification">
+              <button onClick={dismissNotice} aria-label="Dismiss notification">
                 <Check className="size-4" aria-hidden="true" />
               </button>
             </div>
@@ -161,51 +336,80 @@ export default function PatientDashboardPage() {
               title="Next appointment"
               className="border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-primary text-xs font-bold tracking-[0.14em] uppercase">
-                    Next appointment
-                  </p>
-                  <h2 className="mt-2 text-xl font-black">Dr. Michael Anderson</h2>
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    Cardiology &middot; Heart & Vascular Center
-                  </p>
+              {nextAppointmentUI ? (
+                <>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-primary text-xs font-bold tracking-[0.14em] uppercase">
+                        Next appointment
+                      </p>
+                      <h2 className="mt-2 text-xl font-black">{nextAppointmentUI.doctor}</h2>
+                      <p className="text-muted-foreground mt-1 text-sm">
+                        {nextAppointmentUI.specialty} &middot; {nextAppointmentUI.clinic}
+                      </p>
+                    </div>
+                    <div className="text-primary grid size-12 place-items-center rounded-full bg-[#dce8ff] text-sm font-black">
+                      {initialsFromName(nextAppointmentUI.doctor)}
+                    </div>
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    <Detail icon={<CalendarDays />} label="Date" value={nextAppointmentUI.date} />
+                    <Detail icon={<Clock3 />} label="Time" value={nextAppointmentUI.time} />
+                    <Detail
+                      icon={<Video />}
+                      label="Visit type"
+                      value={nextAppointmentUI.consultationType}
+                    />
+                  </div>
+                  <div className="mt-5 flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        'rounded-full px-3 py-1 text-xs font-bold',
+                        nextAppointmentUI.status === 'Confirmed'
+                          ? 'bg-[#e6f7ef] text-[#278e70]'
+                          : 'bg-[#fff2ef] text-[#b86f63]'
+                      )}
+                    >
+                      {nextAppointmentUI.status}
+                    </span>
+                    {daysUntil(nextAppointmentUI.createdAt) > 0 && (
+                      <span className="text-muted-foreground text-xs">
+                        Starts in {daysUntil(nextAppointmentUI.createdAt)} days
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleViewAppointment(nextAppointmentUI)}
+                      className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold hover:opacity-90"
+                    >
+                      View appointment
+                    </button>
+                    <button
+                      onClick={() => handleReschedule(nextAppointmentUI)}
+                      className="border-border hover:bg-secondary rounded-xl border px-4 py-2.5 text-xs font-bold"
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      onClick={() => handleCancel(nextAppointmentUI)}
+                      className="text-muted-foreground hover:bg-secondary rounded-xl px-4 py-2.5 text-xs font-bold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-4">
+                  <EmptyDashboardState />
+                  <button
+                    onClick={() => router.push('/doctors/search')}
+                    className="bg-primary text-primary-foreground mt-6 rounded-xl px-4 py-2.5 text-xs font-bold hover:opacity-90"
+                  >
+                    Book a visit
+                  </button>
                 </div>
-                <div className="text-primary grid size-12 place-items-center rounded-full bg-[#dce8ff] text-sm font-black">
-                  MA
-                </div>
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <Detail icon={<CalendarDays />} label="Date" value="Thursday, Sep 24" />
-                <Detail icon={<Clock3 />} label="Time" value="10:30 AM" />
-                <Detail icon={<Video />} label="Visit type" value="Video visit" />
-              </div>
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-[#e6f7ef] px-3 py-1 text-xs font-bold text-[#278e70]">
-                  Confirmed
-                </span>
-                <span className="text-muted-foreground text-xs">Starts in 3 days</span>
-              </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button
-                  onClick={() => action('Appointment details')}
-                  className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-xs font-bold hover:opacity-90"
-                >
-                  View appointment
-                </button>
-                <button
-                  onClick={() => action('Reschedule')}
-                  className="border-border hover:bg-secondary rounded-xl border px-4 py-2.5 text-xs font-bold"
-                >
-                  Reschedule
-                </button>
-                <button
-                  onClick={() => action('Cancellation')}
-                  className="text-muted-foreground hover:bg-secondary rounded-xl px-4 py-2.5 text-xs font-bold"
-                >
-                  Cancel
-                </button>
-              </div>
+              )}
             </Panel>
 
             <Panel
@@ -220,21 +424,14 @@ export default function PatientDashboardPage() {
                 <HeartPulse className="size-5 text-[#67c7b6]" aria-hidden="true" />
               </div>
               <div className="mt-5 flex flex-col gap-3">
-                <Reminder
-                  icon={<CalendarDays />}
-                  title="Prepare for your video visit"
-                  detail="Check your camera and connection."
-                />
-                <Reminder
-                  icon={<Pill />}
-                  title="Refill Lisinopril"
-                  detail="Your refill is due in 8 days."
-                />
-                <Reminder
-                  icon={<FileText />}
-                  title="Review recent results"
-                  detail="Two new documents are available."
-                />
+                {reminders.map((reminder, i) => (
+                  <Reminder
+                    key={i}
+                    icon={reminder.icon}
+                    title={reminder.title}
+                    detail={reminder.detail}
+                  />
+                ))}
               </div>
             </Panel>
           </section>
@@ -243,25 +440,25 @@ export default function PatientDashboardPage() {
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Metric
               label="Upcoming appointments"
-              value="2"
+              value={upcomingCount}
               icon={<CalendarDays />}
               tone="bg-[#edf3ff] text-primary"
             />
             <Metric
               label="Completed visits"
-              value="12"
+              value={completedCount}
               icon={<Check />}
               tone="bg-[#e9f8f3] text-[#2b9d7e]"
             />
             <Metric
               label="Active prescriptions"
-              value="4"
+              value={activePrescriptions}
               icon={<Pill />}
               tone="bg-[#fff3e7] text-[#d68b42]"
             />
             <Metric
               label="Medical expenses"
-              value="$2,840"
+              value={`$${totalExpenses.toLocaleString()}`}
               icon={<Activity />}
               tone="bg-[#f2ecff] text-[#8e68dc]"
             />
@@ -272,38 +469,58 @@ export default function PatientDashboardPage() {
             <Panel
               title="Appointment timeline"
               action="View all"
-              onAction={() => action('All appointments')}
+              onAction={() => router.push('/patient/appointments')}
             >
               <div className="flex flex-col gap-4">
-                {timeline.map((item) => (
-                  <div key={item.date} className="flex gap-4">
-                    <div className="flex w-14 shrink-0 flex-col items-center">
-                      <span className="text-foreground text-xs font-black">{item.date}</span>
-                      <span className="bg-border mt-2 h-full w-px" />
-                    </div>
-                    <div className="border-border hover:border-primary/30 hover:bg-primary/[0.02] relative -mt-1 flex-1 rounded-xl border p-3 transition">
-                      <span
-                        className={`absolute top-3 right-3 rounded-full px-2 py-1 text-[10px] font-bold ${item.status === 'Upcoming' ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'}`}
-                      >
-                        {item.status}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <div className="bg-secondary text-primary grid size-9 place-items-center rounded-lg">
-                          {item.icon}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold">{item.title}</p>
-                          <p className="text-muted-foreground mt-1 text-xs">{item.doctor}</p>
+                {allAppointments.length > 0 ? (
+                  allAppointments.map((item) => (
+                    <div key={item.id} className="flex gap-4">
+                      <div className="flex w-14 shrink-0 flex-col items-center">
+                        <span className="text-foreground text-xs font-black">{item.date}</span>
+                        <span className="bg-border mt-2 h-full w-px" />
+                      </div>
+                      <div className="border-border hover:border-primary/30 hover:bg-primary/[0.02] relative -mt-1 flex-1 rounded-xl border p-3 transition">
+                        <span
+                          className={`absolute top-3 right-3 rounded-full px-2 py-1 text-[10px] font-bold ${statusColor(
+                            item.tab
+                          )}`}
+                        >
+                          {item.tab}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <div className="bg-secondary text-primary grid size-9 place-items-center rounded-lg">
+                            <CalendarDays className="size-4" aria-hidden="true" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold">{item.doctor}</p>
+                            <p className="text-muted-foreground mt-1 text-xs">
+                              {item.specialty} &middot; {item.clinic}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-muted-foreground py-8 text-center text-sm">
+                    No appointments yet. Book your first visit.
                   </div>
-                ))}
+                )}
               </div>
             </Panel>
 
             <Panel title="Appointments by specialty" action="This year">
-              <SpecialtyPieChart data={specialtyData} total="24" totalLabel="visits" />
+              {pieDataWithColors.length > 0 ? (
+                <SpecialtyPieChart
+                  data={pieDataWithColors}
+                  total={specialtyTotal}
+                  totalLabel="visits"
+                />
+              ) : (
+                <div className="text-muted-foreground flex h-44 items-center justify-center text-sm">
+                  No specialty data available.
+                </div>
+              )}
             </Panel>
           </section>
 
@@ -312,42 +529,54 @@ export default function PatientDashboardPage() {
             <Panel
               title="Recent prescriptions"
               action="View all"
-              onAction={() => action('All prescriptions')}
+              onAction={() => router.push('/patient/records')}
             >
               <div className="flex flex-col gap-2">
-                {prescriptions.map((item) => (
-                  <div
-                    key={item.name}
-                    className="hover:bg-secondary flex items-center gap-3 rounded-xl p-2 transition"
-                  >
-                    <div className="grid size-9 place-items-center rounded-lg bg-[#fff3e7] text-[#d68b42]">
-                      <Pill className="size-4" aria-hidden="true" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold">{item.name}</p>
-                      <p className="text-muted-foreground truncate text-xs">
-                        {item.doctor} &middot; {item.date}
-                      </p>
-                    </div>
-                    <span
-                      className={`hidden rounded-full px-2 py-1 text-[10px] font-bold sm:block ${item.status === 'Active' ? 'bg-[#e6f7ef] text-[#278e70]' : 'bg-[#fff3e7] text-[#b97932]'}`}
+                {prescriptionList.length > 0 ? (
+                  prescriptionList.map((item) => (
+                    <div
+                      key={item.id}
+                      className="hover:bg-secondary flex items-center gap-3 rounded-xl p-2 transition"
                     >
-                      {item.status}
-                    </span>
-                    <button
-                      onClick={() => action(`Download for ${item.name}`)}
-                      className="text-muted-foreground hover:bg-card hover:text-primary rounded-lg p-2"
-                      aria-label={`Download ${item.name}`}
-                    >
-                      <Download className="size-4" aria-hidden="true" />
-                    </button>
+                      <div className="grid size-9 place-items-center rounded-lg bg-[#fff3e7] text-[#d68b42]">
+                        <Pill className="size-4" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold">{item.name}</p>
+                        <p className="text-muted-foreground truncate text-xs">
+                          {item.doctor} &middot; {item.date}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDownloadPrescription(item.prescriptionId, item.name)}
+                        disabled={downloadLoading === item.id}
+                        className="text-muted-foreground hover:bg-card hover:text-primary rounded-lg p-2 disabled:opacity-50"
+                        aria-label={`Download ${item.name}`}
+                      >
+                        {downloadLoading === item.id ? (
+                          <Download className="size-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Download className="size-4" aria-hidden="true" />
+                        )}
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-muted-foreground py-8 text-center text-sm">
+                    No prescriptions yet.
                   </div>
-                ))}
+                )}
               </div>
             </Panel>
 
             <Panel title="Monthly medical expenses" action="2026">
-              <MonthlyExpensesBarChart data={expenseData} />
+              {stats?.monthlyExpenses?.length ? (
+                <MonthlyExpensesBarChart data={stats.monthlyExpenses} />
+              ) : (
+                <div className="text-muted-foreground flex h-56 items-center justify-center text-sm">
+                  No expense data available.
+                </div>
+              )}
             </Panel>
           </section>
 
@@ -363,27 +592,91 @@ export default function PatientDashboardPage() {
               <MoreHorizontal className="text-muted-foreground size-5" aria-hidden="true" />
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {quickActions.map((actionItem) => (
-                <Action
-                  key={actionItem.label}
-                  icon={actionItem.icon}
-                  label={actionItem.label}
-                  onClick={() => action(actionItem.label)}
-                />
-              ))}
+              <Action
+                icon={<Stethoscope />}
+                label="Find a doctor"
+                onClick={() => router.push('/doctors/search')}
+              />
+              <Action
+                icon={<Plus />}
+                label="Book appointment"
+                onClick={() => router.push('/doctors/search')}
+              />
+              <Action
+                icon={<Pill />}
+                label="View prescriptions"
+                onClick={() => router.push('/patient/records')}
+              />
+              <Action
+                icon={<FileText />}
+                label="Medical records"
+                onClick={() => router.push('/patient/records')}
+              />
             </div>
           </section>
 
           <div className="flex justify-end">
             <button
-              onClick={reload}
-              className="text-muted-foreground hover:text-primary flex items-center gap-2 text-xs font-bold"
+              onClick={refreshAll}
+              disabled={isLoading}
+              className="text-muted-foreground hover:text-primary flex items-center gap-2 text-xs font-bold disabled:opacity-50"
             >
-              <RefreshCw className="size-3.5" aria-hidden="true" />
+              {isLoading ? (
+                <RefreshCw className="size-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <RefreshCw className="size-3.5" aria-hidden="true" />
+              )}
               Refresh overview
             </button>
           </div>
         </div>
+
+        {/* Appointment Drawer */}
+        {drawerOpen && drawerAppointment && (
+          <AppointmentDrawer
+            isOpen={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            appointment={drawerAppointment}
+            onNotice={setNotice}
+          />
+        )}
+
+        {/* Cancel Modal */}
+        {cancelOpen && cancelAppointment && (
+          <CancelModal
+            isOpen={cancelOpen}
+            onClose={() => setCancelOpen(false)}
+            onConfirm={handleConfirmCancel}
+            appointment={{
+              id: cancelAppointment.id,
+              doctor: cancelAppointment.doctor,
+              date: cancelAppointment.date,
+              time: cancelAppointment.time,
+              clinic: cancelAppointment.clinic,
+              status: cancelAppointment.status,
+              payment: cancelAppointment.payment,
+              hoursUntilAppointment: daysUntil(cancelAppointment.createdAt) * 24,
+            }}
+            isLoading={cancelMutation.isPending}
+          />
+        )}
+
+        {/* Reschedule Flow */}
+        {rescheduleOpen && rescheduleAppointment && (
+          <RescheduleFlow
+            isOpen={rescheduleOpen}
+            onClose={() => setRescheduleOpen(false)}
+            originalAppointment={{
+              id: rescheduleAppointment.id,
+              doctor: rescheduleAppointment.doctor,
+              specialty: rescheduleAppointment.specialty,
+              date: rescheduleAppointment.date,
+              time: rescheduleAppointment.time,
+            }}
+            onRescheduleComplete={handleConfirmReschedule}
+            isLoading={rescheduleMutation.isPending}
+          />
+        )}
       </PatientPortalShell>
     </ProtectedRoute>
   );
