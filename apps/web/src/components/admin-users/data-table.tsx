@@ -13,7 +13,7 @@ import {
   type Updater,
   type Column,
 } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp, Loader2, MoreHorizontal } from 'lucide-react';
+import { CalendarPlus, ChevronDown, ChevronUp, Loader2, MoreHorizontal } from 'lucide-react';
 
 import { features, type DataTableFeatures } from './data-table-features';
 
@@ -71,6 +71,8 @@ interface DataTableProps<TData extends RowData> {
   toolbarLeading?: React.ReactNode;
   /** Custom trailing toolbar content (after column visibility) */
   toolbarTrailing?: React.ReactNode;
+  /** Callback triggered when the "New appointment" toolbar action is clicked */
+  onCreateAppointment?: () => void;
   className?: string;
 }
 
@@ -105,6 +107,7 @@ export function DataTable<TData extends RowData>({
   toolbar,
   toolbarLeading,
   toolbarTrailing,
+  onCreateAppointment,
   className,
 }: DataTableProps<TData>) {
   const [localVisibility, setLocalVisibility] = React.useState<ColumnVisibilityState>({});
@@ -183,12 +186,16 @@ export function DataTable<TData extends RowData>({
             )} */}
             {showColumnVisibility && (
               <DropdownMenu>
-                <DropdownMenuTrigger className="ml-auto">
-                  <Button variant="outline" size="default">
+                <DropdownMenuTrigger className="max-w-full! sm:ml-auto">
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className="flex w-full items-center justify-between gap-2 sm:w-auto"
+                  >
                     Columns <MoreHorizontal className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="max-w-full!">
                   {table
                     .getAllColumns()
                     .filter((column) => column.getCanHide())
@@ -206,6 +213,12 @@ export function DataTable<TData extends RowData>({
               </DropdownMenu>
             )}
             {toolbarTrailing}
+            {onCreateAppointment && (
+              <Button onClick={onCreateAppointment} className="flex items-center gap-2">
+                <CalendarPlus className="size-4" />
+                New appointment
+              </Button>
+            )}
           </>
         )}
       </div>

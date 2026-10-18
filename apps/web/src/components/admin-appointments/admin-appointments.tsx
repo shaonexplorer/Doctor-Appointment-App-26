@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Toaster } from '@/components/ui/toast';
+import AppointmentBookingDialog from '../admin-users/AppointmentBookingDialog';
 
 const statuses = ['All statuses', 'SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'] as const;
 
@@ -64,12 +65,13 @@ function statusTone(status: string): 'emerald' | 'rose' | 'blue' {
 }
 
 export function AdminAppointments() {
-  const [status, setStatus] = useState<typeof statuses[number]>(statuses[0]); // 'All statuses'
+  const [status, setStatus] = useState<(typeof statuses)[number]>(statuses[0]); // 'All statuses'
   const [selected, setSelected] = useState<string[]>([]);
   const [drawer, setDrawer] = useState<AdminAppointmentData | null>(null);
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [createAppointmentDialogOpen, setCreateAppointmentDialogOpen] = useState(false);
 
   // Fetch appointments from API (Admin/Staff see all system-wide appointments)
   const {
@@ -90,8 +92,10 @@ export function AdminAppointments() {
   const totalAppointments = appointmentsResponse?.meta.total || 0;
 
   // Transform API data to admin format
-  const transformedAppointments = useMemo(() =>
-    transformAppointmentsToAdminFormat(appointments), [appointments]);
+  const transformedAppointments = useMemo(
+    () => transformAppointmentsToAdminFormat(appointments),
+    [appointments]
+  );
 
   // Apply status filter client-side (keeps the UI in sync with the selected status)
   const filteredAppointments = useMemo(() => {
@@ -107,9 +111,7 @@ export function AdminAppointments() {
     (appointment) => {
       if (appointment.status !== 'SCHEDULED') return;
       if (
-        !window.confirm(
-          `Cancel appointment for ${appointment.patientName} on ${appointment.date}?`
-        )
+        !window.confirm(`Cancel appointment for ${appointment.patientName} on ${appointment.date}?`)
       ) {
         return;
       }
@@ -169,7 +171,7 @@ export function AdminAppointments() {
                   setSelected([]);
                 }}
               >
-                <SelectTrigger className="h-10 w-[160px] min-w-[160px]">
+                <SelectTrigger className="h-10 min-w-[160px] sm:w-[160px]">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -182,6 +184,7 @@ export function AdminAppointments() {
               </Select>
             </div>
           }
+          onCreateAppointment={() => setCreateAppointmentDialogOpen(true)}
           className="p-4"
         />
 
@@ -189,12 +192,10 @@ export function AdminAppointments() {
         {isError && appointments.length === 0 && (
           <div className="text-destructive flex items-center justify-center p-12">
             <p>
-              Failed to load appointments: {error instanceof Error ? error.message : 'Unknown error'}
+              Failed to load appointments:{' '}
+              {error instanceof Error ? error.message : 'Unknown error'}
             </p>
-            <button
-              onClick={() => refetch()}
-              className="text-primary ml-3 text-sm hover:underline"
-            >
+            <button onClick={() => refetch()} className="text-primary ml-3 text-sm hover:underline">
               Retry
             </button>
           </div>
@@ -286,7 +287,7 @@ export function AdminAppointments() {
                 {drawer.status === 'SCHEDULED' && (
                   <button
                     onClick={() => handleCancel(drawer)}
-                    className="rounded-xl border border-destructive text-destructive px-4 py-3 text-sm font-bold"
+                    className="border-destructive text-destructive rounded-xl border px-4 py-3 text-sm font-bold"
                   >
                     Cancel appointment
                   </button>
@@ -296,6 +297,15 @@ export function AdminAppointments() {
           </aside>
         </div>
       )}
+
+      {/* Appointment Booking Dialog */}
+      <AppointmentBookingDialog
+        open={createAppointmentDialogOpen}
+        onOpenChange={setCreateAppointmentDialogOpen}
+        onSuccess={() => {
+          void refetch();
+        }}
+      />
 
       {/* Toaster for notifications */}
       <Toaster />

@@ -11,6 +11,7 @@ import {
 import { DataTable } from './data-table';
 import { createUserColumns } from './columns';
 import { AddUserDialog } from './AddUserDialog';
+
 import type { ColumnFiltersState } from '@tanstack/react-table';
 import {
   Select,
@@ -161,14 +162,12 @@ export function AdminUsers() {
             </div>
           }
           toolbarTrailing={
-            <Button
-              onClick={() => setAddUserDialogOpen(true)}
-              className="flex items-center gap-2"
-            >
+            <Button onClick={() => setAddUserDialogOpen(true)} className="flex items-center gap-2">
               <UserPlus className="size-4" />
               Add user
             </Button>
           }
+
           className="p-4"
         />
 
