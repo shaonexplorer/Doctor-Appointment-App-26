@@ -33,8 +33,8 @@ export function SpecialtyPieChart({
   className,
 }: PieChartProps) {
   return (
-    <div className={cn('flex items-center gap-5', className)}>
-      <div className="relative h-44 w-44 shrink-0">
+    <div className={cn('flex items-center sm:gap-5', className)}>
+      <div className="relative h-44 shrink-0 sm:w-44">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -75,7 +75,7 @@ export function SpecialtyPieChart({
         {data.map((item) => (
           <div key={item.name} className="flex items-center gap-2 text-xs">
             <span className="size-2.5 rounded-full" style={{ background: item.color }} />
-            <span className="text-muted-foreground">{item.name}</span>
+            <span className="text-muted-foreground truncate">{item.name}</span>
             <span className="ml-auto font-black">{item.value}%</span>
           </div>
         ))}
@@ -90,11 +90,20 @@ export interface BarChartData {
 }
 
 export interface BarChartProps {
-  data: BarChartData[];
+  data?: BarChartData[];
   barColor?: string;
   className?: string;
   height?: number;
 }
+
+const DEMO_MONTHLY_EXPENSES: BarChartData[] = [
+  { month: 'Jan', amount: 120 },
+  { month: 'Feb', amount: 180 },
+  { month: 'Mar', amount: 240 },
+  { month: 'Apr', amount: 200 },
+  { month: 'May', amount: 300 },
+  { month: 'Jun', amount: 270 },
+];
 
 export function MonthlyExpensesBarChart({
   data,
@@ -102,10 +111,13 @@ export function MonthlyExpensesBarChart({
   className,
   height = 224,
 }: BarChartProps) {
+  const expensesData =
+    data && data.reduce((sum, item) => sum + item.amount, 0) > 0 ? data : DEMO_MONTHLY_EXPENSES;
+
   return (
     <div className={cn('h-56', className)} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 4, left: -18, bottom: 0 }}>
+        <BarChart data={expensesData} margin={{ top: 10, right: 4, left: -18, bottom: 0 }}>
           <XAxis
             dataKey="month"
             axisLine={false}

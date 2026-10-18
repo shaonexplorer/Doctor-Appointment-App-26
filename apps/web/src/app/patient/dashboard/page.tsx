@@ -21,6 +21,7 @@ import {
   Plus,
   MoreHorizontal,
   RefreshCw,
+  Users,
 } from 'lucide-react';
 import {
   Metric,
@@ -245,17 +246,36 @@ export default function PatientDashboardPage() {
   const reminders: Array<{ icon: ReactNode; title: string; detail: string }> = [];
   if (nextAppointment) {
     if (nextAppointment.consultationType === 'VIDEO') {
-      reminders.push({
-        icon: <Video className="size-5" aria-hidden="true" />,
-        title: 'Prepare for your video visit',
-        detail: 'Check your camera and connection before the appointment.',
-      });
+      reminders.push(
+        {
+          icon: <Video className="size-5" aria-hidden="true" />,
+          title: 'Prepare for your video visit',
+          detail: 'Check your camera and connection before the appointment.',
+        },
+        {
+          icon: <Users className="size-5" aria-hidden="true" />,
+          title: 'Visit type',
+          detail: `Visit type: ${nextAppointment.consultationType}`,
+        }
+      );
     } else {
-      reminders.push({
-        icon: <CalendarDays className="size-5" aria-hidden="true" />,
-        title: 'Prepare for your visit',
-        detail: `Your appointment with ${nextAppointment.doctorName} is coming up.`,
-      });
+      reminders.push(
+        {
+          icon: <CalendarDays className="size-5" aria-hidden="true" />,
+          title: 'Prepare for your visit',
+          detail: `Your appointment with ${nextAppointment.doctorName} is coming up.`,
+        },
+        {
+          icon: <Users className="size-5" aria-hidden="true" />,
+          title: 'Visit type',
+          detail: `Visit type: ${nextAppointment.consultationType}`,
+        },
+        {
+          icon: <Clock3 className="size-5" aria-hidden="true" />,
+          title: 'Appointment time',
+          detail: `Scheduled for ${nextAppointmentUI?.date} at ${nextAppointmentUI?.time}.`,
+        }
+      );
     }
   }
   const latestPrescription = completedAppointments.find((a) => Boolean(a.prescription));
@@ -473,7 +493,7 @@ export default function PatientDashboardPage() {
             >
               <div className="flex flex-col gap-4">
                 {allAppointments.length > 0 ? (
-                  allAppointments.map((item) => (
+                  allAppointments.slice(0, 3).map((item) => (
                     <div key={item.id} className="flex gap-4">
                       <div className="flex w-14 shrink-0 flex-col items-center">
                         <span className="text-foreground text-xs font-black">{item.date}</span>
@@ -562,8 +582,12 @@ export default function PatientDashboardPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-muted-foreground py-8 text-center text-sm">
-                    No prescriptions yet.
+                  <div className="bg-warning/10 flex h-52 flex-col content-stretch items-center justify-center gap-2 rounded-xl p-4 text-center">
+                    <Pill className="text-warning mx-auto size-7" aria-hidden="true" />
+                    <h3 className="font-bold">No prescriptions yet</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Prescriptions from completed visits will appear here.
+                    </p>
                   </div>
                 )}
               </div>
