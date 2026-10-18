@@ -245,6 +245,7 @@ export function transformAppointmentToUI(appointment: AppointmentResponse): Appo
     doctorId: appointment.doctorId,
     notes: appointment.notes,
     createdAt: createdAt.toISOString(),
+    slotStartTime: appointment.slot.startTime,
   };
 }
 
@@ -367,4 +368,6 @@ export interface AppointmentUI {
   doctorId: string;
   notes?: string | null;
   createdAt: string;
+  // Raw slot start time (ISO) — used to separate future vs past appointments
+  slotStartTime: string;
 }

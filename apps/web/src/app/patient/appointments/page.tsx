@@ -16,8 +16,6 @@ import { CalendarDays, Check, X } from 'lucide-react';
 import {
   useAppointments,
   useDashboardStats,
-  useUpcomingAppointments,
-  useCompletedAppointments,
   useCancelAppointment,
   useRescheduleAppointment,
   transformAppointmentsToUI,
@@ -38,14 +36,10 @@ export default function PatientAppointmentsPage() {
   const [rescheduleTarget, setRescheduleTarget] = useState<AppointmentUI | null>(null);
   const [notice, setNotice] = useState('');
 
-  // Build filters for API
-  const filters: AppointmentFilters = {
-    status:
-      tab === 'Upcoming'
-        ? ['SCHEDULED']
-        : tab === 'Completed'
-          ? ['COMPLETED']
-          : ['CANCELLED', 'NO_SHOW'],
+  // Build filters for API. We intentionally omit the status filter so the API
+  // returns appointments of all statuses — tab counts must stay accurate
+  // regardless of which tab is active (they should not reset when switching tabs).
+  const listFilters: AppointmentFilters = {
     search: search || undefined,
     specialty: specialty !== 'All specialties' ? specialty : undefined,
     dateFrom: dateFrom || undefined,
@@ -58,33 +52,45 @@ export default function PatientAppointmentsPage() {
 
   // Fetch data using hooks
   const { isLoading: statsLoading } = useDashboardStats();
-  const { data: upcomingData, isLoading: upcomingLoading } = useUpcomingAppointments(10);
-  const { data: completedData, isLoading: completedLoading } = useCompletedAppointments(10);
-  const { data: appointmentsData, isLoading: appointmentsLoading } = useAppointments(filters);
+  const { data: appointmentsData, isLoading: appointmentsLoading } =
+    useAppointments(listFilters);
 
   // Transform data to UI format
-  const upcomingAppointments = upcomingData ? transformAppointmentsToUI(upcomingData) : [];
-  const completedAppointments = completedData ? transformAppointmentsToUI(completedData) : [];
   const filteredAppointments = appointmentsData?.data
     ? transformAppointmentsToUI(appointmentsData.data)
     : [];
 
-  // Get all appointments for specialty filter options
-  const allAppointments = [...upcomingAppointments, ...completedAppointments];
-  const specialties = [
-    'All specialties',
-    ...Array.from(new Set(allAppointments.map((item) => item.specialty))),
-  ];
+  // Now is used to separate future (upcoming) from past appointments. A slot
+  // can keep status SCHEDULED in the DB even after its time has passed, so we
+  // must compare against the appointment date/time rather than status alone.
+  const now = new Date();
 
-  // Counts for tabs
+  // Counts for all tabs — derived from the full appointment list so badges
+  // stay accurate regardless of which tab is active.
   const counts = {
-    Upcoming: upcomingAppointments.length,
-    Completed: completedAppointments.length,
-    Cancelled: allAppointments.filter((a) => a.tab === 'Cancelled').length,
+    Upcoming: filteredAppointments.filter(
+      (a) => a.tab === 'Upcoming' && new Date(a.slotStartTime) >= now
+    ).length,
+    Completed: filteredAppointments.filter((a) => a.tab === 'Completed').length,
+    Cancelled: filteredAppointments.filter((a) => a.tab === 'Cancelled').length,
   };
 
+  // Get all appointments for specialty filter options
+  const specialties = [
+    'All specialties',
+    ...Array.from(new Set(filteredAppointments.map((item) => item.specialty))),
+  ];
+
+  // Rendered list for the active tab only
+  const displayedAppointments = filteredAppointments.filter((item) => {
+    if (tab === 'Upcoming') {
+      return item.tab === 'Upcoming' && new Date(item.slotStartTime) >= now;
+    }
+    return item.tab === tab;
+  });
+
   // Check if any data is loading
-  const isLoading = statsLoading || upcomingLoading || completedLoading || appointmentsLoading;
+  const isLoading = statsLoading || appointmentsLoading;
 
   // Mutations
   const cancelMutation = useCancelAppointment();
@@ -194,7 +200,7 @@ export default function PatientAppointmentsPage() {
                     </div>
                   ))}
                 </div>
-              ) : filteredAppointments.length === 0 ? (
+              ) : displayedAppointments.length === 0 ? (
                 <div className="border-border rounded-2xl border border-dashed p-12 text-center">
                   <CalendarDays className="text-primary/50 mx-auto size-8" aria-hidden="true" />
                   <h3 className="mt-4 font-black">No {tab.toLowerCase()} appointments</h3>
@@ -206,7 +212,7 @@ export default function PatientAppointmentsPage() {
                 </div>
               ) : (
                 <div className="grid gap-3">
-                  {filteredAppointments.map((item) => (
+                  {displayedAppointments.map((item) => (
                     <AppointmentCard
                       key={item.id}
                       appointment={item}

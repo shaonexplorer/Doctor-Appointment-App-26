@@ -229,6 +229,7 @@ export default function PatientDashboardPage() {
         doctorId: '',
         notes: null,
         createdAt: nextAppointment.startTime,
+        slotStartTime: nextAppointment.startTime,
       })
     : null;
 
