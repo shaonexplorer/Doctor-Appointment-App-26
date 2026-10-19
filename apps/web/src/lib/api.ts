@@ -565,9 +565,7 @@ export const clinicApi = {
    * List clinics with pagination, search, sorting, and filtering (Admin/Staff only)
    * GET /api/clinics
    */
-  listClinics: async (
-    filters: ClinicFilters
-  ): Promise<PaginatedResponse<Clinic>> => {
+  listClinics: async (filters: ClinicFilters): Promise<PaginatedResponse<Clinic>> => {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -600,10 +598,7 @@ export const clinicApi = {
    * Update a clinic (Admin only)
    * PATCH /api/clinics/:id
    */
-  updateClinic: async (
-    id: string,
-    data: ClinicUpdateInput
-  ): Promise<Clinic> => {
+  updateClinic: async (id: string, data: ClinicUpdateInput): Promise<Clinic> => {
     return apiRequest<Clinic>(`/api/clinics/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -1258,6 +1253,15 @@ export interface DoctorPrescriptionFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
+// Prescription filters for the patient-scoped list endpoint
+export interface PatientPrescriptionFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 // Prescription API functions
 export const prescriptionApi = {
   /**
@@ -1333,6 +1337,24 @@ export const prescriptionApi = {
    */
   getRecentByPatient: async (limit = 5): Promise<PrescriptionResponse[]> => {
     return apiRequest<PrescriptionResponse[]>(`/api/prescriptions/recent/patient?limit=${limit}`);
+  },
+
+  /**
+   * Get current patient's prescriptions with pagination, search, and sorting
+   * GET /api/prescriptions/patient
+   */
+  listPatientPrescriptions: async (
+    filters: PatientPrescriptionFilters = {}
+  ): Promise<PaginatedPrescriptionsResponse> => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    return apiRequest<PaginatedPrescriptionsResponse>(
+      `/api/prescriptions/patient?${params.toString()}`
+    );
   },
 
   /**

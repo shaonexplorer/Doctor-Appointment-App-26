@@ -113,6 +113,31 @@ export class PrescriptionController {
   };
 
   /**
+   * List the current patient's own prescriptions with pagination (Patient scoped)
+   * GET /api/prescriptions/patient
+   */
+  listPatientPrescriptions = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const validatedQuery = req.validatedQuery as PaginationParams;
+
+      // Patients can only ever list their own prescriptions - force patientId from the session
+      const result = await this.prescriptionService.listPrescriptions(
+        { patientId: req.user!.id },
+        validatedQuery
+      );
+      res.json(
+        buildSuccessResponse(buildPaginatedResponse(result.data, validatedQuery, result.meta.total))
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * Get prescriptions by appointment
    * GET /api/prescriptions/appointment/:appointmentId
    */

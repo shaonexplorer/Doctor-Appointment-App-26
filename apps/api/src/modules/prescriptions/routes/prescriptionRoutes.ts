@@ -32,11 +32,28 @@ export function createPrescriptionRoutes(prescriptionController: PrescriptionCon
   const doctorOnlyMiddleware = requireRole(UserType.DOCTOR);
 
   // List prescriptions (DOCTOR, ADMIN, STAFF)
-  router.get('/', validatePagination, doctorStaffAdminMiddleware, asyncHandler(prescriptionController.listPrescriptions));
+  router.get(
+    '/',
+    validatePagination,
+    doctorStaffAdminMiddleware,
+    asyncHandler(prescriptionController.listPrescriptions)
+  );
 
   // Recent prescriptions (DOCTOR, ADMIN, STAFF)
-  router.get('/recent/doctor', doctorStaffAdminMiddleware, asyncHandler(prescriptionController.getRecentByDoctor));
+  router.get(
+    '/recent/doctor',
+    doctorStaffAdminMiddleware,
+    asyncHandler(prescriptionController.getRecentByDoctor)
+  );
   router.get('/recent/patient', asyncHandler(prescriptionController.getRecentByPatient));
+
+  // Patient's own prescriptions (any authenticated user, scoped to their patientId)
+  router.get(
+    '/patient',
+    validatePagination,
+    requireAuth,
+    asyncHandler(prescriptionController.listPatientPrescriptions)
+  );
 
   // Prescriptions by appointment (accessible via audit middleware)
   router.get(

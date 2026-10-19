@@ -113,16 +113,28 @@ export class PrescriptionRepository {
       doctorId?: string;
       patientId?: string;
       appointmentId?: string;
+      search?: string;
     },
     params: PaginationParams
   ): Promise<PaginatedResponse<PrescriptionWithRelations>> {
-    const { page, limit, sortBy, sortOrder } = params;
+    const { page = 1, limit = 20, sortBy, sortOrder } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.PrescriptionWhereInput = {};
     if (filters.doctorId) where.doctorId = filters.doctorId;
     if (filters.patientId) where.patientId = filters.patientId;
     if (filters.appointmentId) where.appointmentId = filters.appointmentId;
+    if (filters.search) {
+      where.diagnosis = { contains: filters.search, mode: 'insensitive' };
+    }
+
+    // Only allow sorting on columns that exist on the Prescription model
+    const ALLOWED_SORT_BY = ['createdAt', 'diagnosis'] as const;
+    const orderByField =
+      sortBy && ALLOWED_SORT_BY.includes(sortBy as (typeof ALLOWED_SORT_BY)[number])
+        ? sortBy
+        : 'createdAt';
+    const orderDirection = sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [prescriptions, total] = await Promise.all([
       this.prisma.prescription.findMany({
@@ -144,7 +156,7 @@ export class PrescriptionRepository {
             },
           },
         },
-        orderBy: sortBy ? { [sortBy]: sortOrder || 'asc' } : { createdAt: 'desc' },
+        orderBy: { [orderByField]: orderDirection },
       }),
       this.prisma.prescription.count({ where }),
     ]);

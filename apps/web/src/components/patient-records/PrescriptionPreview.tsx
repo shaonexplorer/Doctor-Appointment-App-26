@@ -19,7 +19,7 @@ export interface PrescriptionPreviewProps {
       dosage: string;
       frequency: string;
       duration: string;
-      instructions: string;
+      instructions: string | null;
     }>;
     tests: string[];
   };
@@ -36,27 +36,9 @@ export function PrescriptionPreview({
   onPrint,
   className,
 }: PrescriptionPreviewProps) {
-  if (!isOpen) return null;
+  if (!isOpen || !prescription) return null;
 
-  const defaultPrescription = {
-    id: 'RX-2026-003988',
-    doctor: 'Dr. Sarah Williams &middot; General Medicine',
-    patient: 'Sarah Johnson',
-    diagnosis: 'Annual wellness check-up',
-    created: 'August 18, 2026',
-    medications: [
-      {
-        name: 'Amoxicillin',
-        dosage: '500 mg',
-        frequency: '3 times daily',
-        duration: '7 days',
-        instructions: 'After meals',
-      },
-    ],
-    tests: ['CBC', 'ECG', 'Lipid Profile'],
-  };
-
-  const data = prescription || defaultPrescription;
+  const data = prescription;
 
   return (
     <div
@@ -117,7 +99,7 @@ export function PrescriptionPreview({
                     <td className="py-4">{med.dosage}</td>
                     <td className="py-4">{med.frequency}</td>
                     <td className="py-4">{med.duration}</td>
-                    <td className="py-4">{med.instructions}</td>
+                    <td className="py-4">{med.instructions ?? ''}</td>
                   </tr>
                 ))}
               </tbody>
