@@ -337,6 +337,7 @@ export default function DoctorProfilePage() {
             onBook={handleBook}
             onViewMoreDates={() => setNotice('More appointment dates will be available soon.')}
             onNotice={setNotice}
+            onBack={handleBack}
           />
         </div>
         <Reviews reviews={reviews} overallRating={4.9} />

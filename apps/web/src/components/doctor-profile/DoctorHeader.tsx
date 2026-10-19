@@ -40,7 +40,7 @@ export function DoctorHeader({
       )}
     >
       <div className="h-28 bg-gradient-to-r from-[#527fd2] via-[#88a4dc] to-[#e9f8f3]" />
-      <div className="-mt-12 flex min-w-0 flex-col gap-5 px-5 pb-6 sm:flex-row sm:items-end sm:justify-between sm:px-7">
+      <div className="-mt-10 flex min-w-0 flex-col gap-5 px-5 pb-6 sm:flex-row sm:items-end sm:justify-between sm:px-7">
         <div className="flex min-w-0 flex-wrap items-end gap-4">
           <div
             className={cn(
@@ -55,7 +55,7 @@ export function DoctorHeader({
               <h2 className="text-2xl font-black tracking-tight">{doctor.name}</h2>
               <BadgeCheck className="fill-primary text-card size-5" aria-label="Verified doctor" />
             </div>
-            <p className="text-primary mt-1 font-semibold">{doctor.designation}</p>
+            <p className="text-primary mt-2 font-semibold">{doctor.designation}</p>
             <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-3 text-xs font-bold">
               <span className="flex items-center gap-1 text-[#c28a31]">
                 <Star className="size-3.5 fill-current" aria-hidden="true" />
