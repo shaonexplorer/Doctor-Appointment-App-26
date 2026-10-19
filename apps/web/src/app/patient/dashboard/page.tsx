@@ -33,6 +33,7 @@ import {
   MonthlyExpensesBarChart,
   EmptyDashboardState,
   DashboardErrorState,
+  DashboardLoadingState,
 } from '@/components/patient-dashboard';
 import { AppointmentDrawer, CancelModal, RescheduleFlow } from '@/components/appointments';
 import {
@@ -315,14 +316,7 @@ export default function PatientDashboardPage() {
   if (isLoading) {
     return (
       <ProtectedRoute allowedRoles={[UserType.PATIENT]}>
-        <div className="grid gap-5 lg:grid-cols-2">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
-            <div
-              key={item}
-              className="border-border bg-card h-44 animate-pulse rounded-2xl border"
-            />
-          ))}
-        </div>
+        <DashboardLoadingState />
       </ProtectedRoute>
     );
   }
