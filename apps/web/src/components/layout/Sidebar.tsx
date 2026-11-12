@@ -2,7 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Stethoscope, LayoutDashboard, Calendar, ClipboardList, Users, Settings, Shield, BarChart3, LogOut, User, ChevronRight } from 'lucide-react';
+import {
+  Stethoscope,
+  LayoutDashboard,
+  Calendar,
+  ClipboardList,
+  Users,
+  Settings,
+  Shield,
+  BarChart3,
+  LogOut,
+  User,
+  ChevronRight,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,9 +22,16 @@ import { useAuth } from '@/context/AuthContext';
 import { UserType } from '@doctor-appointment-app/shared';
 import { cn } from '@/lib/utils';
 
-const navigationItems: Record<UserType, Array<{ label: string; href: string; icon: React.ReactNode }>> = {
+const navigationItems: Record<
+  UserType,
+  Array<{ label: string; href: string; icon: React.ReactNode }>
+> = {
   [UserType.PATIENT]: [
-    { label: 'Dashboard', href: '/dashboard/patient', icon: <LayoutDashboard className="h-5 w-5" /> },
+    {
+      label: 'Dashboard',
+      href: '/dashboard/patient',
+      icon: <LayoutDashboard className="h-5 w-5" />,
+    },
     { label: 'Appointments', href: '/appointments', icon: <Calendar className="h-5 w-5" /> },
     { label: 'Doctors', href: '/doctors', icon: <Stethoscope className="h-5 w-5" /> },
     { label: 'Prescriptions', href: '/prescriptions', icon: <ClipboardList className="h-5 w-5" /> },
@@ -20,9 +39,17 @@ const navigationItems: Record<UserType, Array<{ label: string; href: string; ico
     { label: 'Settings', href: '/settings', icon: <Settings className="h-5 w-5" /> },
   ],
   [UserType.DOCTOR]: [
-    { label: 'Dashboard', href: '/dashboard/doctor', icon: <LayoutDashboard className="h-5 w-5" /> },
+    {
+      label: 'Dashboard',
+      href: '/dashboard/doctor',
+      icon: <LayoutDashboard className="h-5 w-5" />,
+    },
     { label: 'My Schedule', href: '/doctor/schedule', icon: <Calendar className="h-5 w-5" /> },
-    { label: 'Appointments', href: '/doctor/appointments', icon: <ClipboardList className="h-5 w-5" /> },
+    {
+      label: 'Appointments',
+      href: '/doctor/appointments',
+      icon: <ClipboardList className="h-5 w-5" />,
+    },
     { label: 'Patients', href: '/doctor/patients', icon: <Users className="h-5 w-5" /> },
     { label: 'Analytics', href: '/doctor/analytics', icon: <BarChart3 className="h-5 w-5" /> },
     { label: 'Profile', href: '/profile', icon: <User className="h-5 w-5" /> },
@@ -65,8 +92,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Overlay */}
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-background/50 backdrop-blur-sm transition-opacity lg:hidden',
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          'bg-background/50 fixed inset-0 z-40 backdrop-blur-sm transition-opacity lg:hidden',
+          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         )}
         onClick={onClose}
         aria-hidden="true"
@@ -75,18 +102,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-50 h-full w-64 border-r border-border bg-background flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:z-auto',
+          'border-border bg-background fixed top-0 left-0 z-50 flex h-full w-64 flex-col border-r transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         role="navigation"
         aria-label="Main navigation"
       >
-        <div className="flex h-16 items-center justify-between border-b border-border px-4 lg:justify-center lg:px-0">
+        <div className="border-border flex h-16 items-center justify-between border-b px-4 lg:justify-center lg:px-0">
           <Link href="/" className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <span className="bg-primary text-primary-foreground shadow-primary/20 grid size-8 place-items-center rounded-xl shadow-lg">
               <Stethoscope className="size-4" />
             </span>
-            <span className="font-bold text-xl text-foreground">
+            <span className="text-foreground text-xl font-bold">
               Medi<span className="text-primary">Book</span>
             </span>
           </Link>
@@ -101,7 +128,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </Button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 lg:px-2 lg:py-6">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 lg:px-2 lg:py-6">
           {userNavItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
@@ -123,18 +150,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           })}
         </nav>
 
-        <div className="border-t border-border p-4 lg:p-6">
+        <div className="border-border border-t p-4 lg:p-6">
           <Separator className="mb-4" />
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={user.email} alt={user.firstName} />
               <AvatarFallback className="bg-primary text-primary-foreground">
-                {user.firstName[0]}{user.lastName[0]}
+                {user.firstName[0]}
+                {user.lastName[0]}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.firstName} {user.lastName}</p>
-              <p className="text-xs text-muted-foreground truncate capitalize">{user.userType.toLowerCase()}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">
+                {user.firstName} {user.lastName}
+              </p>
+              <p className="text-muted-foreground truncate text-xs capitalize">
+                {user.userType.toLowerCase()}
+              </p>
             </div>
           </div>
           <Button

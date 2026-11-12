@@ -2,7 +2,17 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { X, UserRound, Mail, Phone, Calendar, Shield, LockKeyhole, Eye, EyeOff } from 'lucide-react';
+import {
+  X,
+  UserRound,
+  Mail,
+  Phone,
+  Calendar,
+  Shield,
+  LockKeyhole,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -135,11 +145,7 @@ function Field({
   );
 }
 
-export function RegisterPatientDialog({
-  isOpen,
-  onClose,
-  onSuccess,
-}: RegisterPatientDialogProps) {
+export function RegisterPatientDialog({ isOpen, onClose, onSuccess }: RegisterPatientDialogProps) {
   if (!isOpen) return null;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -229,7 +235,7 @@ export function RegisterPatientDialog({
       aria-labelledby="register-patient-title"
     >
       <div
-        className="border-border bg-card w-full max-w-lg rounded-2xl border p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="border-border bg-card max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -247,13 +253,11 @@ export function RegisterPatientDialog({
         </div>
 
         <p className="text-muted-foreground mt-2 text-sm">
-          Enter the patient's information to create their account. They will receive an email to verify their account and set a secure password.
+          Enter the patient's information to create their account. They will receive an email to
+          verify their account and set a secure password.
         </p>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="mt-6 flex flex-col gap-4"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-4">
           {/* Name fields */}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
@@ -342,13 +346,14 @@ export function RegisterPatientDialog({
           </div>
 
           {/* Info notice */}
-          <div className="bg-secondary/50 rounded-xl p-4 border border-border/50">
+          <div className="bg-secondary/50 border-border/50 rounded-xl border p-4">
             <div className="flex items-start gap-3">
-              <Shield className="size-5 text-primary shrink-0 mt-0.5" />
+              <Shield className="text-primary mt-0.5 size-5 shrink-0" />
               <div className="text-sm">
-                <p className="font-semibold text-foreground">Account setup</p>
+                <p className="text-foreground font-semibold">Account setup</p>
                 <p className="text-muted-foreground mt-1">
-                  The patient will receive an email invitation to complete their registration and set a secure password.
+                  The patient will receive an email invitation to complete their registration and
+                  set a secure password.
                 </p>
               </div>
             </div>
@@ -359,7 +364,7 @@ export function RegisterPatientDialog({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="border-border rounded-xl border px-5 py-2.5 text-xs font-bold transition-colors hover:bg-secondary disabled:opacity-50"
+              className="border-border hover:bg-secondary rounded-xl border px-5 py-2.5 text-xs font-bold transition-colors disabled:opacity-50"
             >
               Cancel
             </button>

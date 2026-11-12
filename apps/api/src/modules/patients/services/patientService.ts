@@ -564,17 +564,15 @@ export class PatientService {
    * Get all patients for staff (Staff Portal)
    * Returns all patients in the system with their medical info
    */
-  async getStaffPatientList(
-    query: {
-      page: number;
-      limit: number;
-      search?: string;
-      condition?: string;
-      status?: 'all' | 'active' | 'inactive';
-      sortBy?: 'lastVisit' | 'nextAppointment' | 'name' | 'totalAppointments';
-      sortOrder?: 'asc' | 'desc';
-    }
-  ): Promise<DoctorPatientListResponse> {
+  async getStaffPatientList(query: {
+    page: number;
+    limit: number;
+    search?: string;
+    condition?: string;
+    status?: 'all' | 'active' | 'inactive';
+    sortBy?: 'lastVisit' | 'nextAppointment' | 'name' | 'totalAppointments';
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<DoctorPatientListResponse> {
     const {
       page,
       limit,

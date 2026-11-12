@@ -184,10 +184,7 @@ export function DataTable<TData extends RowData>({
               <Label htmlFor="statusFilter" className="sr-only">
                 Status filter
               </Label>
-              <Select
-                value={statusFilter.value}
-                onValueChange={statusFilter.onChange}
-              >
+              <Select value={statusFilter.value} onValueChange={statusFilter.onChange}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder={statusFilter.placeholder ?? 'All statuses'} />
                 </SelectTrigger>

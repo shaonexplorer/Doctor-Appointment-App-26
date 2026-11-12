@@ -9,7 +9,13 @@ import { DataTable } from '@/components/staff-portal/data-table';
 import { type DataTableFeatures } from '@/components/staff-portal/data-table-features';
 import type { StaffPatient } from './types';
 
-export function PatientTable({ patients, onViewPatient }: { patients: StaffPatient[]; onViewPatient: (patient: StaffPatient) => void }) {
+export function PatientTable({
+  patients,
+  onViewPatient,
+}: {
+  patients: StaffPatient[];
+  onViewPatient: (patient: StaffPatient) => void;
+}) {
   const columns = React.useMemo<ColumnDef<DataTableFeatures, StaffPatient>[]>(
     () => [
       {
@@ -19,12 +25,14 @@ export function PatientTable({ patients, onViewPatient }: { patients: StaffPatie
           const patient = row.original;
           return (
             <div className="flex items-center gap-3">
-              <div className="grid size-9 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold text-primary">
+              <div className="text-primary grid size-9 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold">
                 {patient.initials}
               </div>
               <div>
                 <p className="font-bold">{patient.name}</p>
-                <p className="text-[11px] text-muted-foreground">{patient.id} · {patient.age} years · {patient.gender}</p>
+                <p className="text-muted-foreground text-[11px]">
+                  {patient.id} · {patient.age} years · {patient.gender}
+                </p>
               </div>
             </div>
           );
@@ -36,7 +44,7 @@ export function PatientTable({ patients, onViewPatient }: { patients: StaffPatie
         cell: ({ row }) => {
           const patient = row.original;
           return (
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               <p>{patient.phone}</p>
               <p className="mt-1">{patient.email}</p>
             </div>
@@ -51,12 +59,16 @@ export function PatientTable({ patients, onViewPatient }: { patients: StaffPatie
       {
         accessorKey: 'doctor',
         header: 'Doctor',
-        cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.doctor}</span>,
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-xs">{row.original.doctor}</span>
+        ),
       },
       {
         accessorKey: 'nextAppointment',
         header: 'Next appointment',
-        cell: ({ row }) => <span className="text-xs font-semibold text-primary">{row.original.nextAppointment}</span>,
+        cell: ({ row }) => (
+          <span className="text-primary text-xs font-semibold">{row.original.nextAppointment}</span>
+        ),
       },
       {
         accessorKey: 'payment',
@@ -87,7 +99,9 @@ export function PatientTable({ patients, onViewPatient }: { patients: StaffPatie
               variant={status === 'Active' ? 'default' : 'secondary'}
               className={cn(
                 'rounded-full px-2.5 py-1 text-[10px] font-bold',
-                status === 'Active' ? 'bg-[#e9f8f3] text-[#258c70]' : 'bg-secondary text-muted-foreground'
+                status === 'Active'
+                  ? 'bg-[#e9f8f3] text-[#258c70]'
+                  : 'bg-secondary text-muted-foreground'
               )}
             >
               {status}

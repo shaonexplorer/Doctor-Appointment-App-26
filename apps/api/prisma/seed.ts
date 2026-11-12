@@ -579,8 +579,9 @@ function generateSchedules(doctorId: string, startDate: Date, days: number = 30)
       // 80% available, 15% booked, 5% cancelled
       const rand = Math.random();
       let status = SlotStatus.AVAILABLE;
-      if (rand > 0.95) status = SlotStatus.CANCELLED;      // 5%
-      else if (rand > 0.8) status = SlotStatus.BOOKED;     // 15%
+      if (rand > 0.95)
+        status = SlotStatus.CANCELLED; // 5%
+      else if (rand > 0.8) status = SlotStatus.BOOKED; // 15%
 
       schedules.push({
         doctorId,
@@ -601,8 +602,9 @@ function generateSchedules(doctorId: string, startDate: Date, days: number = 30)
 
       const rand = Math.random();
       let status = SlotStatus.AVAILABLE;
-      if (rand > 0.95) status = SlotStatus.CANCELLED;      // 5%
-      else if (rand > 0.8) status = SlotStatus.BOOKED;     // 15%
+      if (rand > 0.95)
+        status = SlotStatus.CANCELLED; // 5%
+      else if (rand > 0.8) status = SlotStatus.BOOKED; // 15%
 
       schedules.push({
         doctorId,

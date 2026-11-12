@@ -1,8 +1,8 @@
-export * from "./BookingStepper";
-export * from "./BookingSummary";
-export * from "./SymptomNotesField";
-export * from "./ConfirmationModal";
-export * from "./ToastNotification";
+export * from './BookingStepper';
+export * from './BookingSummary';
+export * from './SymptomNotesField';
+export * from './ConfirmationModal';
+export * from './ToastNotification';
 export {
   StepHeading,
   type StepHeadingProps,
@@ -27,4 +27,4 @@ export {
   ConfirmationStep,
   type ConfirmationStepProps,
   type ConfirmationStatus,
-} from "../booking-flow";
+} from '../booking-flow';

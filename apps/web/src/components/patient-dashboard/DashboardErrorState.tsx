@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 export interface DashboardErrorStateProps {
   className?: string;
@@ -12,11 +12,11 @@ export function DashboardErrorState({ className, message }: DashboardErrorStateP
     <div
       role="alert"
       className={cn(
-        "rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-sm font-semibold text-destructive",
+        'border-destructive/20 bg-destructive/5 text-destructive rounded-2xl border p-6 text-sm font-semibold',
         className
       )}
     >
-      {message ?? "We couldn&apos;t load your health overview. Please try again."}
+      {message ?? 'We couldn&apos;t load your health overview. Please try again.'}
     </div>
   );
 }

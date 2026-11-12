@@ -299,7 +299,10 @@ export class DoctorRepository {
    * Build orderBy clause for Prisma query
    * Maps sortBy fields to valid Prisma orderBy fields
    */
-  private buildOrderBy(sortBy?: string, sortOrder: 'asc' | 'desc' = 'asc'): Prisma.DoctorProfileOrderByWithRelationInput {
+  private buildOrderBy(
+    sortBy?: string,
+    sortOrder: 'asc' | 'desc' = 'asc'
+  ): Prisma.DoctorProfileOrderByWithRelationInput {
     // Map sortBy to valid fields
     // DoctorProfile doesn't have createdAt/updatedAt, so map to user.createdAt
     const fieldMap: Record<string, string | Prisma.DoctorProfileOrderByWithRelationInput> = {

@@ -1,33 +1,33 @@
-'use client'
+'use client';
 
-import { createColumnHelper } from '@tanstack/react-table'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Eye } from 'lucide-react'
-import { type DataTableFeatures } from './data-table-features'
+import { createColumnHelper } from '@tanstack/react-table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
+import { type DataTableFeatures } from './data-table-features';
 
 // The transformed appointment shape from useStaffAppointments hook
 export interface StaffAppointment {
-  id: string
-  patient: string // Full name like "John Doe"
-  initials: string
-  time: string // Formatted time like "9:00 AM"
-  symptoms: string | null
-  notes: string | null
-  status: string
-  payment: 'Pending' | 'Paid' | 'Refunded'
-  date: string // Formatted date like "Sep 18, 2026"
-  consultationType: 'IN_PERSON' | 'VIDEO'
-  specialty: string
-  slotId: string
-  doctorId: string
-  patientId: string
-  startTime: string // ISO string
-  endTime: string // ISO string
-  createdAt: string
+  id: string;
+  patient: string; // Full name like "John Doe"
+  initials: string;
+  time: string; // Formatted time like "9:00 AM"
+  symptoms: string | null;
+  notes: string | null;
+  status: string;
+  payment: 'Pending' | 'Paid' | 'Refunded';
+  date: string; // Formatted date like "Sep 18, 2026"
+  consultationType: 'IN_PERSON' | 'VIDEO';
+  specialty: string;
+  slotId: string;
+  doctorId: string;
+  patientId: string;
+  startTime: string; // ISO string
+  endTime: string; // ISO string
+  createdAt: string;
 }
 
-const columnHelper = createColumnHelper<DataTableFeatures, StaffAppointment>()
+const columnHelper = createColumnHelper<DataTableFeatures, StaffAppointment>();
 
 // Status badge variant mapping
 const statusBadgeVariant: Record<string, 'success' | 'warning' | 'destructive' | 'default'> = {
@@ -36,24 +36,22 @@ const statusBadgeVariant: Record<string, 'success' | 'warning' | 'destructive' |
   'Checked in': 'default',
   Confirmed: 'success',
   NoShow: 'destructive',
-}
+};
 
 // Payment badge variant mapping
 const paymentBadgeVariant: Record<string, 'success' | 'warning' | 'destructive'> = {
   Paid: 'success',
   Refunded: 'destructive',
   Pending: 'warning',
-}
+};
 
 // Consultation type mapping
 const consultationTypeMap: Record<string, string> = {
   IN_PERSON: 'In-person',
   VIDEO: 'Video',
-}
+};
 
-export const staffAppointmentsColumns = (
-  onViewClick: (appointment: StaffAppointment) => void
-) =>
+export const staffAppointmentsColumns = (onViewClick: (appointment: StaffAppointment) => void) =>
   columnHelper.columns([
     columnHelper.accessor('time', {
       header: 'Time',
@@ -93,23 +91,15 @@ export const staffAppointmentsColumns = (
     columnHelper.accessor('status', {
       header: 'Status',
       cell: ({ getValue }) => {
-        const status = getValue() as string
-        return (
-          <Badge variant={statusBadgeVariant[status] || 'default'}>
-            {status}
-          </Badge>
-        )
+        const status = getValue() as string;
+        return <Badge variant={statusBadgeVariant[status] || 'default'}>{status}</Badge>;
       },
     }),
     columnHelper.accessor('payment', {
       header: 'Payment',
       cell: ({ getValue }) => {
-        const payment = getValue() as string
-        return (
-          <Badge variant={paymentBadgeVariant[payment] || 'warning'}>
-            {payment}
-          </Badge>
-        )
+        const payment = getValue() as string;
+        return <Badge variant={paymentBadgeVariant[payment] || 'warning'}>{payment}</Badge>;
       },
     }),
     columnHelper.display({
@@ -131,6 +121,6 @@ export const staffAppointmentsColumns = (
       enableSorting: false,
       enableHiding: false,
     }),
-  ])
+  ]);
 
-export type { DataTableFeatures }
+export type { DataTableFeatures };

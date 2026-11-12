@@ -5,7 +5,13 @@
  * Provides caching, pagination, and search functionality
  */
 
-import { useQuery, useInfiniteQuery, useQueryClient, keepPreviousData, useMutation } from '@tanstack/react-query';
+import {
+  useQuery,
+  useInfiniteQuery,
+  useQueryClient,
+  keepPreviousData,
+  useMutation,
+} from '@tanstack/react-query';
 import {
   doctorApi,
   type CreateDoctorInput,
@@ -27,12 +33,7 @@ export const doctorKeys = {
 };
 
 // Re-export types for consumers
-export type {
-  CreateDoctorInput,
-  DoctorSearchFilters,
-  DoctorSearchResult,
-  DoctorProfile,
-};
+export type { CreateDoctorInput, DoctorSearchFilters, DoctorSearchResult, DoctorProfile };
 
 /**
  * Hook for fetching doctors with pagination (page-based)
@@ -360,7 +361,8 @@ export function transformDoctorToAdminFormat(doctor: DoctorSearchResult): AdminD
   const name = `Dr. ${doctor.user.firstName} ${doctor.user.lastName}`;
 
   // Get initials
-  const initials = `${doctor.user.firstName.charAt(0)}${doctor.user.lastName.charAt(0)}`.toUpperCase();
+  const initials =
+    `${doctor.user.firstName.charAt(0)}${doctor.user.lastName.charAt(0)}`.toUpperCase();
 
   // Format fee
   const fee = `$${doctor.fee}`;

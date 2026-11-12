@@ -76,10 +76,12 @@ export class ClinicRepository {
   /**
    * List clinics with pagination, search, and status filter
    */
-  async findMany(params: PaginationParams & {
-    search?: string;
-    status?: ClinicStatus;
-  }): Promise<PaginatedResponse<Clinic>> {
+  async findMany(
+    params: PaginationParams & {
+      search?: string;
+      status?: ClinicStatus;
+    }
+  ): Promise<PaginatedResponse<Clinic>> {
     const { page, limit, sortBy, sortOrder, search } = params;
     const status = (params as { status?: ClinicStatus }).status;
     const skip = (page - 1) * limit;

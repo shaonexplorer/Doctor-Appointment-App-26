@@ -1,18 +1,23 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Stethoscope, CalendarDays, FileText, UserRound } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Stethoscope,
+  CalendarDays,
+  FileText,
+  UserRound,
+  Sparkles,
+  Pill,
+} from 'lucide-react';
 
 // These labels MUST match the routeMap in PatientPortalShell.tsx
 const mobileNavItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/patient/dashboard' },
   { label: 'Find Doctors', icon: Stethoscope, href: '/doctors/search' },
-  // { label: 'Book Appointment', icon: CalendarDays, href: '/doctors/[id]/book' },
+  { label: 'Book Appointment', icon: CalendarDays, href: '/doctors/[id]/book' },
   { label: 'Appointments', icon: CalendarDays, href: '/patient/appointments' },
-  { label: 'Medical Records', icon: FileText, href: '/patient/records' },
-  { label: 'Profile', icon: UserRound, href: '/patient/profile' },
-  // { label: 'Settings', icon: Settings, href: '/patient/settings' },
-  // { label: 'Notifications', icon: Bell, href: '/patient/notifications' },
+  { label: 'Prescriptions', icon: Pill, href: '/patient/prescriptions' },
 ];
 
 export interface MobileNavProps {

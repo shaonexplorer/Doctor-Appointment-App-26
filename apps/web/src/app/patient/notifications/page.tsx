@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { UserType } from "@doctor-appointment-app/shared";
-import { PatientPortalShell } from "@/components/patient-portal";
-import { NotificationCenter } from "@/components/notification-center";
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { UserType } from '@doctor-appointment-app/shared';
+import { PatientPortalShell } from '@/components/patient-portal';
+import { NotificationCenter } from '@/components/notification-center';
 
 export default function PatientNotificationsPage() {
   return (

@@ -13,7 +13,11 @@ import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
 
 // Clinic create schema
 export const ClinicCreateSchema = z.object({
-  name: z.string().min(1, { message: 'Clinic name is required' }).max(100, { message: 'Clinic name is too long' }).trim(),
+  name: z
+    .string()
+    .min(1, { message: 'Clinic name is required' })
+    .max(100, { message: 'Clinic name is too long' })
+    .trim(),
   address: z.string().max(500, { message: 'Address is too long' }).optional().nullable(),
   phone: z.string().max(20, { message: 'Phone number is too long' }).optional().nullable(),
   email: z.string().email({ message: 'Invalid email address' }).optional().nullable(),

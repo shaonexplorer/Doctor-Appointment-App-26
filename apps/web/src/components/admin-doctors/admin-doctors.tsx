@@ -42,7 +42,7 @@ function Badge({ children, tone = 'blue' }: { children: ReactNode; tone?: string
 }
 
 export function AdminDoctors() {
-  const [status, setStatus] = useState<typeof statuses[number]>(statuses[0]); // 'All statuses'
+  const [status, setStatus] = useState<(typeof statuses)[number]>(statuses[0]); // 'All statuses'
   const [selected, setSelected] = useState<string[]>([]);
   const [drawer, setDrawer] = useState<AdminDoctorData | null>(null);
   const [addDoctorDialogOpen, setAddDoctorDialogOpen] = useState(false);
@@ -155,7 +155,7 @@ export function AdminDoctors() {
                 aria-label="Filter by status"
                 value={status}
                 onValueChange={(value) => {
-                  setStatus(value as typeof statuses[number]);
+                  setStatus(value as (typeof statuses)[number]);
                   setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                   setSelected([]);
                 }}
@@ -188,7 +188,9 @@ export function AdminDoctors() {
         {/* Error state */}
         {isError && doctors.length === 0 && (
           <div className="text-destructive flex items-center justify-center p-12">
-            <p>Failed to load doctors: {error instanceof Error ? error.message : 'Unknown error'}</p>
+            <p>
+              Failed to load doctors: {error instanceof Error ? error.message : 'Unknown error'}
+            </p>
             <button onClick={() => refetch()} className="text-primary ml-3 text-sm hover:underline">
               Retry
             </button>
@@ -216,8 +218,20 @@ export function AdminDoctors() {
               <p className="mt-1 text-sm text-slate-500">{drawer.specialty}</p>
               <div className="mt-4 flex gap-2">
                 <Badge>{drawer.status}</Badge>
-                <Badge tone={drawer.status === 'ACTIVE' ? 'green' : drawer.status === 'PENDING' ? 'amber' : 'red'}>
-                  {drawer.status === 'ACTIVE' ? 'Active' : drawer.status === 'PENDING' ? 'Pending review' : 'Suspended'}
+                <Badge
+                  tone={
+                    drawer.status === 'ACTIVE'
+                      ? 'green'
+                      : drawer.status === 'PENDING'
+                        ? 'amber'
+                        : 'red'
+                  }
+                >
+                  {drawer.status === 'ACTIVE'
+                    ? 'Active'
+                    : drawer.status === 'PENDING'
+                      ? 'Pending review'
+                      : 'Suspended'}
                 </Badge>
               </div>
               <div className="bg-muted mt-8 space-y-4 rounded-2xl p-4 text-sm">
@@ -249,7 +263,9 @@ export function AdminDoctors() {
                 <p>
                   <strong>Revenue</strong>
                   <br />
-                  <span className="text-slate-500">${drawer.appointments * Number(drawer.fee.replace('$', ''))}</span>
+                  <span className="text-slate-500">
+                    ${drawer.appointments * Number(drawer.fee.replace('$', ''))}
+                  </span>
                 </p>
               </div>
               <div className="mt-6 grid gap-2">
@@ -273,7 +289,9 @@ export function AdminDoctors() {
                     refetch();
                   }}
                   className={`rounded-xl border px-4 py-3 text-sm font-bold ${
-                    drawer.status === 'SUSPENDED' ? 'border-[#c7eadb] text-[2e9675]' : 'border-[#f1caca] text-[be6467]'
+                    drawer.status === 'SUSPENDED'
+                      ? 'border-[#c7eadb] text-[2e9675]'
+                      : 'border-[#f1caca] text-[be6467]'
                   }`}
                 >
                   {drawer.status === 'SUSPENDED' ? 'Activate doctor' : 'Suspend doctor'}

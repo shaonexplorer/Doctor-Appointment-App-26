@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Logout proxy error:', error);
     return NextResponse.json(
-      { success: false, error: { code: 'PROXY_ERROR', message: 'Authentication service unavailable' } },
+      {
+        success: false,
+        error: { code: 'PROXY_ERROR', message: 'Authentication service unavailable' },
+      },
       { status: 503 }
     );
   }

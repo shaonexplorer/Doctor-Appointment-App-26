@@ -43,7 +43,11 @@ export function createScheduleRoutes(scheduleController: ScheduleController): Ro
     validateCreateBulkSlots,
     asyncHandler(scheduleController.createBulkSlots)
   );
-  router.get('/doctor', doctorStaffAdminMiddleware, asyncHandler(scheduleController.getWeeklySchedule));
+  router.get(
+    '/doctor',
+    doctorStaffAdminMiddleware,
+    asyncHandler(scheduleController.getWeeklySchedule)
+  );
   router.patch(
     '/doctor/bulk',
     doctorOnlyMiddleware,

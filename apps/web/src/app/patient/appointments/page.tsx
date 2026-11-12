@@ -52,8 +52,7 @@ export default function PatientAppointmentsPage() {
 
   // Fetch data using hooks
   const { isLoading: statsLoading } = useDashboardStats();
-  const { data: appointmentsData, isLoading: appointmentsLoading } =
-    useAppointments(listFilters);
+  const { data: appointmentsData, isLoading: appointmentsLoading } = useAppointments(listFilters);
 
   // Transform data to UI format
   const filteredAppointments = appointmentsData?.data

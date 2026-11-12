@@ -6,10 +6,7 @@
 export * from './types';
 export * from './validators';
 export { PatientService, createPatientService } from './services/patientService';
-export {
-  PatientController,
-  createPatientController,
-} from './controllers/patientController';
+export { PatientController, createPatientController } from './controllers/patientController';
 export { createPatientRoutes } from './routes/patientRoutes';
 
 // Module factory for dependency injection

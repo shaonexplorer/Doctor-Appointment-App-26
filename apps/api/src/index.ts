@@ -105,7 +105,9 @@ app.listen(PORT, () => {
   console.log(`🚀 API server running on http://localhost:${PORT}`);
   console.log(`📝 Environment: ${config.nodeEnv}`);
   console.log(`🏗️  Architecture: Modular MVC (modules/ + shared/)`);
-  console.log(`📦 Modules loaded: auth, users, doctors, schedules, appointments, prescriptions, patients`);
+  console.log(
+    `📦 Modules loaded: auth, users, doctors, schedules, appointments, prescriptions, patients`
+  );
 });
 
 // Graceful shutdown

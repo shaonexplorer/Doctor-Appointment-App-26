@@ -62,12 +62,7 @@ export function createUserRoutes(userController: UserController): Router {
 
   // Admin only routes
   const adminMiddleware = userController.getRequireAdminMiddleware();
-  router.post(
-    '/',
-    adminMiddleware,
-    validateCreateUser,
-    asyncHandler(userController.createUser)
-  );
+  router.post('/', adminMiddleware, validateCreateUser, asyncHandler(userController.createUser));
   router.delete(
     '/:id',
     adminMiddleware,

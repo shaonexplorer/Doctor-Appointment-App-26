@@ -7,11 +7,7 @@ import { Router } from 'express';
 import type { ClinicController } from '../controllers/clinicController';
 import { requireAuth } from '../../../shared/middleware/auth';
 import { asyncHandler } from '../../../shared/utils';
-import {
-  validateClinicCreate,
-  validateClinicUpdate,
-  validateClinicFilters,
-} from '../validators';
+import { validateClinicCreate, validateClinicUpdate, validateClinicFilters } from '../validators';
 
 export function createClinicRoutes(clinicController: ClinicController): Router {
   const router = Router();
@@ -24,14 +20,15 @@ export function createClinicRoutes(clinicController: ClinicController): Router {
   router.get('/stats', adminStaffMiddleware, asyncHandler(clinicController.getClinicStats));
 
   // List clinics (Admin/Staff only)
-  router.get('/', adminStaffMiddleware, validateClinicFilters, asyncHandler(clinicController.listClinics));
+  router.get(
+    '/',
+    adminStaffMiddleware,
+    validateClinicFilters,
+    asyncHandler(clinicController.listClinics)
+  );
 
   // Get clinic by ID (Admin/Staff only)
-  router.get(
-    '/:id',
-    adminStaffMiddleware,
-    asyncHandler(clinicController.getClinic)
-  );
+  router.get('/:id', adminStaffMiddleware, asyncHandler(clinicController.getClinic));
 
   // Admin only routes
   const adminMiddleware = clinicController.getRequireAdminMiddleware();
@@ -47,11 +44,7 @@ export function createClinicRoutes(clinicController: ClinicController): Router {
     validateClinicUpdate,
     asyncHandler(clinicController.updateClinic)
   );
-  router.delete(
-    '/:id',
-    adminMiddleware,
-    asyncHandler(clinicController.deleteClinic)
-  );
+  router.delete('/:id', adminMiddleware, asyncHandler(clinicController.deleteClinic));
 
   return router;
 }

@@ -721,7 +721,18 @@ export class AppointmentService {
       userType?: UserType;
     }
   ): Promise<{ data: Appointment[]; meta: { total: number; totalPages: number } }> {
-    const { page, limit, status, patientSearch, dateFrom, dateTo, dateRange, sortBy, sortOrder, userType } = filters;
+    const {
+      page,
+      limit,
+      status,
+      patientSearch,
+      dateFrom,
+      dateTo,
+      dateRange,
+      sortBy,
+      sortOrder,
+      userType,
+    } = filters;
     const skip = (page - 1) * limit;
 
     // Handle dateRange filter - convert to dateFrom/dateTo
@@ -788,9 +799,13 @@ export class AppointmentService {
         startTime: {},
       };
       if (resolvedDateFrom)
-        (where.slot as Record<string, { gte?: Date; lte?: Date }>).startTime.gte = new Date(resolvedDateFrom);
+        (where.slot as Record<string, { gte?: Date; lte?: Date }>).startTime.gte = new Date(
+          resolvedDateFrom
+        );
       if (resolvedDateTo)
-        (where.slot as Record<string, { gte?: Date; lte?: Date }>).startTime.lte = new Date(resolvedDateTo);
+        (where.slot as Record<string, { gte?: Date; lte?: Date }>).startTime.lte = new Date(
+          resolvedDateTo
+        );
     }
 
     const [appointments, total] = await Promise.all([

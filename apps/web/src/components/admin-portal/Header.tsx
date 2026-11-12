@@ -8,11 +8,7 @@ interface AdminHeaderProps {
   onMobileMenuOpen: () => void;
 }
 
-export function AdminHeader({
-  active,
-  onNavigate,
-  onMobileMenuOpen,
-}: AdminHeaderProps) {
+export function AdminHeader({ active, onNavigate, onMobileMenuOpen }: AdminHeaderProps) {
   return (
     <header className="border-border bg-card/90 sticky top-0 z-30 flex h-[76px] items-center justify-between border-b px-4 backdrop-blur-md sm:px-8">
       <div className="flex items-center gap-3">

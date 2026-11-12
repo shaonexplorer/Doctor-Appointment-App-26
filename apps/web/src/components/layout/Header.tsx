@@ -2,26 +2,62 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Bell, User, LogOut, LayoutDashboard, Stethoscope, Users, Settings, Shield, Calendar, ClipboardList, BarChart3 } from 'lucide-react';
+import {
+  Menu,
+  X,
+  Bell,
+  User,
+  LogOut,
+  LayoutDashboard,
+  Stethoscope,
+  Users,
+  Settings,
+  Shield,
+  Calendar,
+  ClipboardList,
+  BarChart3,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
 import { UserType } from '@doctor-appointment-app/shared';
 import { cn } from '@/lib/utils';
 
-const navigationItems: Record<UserType, Array<{ label: string; href: string; icon: React.ReactNode }>> = {
+const navigationItems: Record<
+  UserType,
+  Array<{ label: string; href: string; icon: React.ReactNode }>
+> = {
   [UserType.PATIENT]: [
-    { label: 'Dashboard', href: '/dashboard/patient', icon: <LayoutDashboard className="h-4 w-4" /> },
+    {
+      label: 'Dashboard',
+      href: '/dashboard/patient',
+      icon: <LayoutDashboard className="h-4 w-4" />,
+    },
     { label: 'Appointments', href: '/appointments', icon: <Calendar className="h-4 w-4" /> },
     { label: 'Doctors', href: '/doctors', icon: <Stethoscope className="h-4 w-4" /> },
     { label: 'Prescriptions', href: '/prescriptions', icon: <ClipboardList className="h-4 w-4" /> },
   ],
   [UserType.DOCTOR]: [
-    { label: 'Dashboard', href: '/dashboard/doctor', icon: <LayoutDashboard className="h-4 w-4" /> },
+    {
+      label: 'Dashboard',
+      href: '/dashboard/doctor',
+      icon: <LayoutDashboard className="h-4 w-4" />,
+    },
     { label: 'My Schedule', href: '/doctor/schedule', icon: <Calendar className="h-4 w-4" /> },
-    { label: 'Appointments', href: '/doctor/appointments', icon: <ClipboardList className="h-4 w-4" /> },
+    {
+      label: 'Appointments',
+      href: '/doctor/appointments',
+      icon: <ClipboardList className="h-4 w-4" />,
+    },
     { label: 'Patients', href: '/doctor/patients', icon: <Users className="h-4 w-4" /> },
     { label: 'Analytics', href: '/doctor/analytics', icon: <BarChart3 className="h-4 w-4" /> },
   ],
@@ -60,7 +96,7 @@ export function Header() {
     <>
       <header
         className={cn(
-          'fixed top-0 left-0 right-0 z-40 border-b border-border bg-background/80 backdrop-blur-sm transition-all duration-200',
+          'border-border bg-background/80 fixed top-0 right-0 left-0 z-40 border-b backdrop-blur-sm transition-all duration-200',
           scrolled ? 'shadow-sm' : ''
         )}
         onScroll={handleScroll}
@@ -68,10 +104,10 @@ export function Header() {
         <div className="container-page flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <span className="bg-primary text-primary-foreground shadow-primary/20 grid size-8 place-items-center rounded-xl shadow-lg">
               <Stethoscope className="size-4" />
             </span>
-            <span className="hidden font-bold text-xl text-foreground sm:block">
+            <span className="text-foreground hidden text-xl font-bold sm:block">
               Medi<span className="text-primary">Book</span>
             </span>
           </Link>
@@ -82,7 +118,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
               >
                 {item.icon}
                 <span>{item.label}</span>
@@ -95,7 +131,7 @@ export function Header() {
             {/* Notifications */}
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+              <span className="bg-destructive text-destructive-foreground absolute -top-1 -right-1 size-4 rounded-full text-[10px] font-bold">
                 3
               </span>
             </Button>
@@ -107,7 +143,8 @@ export function Header() {
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={user.email} alt={user.firstName} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user.firstName[0]}{user.lastName[0]}
+                      {user.firstName[0]}
+                      {user.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -115,8 +152,10 @@ export function Header() {
               <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.firstName} {user.lastName}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    <p className="text-sm leading-none font-medium">
+                      {user.firstName} {user.lastName}
+                    </p>
+                    <p className="text-muted-foreground text-xs leading-none">{user.email}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -139,7 +178,7 @@ export function Header() {
                       window.location.href = '/login';
                     });
                   }}
-                  className="flex items-center gap-2 text-destructive focus:text-destructive"
+                  className="text-destructive focus:text-destructive flex items-center gap-2"
                 >
                   <LogOut className="h-4 w-4" />
                   Log out
@@ -162,13 +201,13 @@ export function Header() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border bg-background px-4 py-4">
+          <div className="border-border bg-background border-t px-4 py-4 md:hidden">
             <nav className="flex flex-col gap-1">
               {userNavItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted flex items-center gap-3 rounded-lg px-3 py-2.5 text-base font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.icon}

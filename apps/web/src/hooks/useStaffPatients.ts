@@ -20,9 +20,11 @@ import {
 export const staffPatientSearchKeys = {
   all: ['staff-patient-search'] as const,
   lists: () => [...staffPatientSearchKeys.all, 'list'] as const,
-  list: (filters: StaffPatientSearchFilters) => [...staffPatientSearchKeys.lists(), filters] as const,
+  list: (filters: StaffPatientSearchFilters) =>
+    [...staffPatientSearchKeys.lists(), filters] as const,
   detail: (id: string) => [...staffPatientSearchKeys.all, 'detail', id] as const,
-  staffList: (filters: DoctorPatientFilters) => [...staffPatientSearchKeys.all, 'staff-list', filters] as const,
+  staffList: (filters: DoctorPatientFilters) =>
+    [...staffPatientSearchKeys.all, 'staff-list', filters] as const,
 };
 
 // Re-export types for consumers

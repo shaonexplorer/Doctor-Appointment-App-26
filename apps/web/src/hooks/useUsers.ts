@@ -30,14 +30,16 @@ export type { UserListItem, UserProfile, PaginatedResponse, CreateUserInput };
  * Hook for fetching users with pagination, filters, sorting
  * Uses keepPreviousData for smooth pagination transitions
  */
-export function useUsers(params: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  userType?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-} = {}) {
+export function useUsers(
+  params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    userType?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}
+) {
   const { page = 1, limit = 20, ...restParams } = params;
 
   return useQuery({
@@ -94,7 +96,13 @@ export function useUpdateUserStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId: _userId, status: _status }: { userId: string; status: string }) => {
+    mutationFn: async ({
+      userId: _userId,
+      status: _status,
+    }: {
+      userId: string;
+      status: string;
+    }) => {
       // TODO: Implement actual update endpoint when available
       // await userApi.updateUserStatus(userId, status);
       return Promise.resolve();

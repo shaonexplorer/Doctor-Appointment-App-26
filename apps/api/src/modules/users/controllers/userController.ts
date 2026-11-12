@@ -9,7 +9,12 @@ import { requireRole } from '../../../shared/middleware/auth';
 import { UserType } from '@doctor-appointment-app/shared';
 import { buildSuccessResponse, buildPaginatedResponse } from '@doctor-appointment-app/shared';
 import type { AuthenticatedRequest } from '../../../shared/middleware/auth';
-import type { UpdateProfileInput, PaginationParams, DoctorProfileUpdateInput, CreateUserInput } from '../validators';
+import type {
+  UpdateProfileInput,
+  PaginationParams,
+  DoctorProfileUpdateInput,
+  CreateUserInput,
+} from '../validators';
 
 export class UserController {
   constructor(private userService: UserService) {}
@@ -131,7 +136,10 @@ export class UserController {
       // Clean up empty password
       const dataToCreate = {
         ...validatedData,
-        password: validatedData.password && validatedData.password.length > 0 ? validatedData.password : undefined,
+        password:
+          validatedData.password && validatedData.password.length > 0
+            ? validatedData.password
+            : undefined,
       };
 
       const user = await this.userService.createUser(dataToCreate);

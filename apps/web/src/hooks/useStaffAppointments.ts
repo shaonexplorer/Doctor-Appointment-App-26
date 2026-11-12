@@ -143,7 +143,10 @@ export function transformStaffAppointmentToUI(appointment: DoctorAppointmentResp
   });
 
   // Map status from backend to frontend format
-  const statusMap: Record<string, 'Confirmed' | 'Checked in' | 'Completed' | 'Cancelled' | 'No-show'> = {
+  const statusMap: Record<
+    string,
+    'Confirmed' | 'Checked in' | 'Completed' | 'Cancelled' | 'No-show'
+  > = {
     SCHEDULED: 'Confirmed',
     CONFIRMED: 'Confirmed',
     COMPLETED: 'Completed',

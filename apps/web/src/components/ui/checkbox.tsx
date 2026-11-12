@@ -21,8 +21,8 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           type="checkbox"
           ref={ref}
           className={cn(
-            'peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'peer border-primary ring-offset-background h-4 w-4 shrink-0 rounded-sm border',
+            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50',
             'data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
             'data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground',
@@ -44,7 +44,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         {indeterminate && (
           <div
             className={cn(
-              'absolute top-1/2 left-1/2 w-2.5 h-0.5 -translate-x-1/2 -translate-y-1/2',
+              'absolute top-1/2 left-1/2 h-0.5 w-2.5 -translate-x-1/2 -translate-y-1/2',
               'bg-primary-foreground'
             )}
           />

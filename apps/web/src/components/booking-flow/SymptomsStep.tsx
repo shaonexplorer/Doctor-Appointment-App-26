@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { StepHeading } from "./StepHeading";
-import { ActionRow } from "./ActionRow";
+import { cn } from '@/lib/utils';
+import { StepHeading } from './StepHeading';
+import { ActionRow } from './ActionRow';
 
 export interface SymptomsStepProps {
   symptoms: string;
@@ -16,13 +16,7 @@ export interface SymptomsStepProps {
   className?: string;
 }
 
-const defaultTags = [
-  "Chest pain",
-  "Headache",
-  "Fever",
-  "Follow-up",
-  "Routine consultation",
-];
+const defaultTags = ['Chest pain', 'Headache', 'Fever', 'Follow-up', 'Routine consultation'];
 
 export function SymptomsStep({
   symptoms,
@@ -44,17 +38,20 @@ export function SymptomsStep({
       />
       <div className="mt-7">
         <label htmlFor="symptoms" className="text-sm font-black">
-          Tell us about your symptoms <span className="font-medium text-muted-foreground">(optional)</span>
+          Tell us about your symptoms{' '}
+          <span className="text-muted-foreground font-medium">(optional)</span>
         </label>
         <textarea
           id="symptoms"
           value={symptoms}
           onChange={(event) => setSymptoms(event.target.value)}
           placeholder="Describe what you have been experiencing..."
-          className="mt-3 min-h-40 w-full resize-y rounded-xl border border-border bg-background p-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+          className="border-border bg-background focus:border-primary focus:ring-primary/15 mt-3 min-h-40 w-full resize-y rounded-xl border p-4 text-sm outline-none focus:ring-2"
           maxLength={maxLength}
         />
-        <p className="mt-2 text-right text-xs text-muted-foreground">{symptoms.length}/{maxLength}</p>
+        <p className="text-muted-foreground mt-2 text-right text-xs">
+          {symptoms.length}/{maxLength}
+        </p>
         <p className="mt-5 text-sm font-black">Or choose common reasons</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {tags.map((tag) => (
@@ -62,10 +59,10 @@ export function SymptomsStep({
               key={tag}
               onClick={() => toggleTag(tag)}
               className={cn(
-                "rounded-full border px-3 py-2 text-xs font-bold",
+                'rounded-full border px-3 py-2 text-xs font-bold',
                 selectedTags.includes(tag)
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:border-primary"
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-primary'
               )}
             >
               {tag}

@@ -5,12 +5,7 @@
  * Provides caching, pagination, and filtering functionality
  */
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
   appointmentApi,
   type AppointmentFilters,
@@ -283,7 +278,8 @@ export function transformAppointmentToAdminFormat(
 
   // Get full names and initials
   const patientName = `${appointment.patient.firstName} ${appointment.patient.lastName}`;
-  const patientInitials = `${appointment.patient.firstName.charAt(0)}${appointment.patient.lastName.charAt(0)}`.toUpperCase();
+  const patientInitials =
+    `${appointment.patient.firstName.charAt(0)}${appointment.patient.lastName.charAt(0)}`.toUpperCase();
   const doctorName = `Dr. ${appointment.doctor.firstName} ${appointment.doctor.lastName}`;
 
   // Get clinic from doctor profile or use default

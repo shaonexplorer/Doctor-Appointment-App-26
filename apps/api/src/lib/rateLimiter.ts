@@ -49,9 +49,7 @@ export function createRateLimiter(options: RateLimiterOptions) {
       return `${ip}:${Buffer.from(userAgent).toString('base64').slice(0, 20)}`;
     },
     // Skip rate limiting in development environment
-    skip: isDevelopment
-      ? () => true
-      : options.skip,
+    skip: isDevelopment ? () => true : options.skip,
     // Handler for when rate limit is exceeded
     handler: (_req, res) => {
       res.status(429).json({

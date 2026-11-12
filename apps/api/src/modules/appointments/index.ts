@@ -32,7 +32,12 @@ export function createAppointmentsModule(
   prisma: PrismaClient
 ): AppointmentsModule {
   const notificationService = createNotificationService();
-  const service = new AppointmentService(appointmentRepository, scheduleRepository, prisma, notificationService);
+  const service = new AppointmentService(
+    appointmentRepository,
+    scheduleRepository,
+    prisma,
+    notificationService
+  );
   const controller = new AppointmentController(service);
   const routes = createAppointmentRoutes(controller);
 

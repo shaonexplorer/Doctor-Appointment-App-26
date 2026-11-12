@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 import {
   useTable,
   type ColumnDef,
@@ -10,25 +10,25 @@ import {
   type SortingState,
   type RowSelectionState,
   type Updater,
-} from "@tanstack/react-table";
-import { cell_getContext } from "@tanstack/table-core/static-functions";
-import { ChevronDown, ChevronUp, Search, Columns, ChevronsLeft, ChevronsRight } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@tanstack/react-table';
+import { cell_getContext } from '@tanstack/table-core/static-functions';
+import { ChevronDown, ChevronUp, Search, Columns, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -36,9 +36,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
-import { features, type DataTableFeatures } from "./data-table-features";
+import { features, type DataTableFeatures } from './data-table-features';
 
 // Extend RowData to require an id property for row identification
 type DataTableRowData = RowData & {
@@ -81,13 +81,13 @@ interface DataTableProps<TData extends DataTableRowData> {
 export function DataTable<TData extends DataTableRowData>({
   columns,
   data,
-  searchPlaceholder = "Search...",
+  searchPlaceholder = 'Search...',
   searchKey,
   enableRowSelection = false,
   enableColumnVisibility = true,
   enableGlobalFilter = true,
-  emptyMessage = "No results.",
-  emptyDescription = "No matching records found.",
+  emptyMessage = 'No results.',
+  emptyDescription = 'No matching records found.',
   initialPageSize = 10,
   showPageSizeSelector = true,
   pageSizeOptions = [10, 25, 50, 100],
@@ -99,7 +99,7 @@ export function DataTable<TData extends DataTableRowData>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<ColumnVisibilityState>({});
-  const [globalFilter, setGlobalFilter] = React.useState("");
+  const [globalFilter, setGlobalFilter] = React.useState('');
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: initialPageSize,
@@ -108,14 +108,9 @@ export function DataTable<TData extends DataTableRowData>({
 
   // Handler for TanStack Table's onRowSelectionChange
   // This matches the expected signature: (updater: RowSelectionState | ((prev: RowSelectionState) => RowSelectionState)) => void
-  const handleRowSelectionChange = React.useCallback(
-    (updater: Updater<RowSelectionState>) => {
-      setRowSelection((prev) =>
-        typeof updater === "function" ? updater(prev) : updater
-      );
-    },
-    []
-  );
+  const handleRowSelectionChange = React.useCallback((updater: Updater<RowSelectionState>) => {
+    setRowSelection((prev) => (typeof updater === 'function' ? updater(prev) : updater));
+  }, []);
 
   const table = useTable({
     features,
@@ -190,10 +185,10 @@ export function DataTable<TData extends DataTableRowData>({
   }, [someRowsSelected, allRowsSelected]);
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {/* Toolbar with search, column visibility, and page size */}
       {(enableGlobalFilter || enableColumnVisibility || showPageSizeSelector) && (
-        <div className="bg-muted/30 flex flex-col gap-4 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="bg-muted/30 border-border flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full flex-col gap-2 gap-3 sm:flex-row sm:items-center">
             {enableGlobalFilter && (
               <div className="relative max-w-sm flex-1 sm:max-w-md">
@@ -214,7 +209,7 @@ export function DataTable<TData extends DataTableRowData>({
               <div className="relative max-w-sm flex-1">
                 <Input
                   placeholder={`Filter ${searchKey}...`}
-                  value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
+                  value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
                   onChange={(event) =>
                     table.getColumn(searchKey)?.setFilterValue(event.target.value)
                   }
@@ -248,7 +243,7 @@ export function DataTable<TData extends DataTableRowData>({
                         checked={column.getIsVisible()}
                         onCheckedChange={(value) => column.toggleVisibility(!!value)}
                       >
-                        {typeof column.columnDef.header === "string"
+                        {typeof column.columnDef.header === 'string'
                           ? column.columnDef.header
                           : column.columnDef.header?.({} as never)}
                       </DropdownMenuCheckboxItem>
@@ -284,7 +279,7 @@ export function DataTable<TData extends DataTableRowData>({
       <div className="border-border bg-card overflow-hidden rounded-xl border">
         <div
           className="scrollbar-clinical overflow-x-auto"
-          style={stickyHeader ? { maxHeight: "calc(100vh - 300px)" } : {}}
+          style={stickyHeader ? { maxHeight: 'calc(100vh - 300px)' } : {}}
         >
           <Table className="w-full">
             <TableHeader>
@@ -316,15 +311,15 @@ export function DataTable<TData extends DataTableRowData>({
                         <button
                           onClick={header.column.getToggleSortingHandler()}
                           className="hover:text-primary flex w-full cursor-pointer items-center gap-1.5 transition-colors select-none"
-                          aria-label={`Sort by ${typeof header.column.columnDef.header === "string" ? header.column.columnDef.header : "column"}`}
+                          aria-label={`Sort by ${typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : 'column'}`}
                         >
                           <span className="truncate">
-                            {typeof header.column.columnDef.header === "string"
+                            {typeof header.column.columnDef.header === 'string'
                               ? header.column.columnDef.header
                               : header.column.columnDef.header?.({} as never)}
                           </span>
                           {header.column.getIsSorted() ? (
-                            header.column.getIsSorted() === "asc" ? (
+                            header.column.getIsSorted() === 'asc' ? (
                               <ChevronUp className="text-primary size-4" aria-hidden="true" />
                             ) : (
                               <ChevronDown className="text-primary size-4" aria-hidden="true" />
@@ -338,7 +333,7 @@ export function DataTable<TData extends DataTableRowData>({
                         </button>
                       ) : (
                         <span>
-                          {typeof header.column.columnDef.header === "string"
+                          {typeof header.column.columnDef.header === 'string'
                             ? header.column.columnDef.header
                             : header.column.columnDef.header?.({} as never)}
                         </span>
@@ -353,17 +348,17 @@ export function DataTable<TData extends DataTableRowData>({
                 table.getRowModel().rows.map((row, rowIndex) => (
                   <TableRow
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
+                    data-state={row.getIsSelected() && 'selected'}
                     className={cn(
-                      "transition-colors duration-150",
-                      "hover:bg-muted/30",
-                      "data-[state=selected]:bg-primary/5",
-                      "data-[state=selected]:border-l-primary data-[state=selected]:border-l-2",
-                      "focus-within:ring-primary/20 focus-within:ring-offset-background focus-within:ring-2 focus-within:ring-offset-2"
+                      'transition-colors duration-150',
+                      'hover:bg-muted/30',
+                      'data-[state=selected]:bg-primary/5',
+                      'data-[state=selected]:border-l-primary data-[state=selected]:border-l-2',
+                      'focus-within:ring-primary/20 focus-within:ring-offset-background focus-within:ring-2 focus-within:ring-offset-2'
                     )}
                     tabIndex={0}
                     onKeyDown={(e) => {
-                      if (e.key === " " || e.key === "Enter") {
+                      if (e.key === ' ' || e.key === 'Enter') {
                         if (enableRowSelection) {
                           row.toggleSelected();
                         }
@@ -392,7 +387,7 @@ export function DataTable<TData extends DataTableRowData>({
                     )}
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="px-3 py-3 align-middle whitespace-nowrap">
-                        {typeof cell.column.columnDef.cell === "function"
+                        {typeof cell.column.columnDef.cell === 'function'
                           ? cell.column.columnDef.cell(
                               cell_getContext(cell) as unknown as {
                                 cell: typeof cell;
@@ -447,18 +442,17 @@ export function DataTable<TData extends DataTableRowData>({
             Showing
             <span className="mx-1 font-medium">
               {table.getRowModel().rows.length === 0
-                ? "0"
+                ? '0'
                 : pagination.pageIndex * pagination.pageSize + 1}
             </span>
-            to{" "}
+            to{' '}
             <span className="mx-1 font-medium">
               {Math.min(
                 (pagination.pageIndex + 1) * pagination.pageSize,
                 table.getFilteredRowModel().rows.length
               )}
             </span>
-            of{" "}
-            <span className="mx-1 font-medium">{table.getFilteredRowModel().rows.length}</span>
+            of <span className="mx-1 font-medium">{table.getFilteredRowModel().rows.length}</span>
             results
           </div>
           <div className="flex items-center gap-2">
@@ -495,7 +489,7 @@ export function DataTable<TData extends DataTableRowData>({
       {enableRowSelection && selectedRows.length > 0 && (
         <div className="bg-primary/5 border-primary/20 flex items-center justify-between rounded-xl border p-3">
           <span className="text-primary text-sm font-medium">
-            {selectedRows.length} row{selectedRows.length !== 1 ? "s" : ""} selected
+            {selectedRows.length} row{selectedRows.length !== 1 ? 's' : ''} selected
           </span>
           <Button
             variant="ghost"

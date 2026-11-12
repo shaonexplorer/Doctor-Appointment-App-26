@@ -4,32 +4,32 @@
  * displays them in a table with check-in functionality.
  * ***/
 
-"use client";
+'use client';
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
-import { DataTable } from "./DataTable";
-import { cn } from "@/lib/utils";
-import { appointmentApi } from "@/lib/api";
-import { staffCheckinColumns } from "./columns";
-import { toast } from "@/components/ui/toast";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { DataTable } from './DataTable';
+import { cn } from '@/lib/utils';
+import { appointmentApi } from '@/lib/api';
+import { staffCheckinColumns } from './columns';
+import { toast } from '@/components/ui/toast';
 
 // Query keys for consistent caching
 export const staffCheckinAppointmentKeys = {
-  all: ["staff-checkin-appointments"] as const,
-  today: () => [...staffCheckinAppointmentKeys.all, "today"] as const,
+  all: ['staff-checkin-appointments'] as const,
+  today: () => [...staffCheckinAppointmentKeys.all, 'today'] as const,
 };
 
 // Status badge colors based on clinical precision palette
 // Maps status strings to Tailwind classes using project's design tokens
 const statusBadgeClasses = {
-  waiting: "bg-primary/10 text-primary",
-  checkedIn: "bg-secondary/10 text-secondary",
-  inConsultation: "bg-warning/10 text-warning",
-  completed: "bg-success/10 text-success",
-  noShow: "bg-destructive/10 text-destructive",
-  default: "bg-muted/10 text-muted-foreground",
+  waiting: 'bg-primary/10 text-primary',
+  checkedIn: 'bg-secondary/10 text-secondary',
+  inConsultation: 'bg-warning/10 text-warning',
+  completed: 'bg-success/10 text-success',
+  noShow: 'bg-destructive/10 text-destructive',
+  default: 'bg-muted/10 text-muted-foreground',
 };
 
 export interface Appointment {
@@ -63,9 +63,9 @@ interface DoctorAppointmentResponse {
 function transformToAppointment(ui: DoctorAppointmentResponse): Appointment {
   const patientName = `${ui.patient.firstName} ${ui.patient.lastName}`;
   const doctorName = `Dr. ${ui.doctor.firstName} ${ui.doctor.lastName}`;
-  const time = new Date(ui.slot.startTime).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
+  const time = new Date(ui.slot.startTime).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
     hour12: false,
   });
 
@@ -85,7 +85,7 @@ function useTodayAppointments() {
     queryKey: staffCheckinAppointmentKeys.today(),
     queryFn: async () => {
       const result = await appointmentApi.getDoctorAppointments({
-        dateRange: "today",
+        dateRange: 'today',
       });
       // Transform each appointment to the UI format
       return result.data.map(transformToAppointment);
@@ -105,7 +105,7 @@ export function StaffCheckin() {
 
   const queryClient = useQueryClient();
 
-  console.log(appointments, "appointments data");
+  console.log(appointments, 'appointments data');
 
   // Check-in mutation
   const checkInMutation = useMutation({
@@ -114,16 +114,16 @@ export function StaffCheckin() {
       // Invalidate and refetch appointments
       queryClient.invalidateQueries({ queryKey: staffCheckinAppointmentKeys.today() });
       toast.add({
-        type: "success",
-        title: "Check-in successful",
-        description: "Patient has been checked in successfully",
+        type: 'success',
+        title: 'Check-in successful',
+        description: 'Patient has been checked in successfully',
       });
     },
     onError: (error: Error) => {
       toast.add({
-        type: "error",
-        title: "Check-in failed",
-        description: error.message || "Failed to check in patient",
+        type: 'error',
+        title: 'Check-in failed',
+        description: error.message || 'Failed to check in patient',
       });
     },
   });
@@ -135,33 +135,33 @@ export function StaffCheckin() {
       checkInMutation.mutate(appointmentId);
     };
 
-    window.addEventListener("staff-checkin:check-in", handleCheckIn as EventListener);
+    window.addEventListener('staff-checkin:check-in', handleCheckIn as EventListener);
 
     return () => {
-      window.removeEventListener("staff-checkin:check-in", handleCheckIn as EventListener);
+      window.removeEventListener('staff-checkin:check-in', handleCheckIn as EventListener);
     };
   }, [checkInMutation]);
 
   // Get badge classes for a given status
   const getStatusBadgeClass = (status: string) => {
     const lower = status.toLowerCase();
-    return lower.includes("waiting") || lower.includes("pending")
+    return lower.includes('waiting') || lower.includes('pending')
       ? statusBadgeClasses.waiting
-      : lower.includes("checked in") || lower.includes("checked-in")
+      : lower.includes('checked in') || lower.includes('checked-in')
         ? statusBadgeClasses.checkedIn
-        : lower.includes("consultation")
+        : lower.includes('consultation')
           ? statusBadgeClasses.inConsultation
-          : lower.includes("completed")
+          : lower.includes('completed')
             ? statusBadgeClasses.completed
-            : lower.includes("no-show") || lower.includes("cancelled")
+            : lower.includes('no-show') || lower.includes('cancelled')
               ? statusBadgeClasses.noShow
               : statusBadgeClasses.default;
   };
 
   // Stats for the metric cards
-  const waitingCount = appointments.filter((a) => a.status === "Waiting").length;
-  const checkedInCount = appointments.filter((a) => a.status === "Checked In").length;
-  const pendingPaymentsCount = appointments.filter((a) => a.payment === "Pending").length;
+  const waitingCount = appointments.filter((a) => a.status === 'Waiting').length;
+  const checkedInCount = appointments.filter((a) => a.status === 'Checked In').length;
+  const pendingPaymentsCount = appointments.filter((a) => a.payment === 'Pending').length;
 
   return (
     <div className="mt-8 space-y-6">
@@ -190,7 +190,7 @@ export function StaffCheckin() {
             Pending payments
           </h3>
           <p className="text-3xl font-black tracking-tight">
-            {pendingPaymentsCount > 0 ? pendingPaymentsCount : "0"}
+            {pendingPaymentsCount > 0 ? pendingPaymentsCount : '0'}
           </p>
         </div>
       </div>
@@ -246,7 +246,7 @@ export function StaffCheckin() {
             <div
               key={a.id}
               className={cn(
-                "mb-2 flex items-center gap-3 rounded-xl border p-3",
+                'mb-2 flex items-center gap-3 rounded-xl border p-3',
                 getStatusBadgeClass(a.status)
               )}
             >
@@ -262,13 +262,13 @@ export function StaffCheckin() {
               <div className="flex items-center gap-2">
                 <Badge
                   variant={
-                    a.status === "Waiting"
-                      ? "warning"
-                      : a.status === "Checked In"
-                        ? "success"
-                        : a.status === "Completed"
-                          ? "success"
-                          : "default"
+                    a.status === 'Waiting'
+                      ? 'warning'
+                      : a.status === 'Checked In'
+                        ? 'success'
+                        : a.status === 'Completed'
+                          ? 'success'
+                          : 'default'
                   }
                   className="text-xs"
                 >
@@ -290,12 +290,12 @@ export function StaffCheckin() {
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {appointments
-            .filter((a) => a.status === "Waiting")
+            .filter((a) => a.status === 'Waiting')
             .map((a) => (
               <div
                 key={a.id}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl border p-3",
+                  'flex items-center gap-3 rounded-xl border p-3',
                   // Apply status-based background tint
                   getStatusBadgeClass(a.status)
                 )}
@@ -309,7 +309,7 @@ export function StaffCheckin() {
                 </div>
               </div>
             ))}
-          {appointments.filter((a) => a.status === "Waiting").length === 0 && (
+          {appointments.filter((a) => a.status === 'Waiting').length === 0 && (
             <div className="text-muted-foreground py-8 text-center sm:col-span-3">
               <svg
                 className="text-muted-foreground/50 mx-auto size-8"

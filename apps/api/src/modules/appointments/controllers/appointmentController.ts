@@ -34,15 +34,12 @@ export class AppointmentController {
       // Determine patient ID:
       // - For STAFF/ADMIN: use provided patientId if available, otherwise fallback to authenticated user
       // - For PATIENT/DOCTOR: always use authenticated user's ID (cannot book for others)
-      const isStaffOrAdmin = req.user!.userType === UserType.STAFF || req.user!.userType === UserType.ADMIN;
-      const patientId = isStaffOrAdmin && validatedData.patientId
-        ? validatedData.patientId
-        : req.user!.id;
+      const isStaffOrAdmin =
+        req.user!.userType === UserType.STAFF || req.user!.userType === UserType.ADMIN;
+      const patientId =
+        isStaffOrAdmin && validatedData.patientId ? validatedData.patientId : req.user!.id;
 
-      const appointment = await this.appointmentService.bookAppointment(
-        patientId,
-        validatedData
-      );
+      const appointment = await this.appointmentService.bookAppointment(patientId, validatedData);
       res.status(201).json(buildSuccessResponse(appointment));
     } catch (error) {
       next(error);

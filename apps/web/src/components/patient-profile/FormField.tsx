@@ -1,14 +1,15 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
-const inputClass = "h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15";
+const inputClass =
+  'h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15';
 
 export interface FormFieldProps {
   label: string;
   value: string;
   onChange?: (value: string) => void;
-  type?: "text" | "email" | "tel" | "password" | "date";
+  type?: 'text' | 'email' | 'tel' | 'password' | 'date';
   disabled?: boolean;
   placeholder?: string;
   className?: string;
@@ -21,7 +22,7 @@ export function FormField({
   label,
   value,
   onChange,
-  type = "text",
+  type = 'text',
   disabled = false,
   placeholder,
   className,
@@ -29,13 +30,20 @@ export function FormField({
   error,
   id,
 }: FormFieldProps) {
-  const fieldId = id || label.toLowerCase().replace(/\s+/g, "-");
+  const fieldId = id || label.toLowerCase().replace(/\s+/g, '-');
 
   return (
-    <label className={cn("grid gap-2 text-xs font-bold text-foreground", className)} htmlFor={fieldId}>
+    <label
+      className={cn('text-foreground grid gap-2 text-xs font-bold', className)}
+      htmlFor={fieldId}
+    >
       <span>
         {label}
-        {required && <span className="text-destructive ml-1" aria-hidden="true">*</span>}
+        {required && (
+          <span className="text-destructive ml-1" aria-hidden="true">
+            *
+          </span>
+        )}
       </span>
       <input
         id={fieldId}
@@ -46,14 +54,15 @@ export function FormField({
         placeholder={placeholder}
         className={cn(
           inputClass,
-          disabled && "disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground",
-          error && "border-destructive focus:border-destructive focus:ring-destructive/15"
+          disabled &&
+            'disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed',
+          error && 'border-destructive focus:border-destructive focus:ring-destructive/15'
         )}
-        aria-invalid={error ? "true" : "false"}
+        aria-invalid={error ? 'true' : 'false'}
         aria-describedby={error ? `${fieldId}-error` : undefined}
       />
       {error && (
-        <p id={`${fieldId}-error`} className="text-xs text-destructive" role="alert">
+        <p id={`${fieldId}-error`} className="text-destructive text-xs" role="alert">
           {error}
         </p>
       )}
@@ -86,13 +95,20 @@ export function TextareaField({
   id,
   rows = 4,
 }: TextareaFieldProps) {
-  const fieldId = id || label.toLowerCase().replace(/\s+/g, "-");
+  const fieldId = id || label.toLowerCase().replace(/\s+/g, '-');
 
   return (
-    <label className={cn("grid gap-2 text-xs font-bold text-foreground", className)} htmlFor={fieldId}>
+    <label
+      className={cn('text-foreground grid gap-2 text-xs font-bold', className)}
+      htmlFor={fieldId}
+    >
       <span>
         {label}
-        {required && <span className="text-destructive ml-1" aria-hidden="true">*</span>}
+        {required && (
+          <span className="text-destructive ml-1" aria-hidden="true">
+            *
+          </span>
+        )}
       </span>
       <textarea
         id={fieldId}
@@ -102,15 +118,15 @@ export function TextareaField({
         placeholder={placeholder}
         rows={rows}
         className={cn(
-          "min-h-24 rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-none",
-          disabled && "disabled:bg-secondary disabled:text-muted-foreground",
-          error && "border-destructive focus:border-destructive focus:ring-destructive/15"
+          'border-border bg-background focus:border-primary focus:ring-primary/15 min-h-24 resize-none rounded-xl border p-3 text-sm outline-none focus:ring-2',
+          disabled && 'disabled:bg-secondary disabled:text-muted-foreground',
+          error && 'border-destructive focus:border-destructive focus:ring-destructive/15'
         )}
-        aria-invalid={error ? "true" : "false"}
+        aria-invalid={error ? 'true' : 'false'}
         aria-describedby={error ? `${fieldId}-error` : undefined}
       />
       {error && (
-        <p id={`${fieldId}-error`} className="text-xs text-destructive" role="alert">
+        <p id={`${fieldId}-error`} className="text-destructive text-xs" role="alert">
           {error}
         </p>
       )}
@@ -141,13 +157,20 @@ export function SelectField({
   error,
   id,
 }: SelectFieldProps) {
-  const fieldId = id || label.toLowerCase().replace(/\s+/g, "-");
+  const fieldId = id || label.toLowerCase().replace(/\s+/g, '-');
 
   return (
-    <label className={cn("grid gap-2 text-xs font-bold text-foreground", className)} htmlFor={fieldId}>
+    <label
+      className={cn('text-foreground grid gap-2 text-xs font-bold', className)}
+      htmlFor={fieldId}
+    >
       <span>
         {label}
-        {required && <span className="text-destructive ml-1" aria-hidden="true">*</span>}
+        {required && (
+          <span className="text-destructive ml-1" aria-hidden="true">
+            *
+          </span>
+        )}
       </span>
       <select
         id={fieldId}
@@ -155,11 +178,12 @@ export function SelectField({
         onChange={(e) => onChange?.(e.target.value)}
         disabled={disabled}
         className={cn(
-          "h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15",
-          disabled && "disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground",
-          error && "border-destructive focus:border-destructive focus:ring-destructive/15"
+          'border-border bg-background focus:border-primary focus:ring-primary/15 h-11 w-full rounded-xl border px-3 text-sm outline-none focus:ring-2',
+          disabled &&
+            'disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed',
+          error && 'border-destructive focus:border-destructive focus:ring-destructive/15'
         )}
-        aria-invalid={error ? "true" : "false"}
+        aria-invalid={error ? 'true' : 'false'}
         aria-describedby={error ? `${fieldId}-error` : undefined}
       >
         {options.map((option) => (
@@ -169,7 +193,7 @@ export function SelectField({
         ))}
       </select>
       {error && (
-        <p id={`${fieldId}-error`} className="text-xs text-destructive" role="alert">
+        <p id={`${fieldId}-error`} className="text-destructive text-xs" role="alert">
           {error}
         </p>
       )}

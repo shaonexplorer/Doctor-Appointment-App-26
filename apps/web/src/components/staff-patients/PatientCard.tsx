@@ -11,18 +11,27 @@ export function PatientCard({ patient, onViewPatient }: PatientCardProps) {
       : 'bg-secondary text-muted-foreground';
 
   return (
-    <article className={cn('border-border rounded-xl border p-4', 'hover:bg-secondary/30 transition-colors')}>
+    <article
+      className={cn(
+        'border-border rounded-xl border p-4',
+        'hover:bg-secondary/30 transition-colors'
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold text-primary">
+          <div className="text-primary grid size-10 place-items-center rounded-full bg-[#d9e8ff] text-xs font-bold">
             {patient.initials}
           </div>
           <div className="min-w-0">
             <p className="truncate font-bold">{patient.name}</p>
-            <p className="text-xs text-muted-foreground">{patient.id} · {patient.age} years</p>
+            <p className="text-muted-foreground text-xs">
+              {patient.id} · {patient.age} years
+            </p>
           </div>
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${statusTone}`}>{patient.status}</span>
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${statusTone}`}>
+          {patient.status}
+        </span>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
         <Info label="Phone" value={patient.phone} />
@@ -47,7 +56,9 @@ export function PatientCard({ patient, onViewPatient }: PatientCardProps) {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="border-border rounded-xl border p-3">
-      <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">{label}</p>
+      <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+        {label}
+      </p>
       <p className="mt-1 truncate text-xs font-bold">{value}</p>
     </div>
   );

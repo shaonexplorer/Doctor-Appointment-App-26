@@ -2,11 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import { Search, UserPlus, X } from 'lucide-react';
-import {
-  useUsers,
-  transformUsersToAdminFormat,
-  type AdminUserData,
-} from '@/hooks/useUsers';
+import { useUsers, transformUsersToAdminFormat, type AdminUserData } from '@/hooks/useUsers';
 import { DataTable } from '@/components/admin-users/data-table';
 import { createStaffColumns } from './columns';
 import { AddStaffDialog } from './AddStaffDialog';
@@ -42,7 +38,7 @@ function Badge({ children, tone = 'blue' }: { children: ReactNode; tone?: string
 }
 
 export function AdminStaff() {
-  const [status, setStatus] = useState<typeof statuses[number]>(statuses[0]); // 'All statuses'
+  const [status, setStatus] = useState<(typeof statuses)[number]>(statuses[0]); // 'All statuses'
   const [selected, setSelected] = useState<string[]>([]);
   const [drawer, setDrawer] = useState<AdminUserData | null>(null);
   const [addStaffDialogOpen, setAddStaffDialogOpen] = useState(false);
@@ -169,10 +165,7 @@ export function AdminStaff() {
             </div>
           }
           toolbarTrailing={
-            <Button
-              onClick={() => setAddStaffDialogOpen(true)}
-              className="flex items-center gap-2"
-            >
+            <Button onClick={() => setAddStaffDialogOpen(true)} className="flex items-center gap-2">
               <UserPlus className="size-4" />
               Add staff
             </Button>
@@ -183,9 +176,7 @@ export function AdminStaff() {
         {/* Error state */}
         {isError && staff.length === 0 && (
           <div className="text-destructive flex items-center justify-center p-12">
-            <p>
-              Failed to load staff: {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
+            <p>Failed to load staff: {error instanceof Error ? error.message : 'Unknown error'}</p>
             <button onClick={() => refetch()} className="text-primary ml-3 text-sm hover:underline">
               Retry
             </button>
@@ -244,9 +235,7 @@ export function AdminStaff() {
                 <p>
                   <strong>Email verified</strong>
                   <br />
-                  <span className="text-slate-500">
-                    {drawer.raw.emailVerified ? 'Yes' : 'No'}
-                  </span>
+                  <span className="text-slate-500">{drawer.raw.emailVerified ? 'Yes' : 'No'}</span>
                 </p>
               </div>
               <div className="mt-6 grid gap-2">

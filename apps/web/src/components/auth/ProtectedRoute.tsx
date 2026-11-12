@@ -37,7 +37,7 @@ export function ProtectedRoute({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Skeleton className="h-8 w-32 rounded" />
           <Skeleton className="h-4 w-48 rounded" />
@@ -75,7 +75,7 @@ export function PublicRoute({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Skeleton className="h-8 w-32 rounded" />
           <Skeleton className="h-4 w-48 rounded" />

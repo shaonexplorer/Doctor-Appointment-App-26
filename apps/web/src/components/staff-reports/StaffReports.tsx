@@ -91,7 +91,7 @@ export function StaffReports() {
           ))}
           <button
             onClick={() => notify('Report export started')}
-            className="border-border inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors hover:bg-secondary"
+            className="border-border hover:bg-secondary inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors"
           >
             <Download className="size-3.5" aria-hidden="true" />
             Export
@@ -170,7 +170,7 @@ export function StaffReports() {
           </div>
           <button
             onClick={() => notify('Report builder opened')}
-            className="bg-primary text-primary-foreground inline-flex items-center gap-2 self-start rounded-xl px-4 py-2.5 text-xs font-bold transition-colors hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 self-start rounded-xl px-4 py-2.5 text-xs font-bold transition-colors"
           >
             <FileBarChart className="size-4" aria-hidden="true" />
             Create report
@@ -242,7 +242,7 @@ function Metric({ label, value, trend }: MetricProps) {
     <div className="border-border bg-card rounded-2xl border p-4 shadow-sm">
       <p className="text-muted-foreground text-xs">{label}</p>
       <p className="mt-2 text-2xl font-black tracking-tight tabular-nums">{value}</p>
-      <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-success">
+      <p className="text-success mt-2 inline-flex items-center gap-1 text-[11px] font-bold">
         <TrendingUp className="size-3" aria-hidden="true" />
         {trend} vs prior
       </p>

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { Search, Filter, X } from "lucide-react";
+import { cn } from '@/lib/utils';
+import { Search, Filter, X } from 'lucide-react';
 
 export interface AppointmentSearchFilterProps {
   searchValue: string;
@@ -33,24 +33,27 @@ export function AppointmentSearchFilter({
   className,
 }: AppointmentSearchFilterProps) {
   const handleClearAll = () => {
-    onSearchChange("");
-    onSpecialtyChange("All specialties");
-    onDateFromChange?.("");
-    onDateToChange?.("");
+    onSearchChange('');
+    onSpecialtyChange('All specialties');
+    onDateFromChange?.('');
+    onDateToChange?.('');
     onClearFilters?.();
   };
 
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
+    <div className={cn('flex flex-wrap gap-2', className)}>
       {/* Search Input */}
-      <label className="relative flex-1 min-w-[200px]">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+      <label className="relative min-w-[200px] flex-1">
+        <Search
+          className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          aria-hidden="true"
+        />
         <input
           type="search"
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search appointments..."
-          className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-xs outline-none focus:border-primary"
+          className="border-border bg-background focus:border-primary h-10 w-full rounded-xl border pr-3 pl-9 text-xs outline-none"
           aria-label="Search appointments"
         />
       </label>
@@ -59,7 +62,7 @@ export function AppointmentSearchFilter({
       <select
         value={specialtyValue}
         onChange={(e) => onSpecialtyChange(e.target.value)}
-        className="h-10 rounded-xl border border-border bg-background px-3 text-xs font-bold outline-none focus:border-primary"
+        className="border-border bg-background focus:border-primary h-10 rounded-xl border px-3 text-xs font-bold outline-none"
         aria-label="Filter by specialty"
       >
         {specialties.map((specialty) => (
@@ -73,9 +76,9 @@ export function AppointmentSearchFilter({
       {onDateFromChange && (
         <input
           type="date"
-          value={dateFrom || ""}
+          value={dateFrom || ''}
           onChange={(e) => onDateFromChange(e.target.value)}
-          className="h-10 rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-primary"
+          className="border-border bg-background focus:border-primary h-10 rounded-xl border px-3 text-xs outline-none"
           aria-label="Filter from date"
         />
       )}
@@ -83,9 +86,9 @@ export function AppointmentSearchFilter({
       {onDateToChange && (
         <input
           type="date"
-          value={dateTo || ""}
+          value={dateTo || ''}
           onChange={(e) => onDateToChange(e.target.value)}
-          className="h-10 rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-primary"
+          className="border-border bg-background focus:border-primary h-10 rounded-xl border px-3 text-xs outline-none"
           aria-label="Filter to date"
         />
       )}
@@ -95,7 +98,7 @@ export function AppointmentSearchFilter({
         <button
           type="button"
           onClick={handleClearAll}
-          className="flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold text-muted-foreground hover:bg-secondary"
+          className="border-border text-muted-foreground hover:bg-secondary flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold"
         >
           <X className="size-4" aria-hidden="true" />
           Clear
@@ -105,7 +108,7 @@ export function AppointmentSearchFilter({
       {/* More Filters Button */}
       <button
         type="button"
-        className="flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold text-muted-foreground hover:bg-secondary"
+        className="border-border text-muted-foreground hover:bg-secondary flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-bold"
       >
         <Filter className="size-4" aria-hidden="true" />
         Filters

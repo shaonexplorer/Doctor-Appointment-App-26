@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { AlertCircle } from "lucide-react";
+import { cn } from '@/lib/utils';
+import { AlertCircle } from 'lucide-react';
 
 export interface ErrorBoxProps {
   title: string;
@@ -15,7 +15,7 @@ export function ErrorBox({ title, text, onClick, className }: ErrorBoxProps) {
     <div
       role="alert"
       className={cn(
-        "mt-5 flex items-start gap-3 rounded-xl border border-[#f0d2cc] bg-[#fff8f6] p-4 text-[#b86f63]",
+        'mt-5 flex items-start gap-3 rounded-xl border border-[#f0d2cc] bg-[#fff8f6] p-4 text-[#b86f63]',
         className
       )}
     >

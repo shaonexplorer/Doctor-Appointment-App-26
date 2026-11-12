@@ -165,3 +165,6 @@ export interface WebhookEvent<T = unknown> {
   data: T;
   createdAt: Date;
 }
+
+// Re-export agent types
+export * from './agent.types';

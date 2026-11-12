@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { Camera, X } from "lucide-react";
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { Camera, X } from 'lucide-react';
 
 export interface AvatarUploadProps {
   initials: string;
@@ -13,7 +13,14 @@ export interface AvatarUploadProps {
   className?: string;
 }
 
-export function AvatarUpload({ initials, photo, editing, onChange, onRemove, className }: AvatarUploadProps) {
+export function AvatarUpload({
+  initials,
+  photo,
+  editing,
+  onChange,
+  onRemove,
+  className,
+}: AvatarUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +44,12 @@ export function AvatarUpload({ initials, photo, editing, onChange, onRemove, cla
   const displayPhoto = preview || photo;
 
   return (
-    <div className={cn("relative grid size-20 shrink-0 place-items-center rounded-2xl bg-[#d9e8ff] text-xl font-black text-primary", className)}>
+    <div
+      className={cn(
+        'text-primary relative grid size-20 shrink-0 place-items-center rounded-2xl bg-[#d9e8ff] text-xl font-black',
+        className
+      )}
+    >
       {displayPhoto ? (
         <img src={displayPhoto} alt="" className="size-full rounded-2xl object-cover" />
       ) : (
@@ -45,7 +57,7 @@ export function AvatarUpload({ initials, photo, editing, onChange, onRemove, cla
       )}
       {editing && (
         <>
-          <label className="absolute -bottom-2 -right-2 grid size-8 place-items-center rounded-full border-2 border-card bg-primary text-primary-foreground cursor-pointer">
+          <label className="border-card bg-primary text-primary-foreground absolute -right-2 -bottom-2 grid size-8 cursor-pointer place-items-center rounded-full border-2">
             <Camera className="size-4" aria-hidden="true" />
             <input
               type="file"
@@ -59,7 +71,7 @@ export function AvatarUpload({ initials, photo, editing, onChange, onRemove, cla
             <button
               type="button"
               onClick={handleRemove}
-              className="absolute -top-2 -right-2 grid size-6 place-items-center rounded-full border-2 border-card bg-destructive text-destructive-foreground"
+              className="border-card bg-destructive text-destructive-foreground absolute -top-2 -right-2 grid size-6 place-items-center rounded-full border-2"
               aria-label="Remove avatar"
             >
               <X className="size-3" aria-hidden="true" />

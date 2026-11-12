@@ -36,7 +36,10 @@ export class ClinicService {
    */
   async listClinics(
     params: ClinicFilters
-  ): Promise<{ data: Clinic[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+  ): Promise<{
+    data: Clinic[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const result = await this.clinicRepository.findMany(params);
     return {
       data: result.data,

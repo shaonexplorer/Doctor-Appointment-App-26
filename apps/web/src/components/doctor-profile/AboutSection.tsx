@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { ProfileInfo } from "./ProfileInfo";
+import { cn } from '@/lib/utils';
+import { ProfileInfo } from './ProfileInfo';
 
 export interface AboutSectionProps {
   title?: string;
@@ -14,11 +14,18 @@ export interface AboutSectionProps {
   className?: string;
 }
 
-export function AboutSection({ title = "About Dr. Anderson", description, infoItems, className }: AboutSectionProps) {
+export function AboutSection({
+  title = 'About Dr. Anderson',
+  description,
+  infoItems,
+  className,
+}: AboutSectionProps) {
   return (
-    <section className={cn("rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6", className)}>
+    <section
+      className={cn('border-border bg-card rounded-2xl border p-5 shadow-sm sm:p-6', className)}
+    >
       <h2 className="text-lg font-black">{title}</h2>
-      {description && <p className="mt-3 text-sm leading-7 text-muted-foreground">{description}</p>}
+      {description && <p className="text-muted-foreground mt-3 text-sm leading-7">{description}</p>}
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         {infoItems.map((item, index) => (
           <ProfileInfo key={index} {...item} />

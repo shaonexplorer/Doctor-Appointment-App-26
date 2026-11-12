@@ -8,6 +8,7 @@ import { Header } from './Header';
 import { MobileSidebar } from './MobileSidebar';
 import { MobileNav } from './MobileNav';
 import { useAuth } from '@/context/AuthContext';
+import { AssistantLauncher } from '@/components/ai-assistant';
 
 const routeMap: Record<string, string> = {
   Dashboard: '/patient/dashboard',
@@ -17,6 +18,7 @@ const routeMap: Record<string, string> = {
   Appointments: '/patient/appointments',
   Prescriptions: '/patient/prescriptions',
   'Medical Records': '/patient/records',
+  'AI Assistant': '/patient/assistant',
   Profile: '/patient/profile',
   Settings: '/patient/settings',
   Notifications: '/patient/notifications',
@@ -109,6 +111,9 @@ export function PatientPortalShell({ children, active, className }: PatientPorta
           {children}
         </main>
         <MobileNav active={currentActive} onNavigate={handleNavigate} />
+        {currentActive !== 'AI Assistant' && (
+          <AssistantLauncher onExpand={() => handleNavigate('AI Assistant')} />
+        )}
       </div>
     </div>
   );

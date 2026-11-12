@@ -17,9 +17,9 @@ function AuthShell({
 }) {
   return (
     <div className="mx-auto w-full max-w-md">
-      <p className="text-sm font-bold text-primary">{eyebrow}</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p>
+      <p className="text-primary text-sm font-bold">{eyebrow}</p>
+      <h1 className="text-foreground mt-2 text-3xl font-bold tracking-tight">{title}</h1>
+      <p className="text-muted-foreground mt-3 text-sm leading-6">{copy}</p>
       <div className="mt-8">{children}</div>
     </div>
   );
@@ -27,7 +27,7 @@ function AuthShell({
 
 export default function SuccessPage() {
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-5 py-10">
+    <main className="bg-background flex min-h-screen items-center justify-center px-5 py-10">
       <AuthShell
         eyebrow="You're all set"
         title="Welcome to MediBook"
@@ -42,7 +42,7 @@ export default function SuccessPage() {
           </p>
         </div>
         <Link href="/login">
-          <Button className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20">
+          <Button className="bg-primary text-primary-foreground shadow-primary/20 mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold shadow-lg">
             Continue to sign in <ArrowRight className="size-4" />
           </Button>
         </Link>

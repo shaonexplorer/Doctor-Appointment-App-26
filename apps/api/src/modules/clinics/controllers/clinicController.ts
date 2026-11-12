@@ -37,9 +37,7 @@ export class ClinicController {
 
       const result = await this.clinicService.listClinics(validatedQuery);
       res.json(
-        buildSuccessResponse(
-          buildPaginatedResponse(result.data, validatedQuery, result.meta.total)
-        )
+        buildSuccessResponse(buildPaginatedResponse(result.data, validatedQuery, result.meta.total))
       );
     } catch (error) {
       next(error);

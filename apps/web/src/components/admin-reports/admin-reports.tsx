@@ -22,7 +22,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toast';
 
@@ -136,18 +142,14 @@ export function AdminReports() {
           ))}
           {range === 'Custom' && (
             <div className="flex items-center gap-2">
-              <Label htmlFor="report-from" className="text-[10px] font-bold uppercase">From</Label>
-              <Input
-                id="report-from"
-                type="date"
-                className="h-9 w-[150px] text-xs"
-              />
-              <Label htmlFor="report-to" className="text-[10px] font-bold uppercase ml-2">To</Label>
-              <Input
-                id="report-to"
-                type="date"
-                className="h-9 w-[150px] text-xs"
-              />
+              <Label htmlFor="report-from" className="text-[10px] font-bold uppercase">
+                From
+              </Label>
+              <Input id="report-from" type="date" className="h-9 w-[150px] text-xs" />
+              <Label htmlFor="report-to" className="ml-2 text-[10px] font-bold uppercase">
+                To
+              </Label>
+              <Input id="report-to" type="date" className="h-9 w-[150px] text-xs" />
             </div>
           )}
           <Button
@@ -213,7 +215,11 @@ export function AdminReports() {
       <div className="grid gap-5 xl:grid-cols-2">
         <Chart title="Appointments by specialty" subtitle="Current period volume">
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={appointmentsBySpecialty} layout="vertical" margin={{ left: 18, right: 18 }}>
+            <BarChart
+              data={appointmentsBySpecialty}
+              layout="vertical"
+              margin={{ left: 18, right: 18 }}
+            >
               <CartesianGrid stroke="var(--muted)" horizontal={false} />
               <XAxis type="number" hide />
               <YAxis
@@ -369,20 +375,12 @@ export function AdminReports() {
   );
 }
 
-function Metric({
-  title,
-  value,
-  trend,
-}: {
-  title: string;
-  value: string;
-  trend: string;
-}) {
+function Metric({ title, value, trend }: { title: string; value: string; trend: string }) {
   return (
     <div className="border-border bg-card rounded-2xl p-4 shadow-sm">
       <p className="text-muted-foreground text-[11px] font-semibold">{title}</p>
       <p className="text-foreground mt-2 text-xl font-black tabular-nums">{value}</p>
-      <p className="mt-3 text-[11px] font-bold text-primary">{trend} vs prior</p>
+      <p className="text-primary mt-3 text-[11px] font-bold">{trend} vs prior</p>
     </div>
   );
 }

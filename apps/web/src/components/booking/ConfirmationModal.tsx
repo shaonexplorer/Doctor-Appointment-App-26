@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { Check, Clock3, X, Download, Calendar } from "lucide-react";
+import { cn } from '@/lib/utils';
+import { Check, Clock3, X, Download, Calendar } from 'lucide-react';
 
 export interface ConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm?: () => void;
-  variant?: "confirm" | "success" | "cancel";
+  variant?: 'confirm' | 'success' | 'cancel';
   title?: string;
   description?: string;
   appointmentId?: string;
@@ -29,13 +29,13 @@ export function ConfirmationModal({
   isOpen,
   onClose,
   onConfirm,
-  variant = "confirm",
+  variant = 'confirm',
   title,
   description,
   appointmentId,
   appointmentDetails,
   confirmLabel,
-  cancelLabel = "Close",
+  cancelLabel = 'Close',
   showCalendarDownload = false,
   onDownloadCalendar,
   className,
@@ -45,27 +45,27 @@ export function ConfirmationModal({
   const configs = {
     confirm: {
       icon: Clock3,
-      iconBg: "bg-primary/10 text-primary",
-      defaultTitle: "Confirm Your Appointment",
-      defaultDescription: "Please review the details below before confirming your booking.",
-      confirmLabel: confirmLabel || "Confirm Booking",
-      confirmVariant: "primary" as const,
+      iconBg: 'bg-primary/10 text-primary',
+      defaultTitle: 'Confirm Your Appointment',
+      defaultDescription: 'Please review the details below before confirming your booking.',
+      confirmLabel: confirmLabel || 'Confirm Booking',
+      confirmVariant: 'primary' as const,
     },
     success: {
       icon: Check,
-      iconBg: "bg-green-100 text-green-600",
-      defaultTitle: "Appointment Confirmed!",
-      defaultDescription: "Your appointment has been successfully booked.",
-      confirmLabel: confirmLabel || "Done",
-      confirmVariant: "primary" as const,
+      iconBg: 'bg-green-100 text-green-600',
+      defaultTitle: 'Appointment Confirmed!',
+      defaultDescription: 'Your appointment has been successfully booked.',
+      confirmLabel: confirmLabel || 'Done',
+      confirmVariant: 'primary' as const,
     },
     cancel: {
       icon: X,
-      iconBg: "bg-red-100 text-red-600",
-      defaultTitle: "Are you sure you want to cancel?",
-      defaultDescription: "This action cannot be undone.",
-      confirmLabel: confirmLabel || "Cancel Appointment",
-      confirmVariant: "destructive" as const,
+      iconBg: 'bg-red-100 text-red-600',
+      defaultTitle: 'Are you sure you want to cancel?',
+      defaultDescription: 'This action cannot be undone.',
+      confirmLabel: confirmLabel || 'Cancel Appointment',
+      confirmVariant: 'destructive' as const,
     },
   };
 
@@ -73,110 +73,108 @@ export function ConfirmationModal({
   const Icon = config.icon;
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
   const formatTime = (time: string) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
+    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
       hour12: true,
     });
   };
 
   return (
     <div
-      className="fixed inset-0 z-[60] grid place-items-center bg-foreground/30 p-4"
+      className="bg-foreground/30 fixed inset-0 z-[60] grid place-items-center p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={variant === "success" ? "success-title" : "confirm-title"}
-      aria-describedby={variant === "success" ? "success-desc" : "confirm-desc"}
+      aria-labelledby={variant === 'success' ? 'success-title' : 'confirm-title'}
+      aria-describedby={variant === 'success' ? 'success-desc' : 'confirm-desc'}
     >
       <div
         className={cn(
-          "w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200",
+          'border-border bg-card animate-in fade-in zoom-in-95 w-full max-w-md rounded-2xl border p-6 shadow-2xl duration-200',
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Icon */}
-        <div className="mx-auto grid size-12 place-items-center rounded-full mb-4">
-          <div className={cn("grid size-9 place-items-center rounded-full", config.iconBg)}>
+        <div className="mx-auto mb-4 grid size-12 place-items-center rounded-full">
+          <div className={cn('grid size-9 place-items-center rounded-full', config.iconBg)}>
             <Icon className="size-5" aria-hidden="true" />
           </div>
         </div>
 
         {/* Title & Description */}
-        <div className="text-center mb-6">
+        <div className="mb-6 text-center">
           <h2
-            id={variant === "success" ? "success-title" : "confirm-title"}
-            className="text-xl font-black text-foreground"
+            id={variant === 'success' ? 'success-title' : 'confirm-title'}
+            className="text-foreground text-xl font-black"
           >
             {title || config.defaultTitle}
           </h2>
           <p
-            id={variant === "success" ? "success-desc" : "confirm-desc"}
-            className="mt-2 text-sm text-muted-foreground"
+            id={variant === 'success' ? 'success-desc' : 'confirm-desc'}
+            className="text-muted-foreground mt-2 text-sm"
           >
             {description || config.defaultDescription}
           </p>
         </div>
 
         {/* Appointment Details (Success Variant) */}
-        {variant === "success" && appointmentDetails && (
-          <div className="mb-6 rounded-xl border border-border bg-background p-4">
+        {variant === 'success' && appointmentDetails && (
+          <div className="border-border bg-background mb-6 rounded-xl border p-4">
             {appointmentId && (
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                   Appointment ID
                 </span>
-                <span className="font-mono text-sm font-bold text-primary">
-                  {appointmentId}
-                </span>
+                <span className="text-primary font-mono text-sm font-bold">{appointmentId}</span>
               </div>
             )}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                <div className="bg-primary/10 text-primary grid size-9 place-items-center rounded-lg">
                   <Calendar className="size-4" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Date & Time</p>
+                  <p className="text-muted-foreground text-xs">Date & Time</p>
                   <p className="font-semibold">
                     {formatDate(appointmentDetails.date)} at {formatTime(appointmentDetails.time)}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                <div className="bg-primary/10 text-primary grid size-9 place-items-center rounded-lg">
                   <Calendar className="size-4" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Doctor</p>
+                  <p className="text-muted-foreground text-xs">Doctor</p>
                   <p className="font-semibold">{appointmentDetails.doctorName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                <div className="bg-primary/10 text-primary grid size-9 place-items-center rounded-lg">
                   <Calendar className="size-4" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Clinic</p>
+                  <p className="text-muted-foreground text-xs">Clinic</p>
                   <p className="font-semibold">{appointmentDetails.clinic}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                <div className="bg-primary/10 text-primary grid size-9 place-items-center rounded-lg">
                   <Calendar className="size-4" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Fee</p>
-                  <p className="font-semibold text-primary">${appointmentDetails.fee.toFixed(2)}</p>
+                  <p className="text-muted-foreground text-xs">Fee</p>
+                  <p className="text-primary font-semibold">${appointmentDetails.fee.toFixed(2)}</p>
                 </div>
               </div>
             </div>
@@ -184,17 +182,17 @@ export function ConfirmationModal({
         )}
 
         {/* Appointment Details (Confirm Variant) */}
-        {variant === "confirm" && appointmentDetails && (
-          <div className="mb-6 rounded-xl border border-border bg-background p-4">
+        {variant === 'confirm' && appointmentDetails && (
+          <div className="border-border bg-background mb-6 rounded-xl border p-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                   Doctor
                 </span>
                 <span className="font-semibold">{appointmentDetails.doctorName}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                   Date & Time
                 </span>
                 <span className="font-semibold">
@@ -202,16 +200,16 @@ export function ConfirmationModal({
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                   Clinic
                 </span>
-                <span className="font-semibold truncate text-right max-w-[180px]">
+                <span className="max-w-[180px] truncate text-right font-semibold">
                   {appointmentDetails.clinic}
                 </span>
               </div>
-              <div className="flex items-center justify-between border-t border-border pt-3">
+              <div className="border-border flex items-center justify-between border-t pt-3">
                 <span className="font-semibold">Total</span>
-                <span className="font-bold text-primary">${appointmentDetails.fee.toFixed(2)}</span>
+                <span className="text-primary font-bold">${appointmentDetails.fee.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -223,10 +221,10 @@ export function ConfirmationModal({
             type="button"
             onClick={onClose}
             className={cn(
-              "rounded-xl px-4 py-3 text-sm font-bold transition",
-              config.confirmVariant === "destructive"
-                ? "border border-border bg-background text-foreground hover:bg-secondary"
-                : "border border-border bg-background text-foreground hover:bg-secondary"
+              'rounded-xl px-4 py-3 text-sm font-bold transition',
+              config.confirmVariant === 'destructive'
+                ? 'border-border bg-background text-foreground hover:bg-secondary border'
+                : 'border-border bg-background text-foreground hover:bg-secondary border'
             )}
           >
             {cancelLabel}
@@ -236,10 +234,10 @@ export function ConfirmationModal({
               type="button"
               onClick={onConfirm}
               className={cn(
-                "rounded-xl px-4 py-3 text-sm font-bold transition",
-                config.confirmVariant === "primary"
-                  ? "bg-primary text-primary-foreground hover:opacity-90"
-                  : "bg-destructive text-destructive-foreground hover:opacity-90"
+                'rounded-xl px-4 py-3 text-sm font-bold transition',
+                config.confirmVariant === 'primary'
+                  ? 'bg-primary text-primary-foreground hover:opacity-90'
+                  : 'bg-destructive text-destructive-foreground hover:opacity-90'
               )}
             >
               {config.confirmLabel}
@@ -248,37 +246,37 @@ export function ConfirmationModal({
         </div>
 
         {/* Calendar Download (Success Variant) */}
-        {variant === "success" && showCalendarDownload && onDownloadCalendar && (
-          <div className="mt-4 pt-4 border-t border-border">
+        {variant === 'success' && showCalendarDownload && onDownloadCalendar && (
+          <div className="border-border mt-4 border-t pt-4">
             <button
               type="button"
               onClick={onDownloadCalendar}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-bold hover:bg-secondary"
+              className="border-border hover:bg-secondary flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold"
             >
               <Download className="size-4" aria-hidden="true" />
               Add to Calendar (.ics)
             </button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
+            <p className="text-muted-foreground mt-2 text-center text-xs">
               Works with Google Calendar, Outlook, Apple Calendar
             </p>
           </div>
         )}
 
         {/* Next Steps (Success Variant) */}
-        {variant === "success" && (
-          <div className="mt-4 rounded-xl bg-primary/5 border border-primary/20 p-4">
-            <h3 className="text-sm font-bold text-primary">What happens next?</h3>
-            <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+        {variant === 'success' && (
+          <div className="bg-primary/5 border-primary/20 mt-4 rounded-xl border p-4">
+            <h3 className="text-primary text-sm font-bold">What happens next?</h3>
+            <ul className="text-muted-foreground mt-2 space-y-1.5 text-xs">
               <li className="flex items-start gap-2">
-                <Check className="size-3.5 shrink-0 mt-0.5 text-primary" aria-hidden="true" />
+                <Check className="text-primary mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 <span>Confirmation email sent to your inbox</span>
               </li>
               <li className="flex items-start gap-2">
-                <Check className="size-3.5 shrink-0 mt-0.5 text-primary" aria-hidden="true" />
+                <Check className="text-primary mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 <span>Reminder notifications 24h and 2h before</span>
               </li>
               <li className="flex items-start gap-2">
-                <Check className="size-3.5 shrink-0 mt-0.5 text-primary" aria-hidden="true" />
+                <Check className="text-primary mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 <span>Video link (if applicable) available 15 min before</span>
               </li>
             </ul>

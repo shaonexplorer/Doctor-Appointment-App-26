@@ -95,7 +95,11 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
-        status === 'PAID' ? 'bg-[#e9f8f3] text-[#258c70]' : status === 'PENDING' ? 'bg-[#fff3e7] text-[#b8742c]' : 'bg-[#fff0ef] text-[#bd6c63]'
+        status === 'PAID'
+          ? 'bg-[#e9f8f3] text-[#258c70]'
+          : status === 'PENDING'
+            ? 'bg-[#fff3e7] text-[#b8742c]'
+            : 'bg-[#fff0ef] text-[#bd6c63]'
       }`}
     >
       {status}

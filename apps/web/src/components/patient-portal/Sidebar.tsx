@@ -13,6 +13,8 @@ import {
   Bell,
   PanelLeftClose,
   PanelLeftOpen,
+  Pill,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Brand } from './Brand';
@@ -24,8 +26,9 @@ const navigation = [
   { label: 'Doctor Profile', icon: UserRound, href: '/doctors/profile' },
   { label: 'Book Appointment', icon: CalendarDays, href: '/doctors/[id]/book' },
   { label: 'Appointments', icon: CalendarDays, href: '/patient/appointments' },
-  // { label: "Prescriptions", icon: Pill, href: "/patient/prescriptions" },
+  { label: 'Prescriptions', icon: Pill, href: '/patient/prescriptions' },
   { label: 'Medical Records', icon: FileText, href: '/patient/records' },
+  { label: 'AI Assistant', icon: Sparkles, href: '/patient/assistant' },
 ];
 
 const secondary = [
