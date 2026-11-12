@@ -50,3 +50,5 @@ prisma/migrations/.migration_lock.toml
 *.pem
 .vercel
 .netlify
+
+.screens
